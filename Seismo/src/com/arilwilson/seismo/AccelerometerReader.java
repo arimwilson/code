@@ -24,30 +24,30 @@ public class AccelerometerReader {
   }
 
   private SensorEventListener listener_ = new SensorEventListener(){
-	    public void onAccuracyChanged(Sensor arg0, int arg1) {}
+    public void onAccuracyChanged(Sensor arg0, int arg1) {}
 
-	    public void onSensorChanged(SensorEvent evt) {
-	      float vals[] = evt.values;
-	      
-	      if(evt.sensor.getType() == Sensor.TYPE_ORIENTATION) {
-	        float rawDirection = vals[0];
+    public void onSensorChanged(SensorEvent evt) {
+      float vals[] = evt.values;
+      
+      if(evt.sensor.getType() == Sensor.TYPE_ORIENTATION) {
+        float rawDirection = vals[0];
 
-	        direction =(float) ((rawDirection * kFilteringFactor) + 
-	            (direction * (1.0 - kFilteringFactor)));
+        direction =(float) ((rawDirection * kFilteringFactor) + 
+            (direction * (1.0 - kFilteringFactor)));
 
-	        inclination = 
-	            (float) ((vals[2] * kFilteringFactor) + 
-	            (inclination * (1.0 - kFilteringFactor)));
+        inclination = 
+            (float) ((vals[2] * kFilteringFactor) + 
+            (inclination * (1.0 - kFilteringFactor)));
 
-	                
-	        if(aboveOrBelow > 0) inclination = inclination * -1;
-	          
-	        if(evt.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-	            aboveOrBelow =
-	                (float) ((vals[2] * kFilteringFactor) + 
-	                (aboveOrBelow * (1.0 - kFilteringFactor)));
-	        }
-	      }
-	    }
-	  };
+                
+        if(aboveOrBelow > 0) inclination = inclination * -1;
+          
+        if(evt.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            aboveOrBelow =
+                (float) ((vals[2] * kFilteringFactor) + 
+                (aboveOrBelow * (1.0 - kFilteringFactor)));
+        }
+      }
+    }
+  };
 }
