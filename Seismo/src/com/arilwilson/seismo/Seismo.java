@@ -5,21 +5,34 @@ import android.os.Bundle;
 import android.widget.TextView;
 
 public class Seismo extends Activity {
-  /** Called when the activity is first created. */
+  private class AccelerometerThread implements Runnable {
+    private volatile AccelerometerReader reader_;
+    private volatile TextView tv_;
+
+    public AccelerometerThread(AccelerometerReader reader, TextView tv) {
+      reader_ = reader;
+      tv_ = tv;
+    }
+
+    public void run() {
+      while (true) {
+        tv_.setText(String.valueOf(reader_.direction));
+        try {
+            Thread.sleep(1000, 0);
+        } catch (Exception e) {
+            // Ignore.
+        }
+      }
+    }
+  }
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    TextView tv = new TextView(this);
     AccelerometerReader reader = new AccelerometerReader(this);
-    tv.setText("Test!");
+    TextView tv = new TextView(this);
+    AccelerometerThread thread = new AccelerometerThread(reader, tv);
     setContentView(tv);
-    while (true) {
-      tv.setText(String.valueOf(reader.direction));
-	  try {
-        Thread.sleep(1000, 0);
-	  } catch (Exception e) {
-        // Ignore.
-      }
-    }
+    new Thread(thread).start();
   }
 }
