@@ -7,12 +7,12 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
 public class AccelerometerReader { 
-  public volatile float direction = (float)0;
+  public volatile float direction = 0;
   public volatile float inclination;
-  public volatile float rollingZ = (float)0;
+  public volatile float rollingZ = 0;
 
   public volatile float kFilteringFactor = (float)0.05;
-  public float aboveOrBelow = (float)0;
+  public float aboveOrBelow = 0;
 	
   public AccelerometerReader(Context ctx) 
       throws UnsupportedOperationException { 
