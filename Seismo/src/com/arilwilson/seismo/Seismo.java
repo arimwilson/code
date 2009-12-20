@@ -10,38 +10,31 @@ public class Seismo extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
 	super.onCreate(savedInstanceState);
-    AccelerometerReader reader = new AccelerometerReader(this);
     view_ = new TextView(this);
-    updater_ = new AccelerometerUpdater(reader, ui_updater_, 1000);
     setContentView(view_);
-    updater_thread_ = new Thread(updater_);
-    updater_thread_.start();
-  }
-
-  @Override
-  public void onPause() {
-    super.onPause();
-  }
-
-  @Override
-  public void onResume() {
-    super.onResume();
-  }
-
-  @Override
-  public void onStop() {
-    super.onStop();
+    createUpdater();
   }
 
   @Override
   public void onDestroy() {
     super.onDestroy();
-	updater_.destroy();
-    try {
-      updater_thread_.join();
-    } catch (InterruptedException e) {
-      // Ignore.
+	destroyUpdater();
+  }
+
+  private void destroyUpdater() {
+    updater_.destroy();
+	try {
+	  updater_thread_.join();
+	} catch (InterruptedException e) {
+	  // Ignore.
     }
+  }
+
+  private void createUpdater() {
+	AccelerometerReader reader = new AccelerometerReader(this);
+	updater_ = new AccelerometerUpdater(reader, ui_updater_, 200);
+    updater_thread_ = new Thread(updater_);
+    updater_thread_.start();
   }
 
   private class AccelerometerUpdater implements Runnable {
