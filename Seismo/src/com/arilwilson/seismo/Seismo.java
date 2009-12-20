@@ -4,24 +4,39 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.widget.TextView;
 
 public class Seismo extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
+	super.onCreate(savedInstanceState);
     AccelerometerReader reader = new AccelerometerReader(this);
-    direction_view_ = new TextView(this);
+    view_ = new TextView(this);
     updater_ = new AccelerometerUpdater(reader, ui_updater_);
-    setContentView(direction_view_);
+    setContentView(view_);
     updater_thread_ = new Thread(updater_);
     updater_thread_.start();
   }
 
   @Override
+  public void onPause() {
+    super.onPause();
+  }
+
+  @Override
+  public void onResume() {
+    super.onResume();
+  }
+
+  @Override
+  public void onStop() {
+    super.onStop();
+  }
+
+  @Override
   public void onDestroy() {
-    updater_.destroy();
+    super.onDestroy();
+	updater_.destroy();
     try {
       updater_thread_.join();
     } catch (InterruptedException e) {
@@ -42,7 +57,9 @@ public class Seismo extends Activity {
         Message m = new Message();
         m.setData(b);
         b.putString("action", "update");
-        b.putDouble("direction", reader_.direction);
+        b.putDouble("x", reader_.x);
+        b.putDouble("y", reader_.y);
+        b.putDouble("z", reader_.z);
         ui_updater_.sendMessage(m);
         try {
             Thread.sleep(1000, 0);
@@ -67,13 +84,15 @@ public class Seismo extends Activity {
       Bundle b = m.getData();
       if (b != null) {
         if (b.getString("action") == "update") {
-          direction_view_.setText(String.valueOf(b.getDouble("direction")));
+          view_.setText(String.valueOf(b.getDouble("x")) + " " +
+        		        String.valueOf(b.getDouble("y")) + " " +
+        		        String.valueOf(b.getDouble("z")));
         }
       }
     }
   };
 
-  private TextView direction_view_;
+  private TextView view_;
   private AccelerometerUpdater updater_;
   private Thread updater_thread_;
 }
