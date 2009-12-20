@@ -18,7 +18,7 @@ public class AccelerometerReader {
         Context.SENSOR_SERVICE);
     Sensor accelerometer = sensor_manager.getDefaultSensor(
         Sensor.TYPE_ACCELEROMETER);
-    Log.i("Seismo", accelerometer.getName());
+    Log.i("Seismo", accelerometer.getName() + " " + accelerometer.getVendor());
     sensor_manager.registerListener(listener_, accelerometer,
     		                        SensorManager.SENSOR_DELAY_FASTEST); 
   }

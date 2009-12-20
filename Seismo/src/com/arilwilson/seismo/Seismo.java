@@ -12,7 +12,7 @@ public class Seismo extends Activity {
 	super.onCreate(savedInstanceState);
     AccelerometerReader reader = new AccelerometerReader(this);
     view_ = new TextView(this);
-    updater_ = new AccelerometerUpdater(reader, ui_updater_);
+    updater_ = new AccelerometerUpdater(reader, ui_updater_, 1000);
     setContentView(view_);
     updater_thread_ = new Thread(updater_);
     updater_thread_.start();
@@ -45,10 +45,12 @@ public class Seismo extends Activity {
   }
 
   private class AccelerometerUpdater implements Runnable {
-    public AccelerometerUpdater(AccelerometerReader reader, Handler ui_updater) {
+    public AccelerometerUpdater(AccelerometerReader reader, Handler ui_updater,
+    		                    int updater_period) {
       stop_ = false;
       reader_ = reader;
       ui_updater_ = ui_updater;
+      updater_period_ = updater_period;
     }
 
     public void run() {
@@ -62,7 +64,7 @@ public class Seismo extends Activity {
         b.putDouble("z", reader_.z);
         ui_updater_.sendMessage(m);
         try {
-            Thread.sleep(1000, 0);
+            Thread.sleep(updater_period_, 0);
         } catch (Exception e) {
             // Ignore.
         }
@@ -75,6 +77,7 @@ public class Seismo extends Activity {
 
     private volatile AccelerometerReader reader_;
     private Handler ui_updater_;
+    private int updater_period_;
     private volatile boolean stop_;
   }
 
