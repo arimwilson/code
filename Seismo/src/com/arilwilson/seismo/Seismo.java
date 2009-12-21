@@ -4,14 +4,15 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.SurfaceView;
 import android.widget.TextView;
 
 public class Seismo extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
 	super.onCreate(savedInstanceState);
-    view_ = new TextView(this);
-    setContentView(view_);
+	SeismoView view = new SeismoView(this);
+	setContentView(R.layout.main);
     createUpdater();
   }
 
@@ -88,7 +89,6 @@ public class Seismo extends Activity {
     }
   };
 
-  private TextView view_;
   private AccelerometerUpdater updater_;
   private Thread updater_thread_;
 }
