@@ -20,7 +20,7 @@ public class AccelerometerReader {
         Sensor.TYPE_ACCELEROMETER);
     Log.i("Seismo", accelerometer.getName() + " " + accelerometer.getVendor());
     sensor_manager.registerListener(listener_, accelerometer,
-    		                        SensorManager.SENSOR_DELAY_FASTEST); 
+    		                            SensorManager.SENSOR_DELAY_FASTEST); 
   }
 
   private SensorEventListener listener_ = new SensorEventListener(){
