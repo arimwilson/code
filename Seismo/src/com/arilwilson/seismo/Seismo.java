@@ -2,17 +2,17 @@ package com.arilwilson.seismo;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.view.SurfaceView;
-import android.widget.TextView;
+import android.widget.LinearLayout;
 
 public class Seismo extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
 	super.onCreate(savedInstanceState);
-	SeismoView view = new SeismoView(this);
-	setContentView(R.layout.main);
+	LinearLayout layout = new LinearLayout(this);
+	view_ = new SeismoView(this, 25);
+	layout.addView(view_);
+	
+	setContentView(layout);
     createUpdater();
   }
 
@@ -33,34 +33,27 @@ public class Seismo extends Activity {
 
   private void createUpdater() {
 	AccelerometerReader reader = new AccelerometerReader(this);
-	updater_ = new AccelerometerUpdater(reader, ui_updater_, 200);
+	updater_ = new AccelerometerUpdater(reader, view_, 25);
     updater_thread_ = new Thread(updater_);
     updater_thread_.start();
   }
 
   private class AccelerometerUpdater implements Runnable {
-    public AccelerometerUpdater(AccelerometerReader reader, Handler ui_updater,
+    public AccelerometerUpdater(AccelerometerReader reader, SeismoView view,
     		                    int updater_period) {
       stop_ = false;
       reader_ = reader;
-      ui_updater_ = ui_updater;
+      view_ = view;
       updater_period_ = updater_period;
     }
 
     public void run() {
       while (!stop_) {
-        Bundle b = new Bundle();
-        Message m = new Message();
-        m.setData(b);
-        b.putString("action", "update");
-        b.putDouble("x", reader_.x);
-        b.putDouble("y", reader_.y);
-        b.putDouble("z", reader_.z);
-        ui_updater_.sendMessage(m);
+        view_.update(reader_.x, reader_.y, reader_.z);
         try {
-            Thread.sleep(updater_period_, 0);
+          Thread.sleep(updater_period_, 0);
         } catch (Exception e) {
-            // Ignore.
+          // Ignore.
         }
       }
     }
@@ -70,25 +63,11 @@ public class Seismo extends Activity {
     }
 
     private volatile AccelerometerReader reader_;
-    private Handler ui_updater_;
     private int updater_period_;
     private volatile boolean stop_;
   }
 
-  private Handler ui_updater_ = new Handler() {
-    @Override
-    public void handleMessage(Message m) {
-      Bundle b = m.getData();
-      if (b != null) {
-        if (b.getString("action") == "update") {
-          view_.setText(String.valueOf(b.getDouble("x")) + " " +
-        		        String.valueOf(b.getDouble("y")) + " " +
-        		        String.valueOf(b.getDouble("z")));
-        }
-      }
-    }
-  };
-
   private AccelerometerUpdater updater_;
+  private SeismoView view_;
   private Thread updater_thread_;
 }
