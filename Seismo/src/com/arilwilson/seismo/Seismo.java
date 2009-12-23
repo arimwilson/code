@@ -7,12 +7,12 @@ import android.widget.LinearLayout;
 public class Seismo extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
-	  super.onCreate(savedInstanceState);
-	  LinearLayout layout = new LinearLayout(this);
-	  view_ = new SeismoView(this, 25);
-	  layout.addView(view_);
-	
-	  setContentView(layout);
+    super.onCreate(savedInstanceState);
+    LinearLayout layout = new LinearLayout(this);
+    view_ = new SeismoView(this, 25);
+    layout.addView(view_);
+
+    setContentView(layout);
   }
 
   private SeismoView view_;
