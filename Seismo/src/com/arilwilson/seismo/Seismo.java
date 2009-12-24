@@ -14,6 +14,18 @@ public class Seismo extends Activity {
 
     setContentView(layout);
   }
+  
+  @Override
+  public void onPause() {
+    super.onPause();
+    view_.pause();
+  }
+
+  @Override
+  public void onResume() {
+    super.onPause();
+    view_.resume();
+  }
 
   private SeismoView view_;
 }

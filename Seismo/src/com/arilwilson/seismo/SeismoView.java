@@ -11,10 +11,30 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
 
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
-    AccelerometerReader reader = new AccelerometerReader(ctx);
-    view_thread_ = new SeismoViewThread(holder, ctx, period);
+    ctx_ = ctx;
+    period_ = period;
+    resume();
+  }
+  
+  public void pause() {
+    boolean retry = true;
+    view_thread_.setRunning(false);
+    reader_thread_.setRunning(false);
+    while (retry) {
+      try {
+        view_thread_.join();
+        reader_thread_.join();
+        retry = false;
+      } catch (InterruptedException e) {
+      }
+    }    
+  }
+
+  public void resume() {
+    AccelerometerReader reader = new AccelerometerReader(ctx_);
+    view_thread_ = new SeismoViewThread(getHolder(), ctx_, period_);
     reader_thread_ = new AccelerometerReaderThread(reader, view_thread_,
-                                                   period);
+                                                   period_);
   }
   
   public void surfaceChanged(SurfaceHolder holder, int format, int width,
@@ -136,8 +156,10 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   private static final int HISTORY_SIZE = 100;
-  private static final float MAX_ACCELERATION = 3.0f;
+  private static final float MAX_ACCELERATION = 2.0f * 9.806f;
 
   private AccelerometerReaderThread reader_thread_;
   private SeismoViewThread view_thread_;
+  private Context ctx_;
+  private int period_;
 }
