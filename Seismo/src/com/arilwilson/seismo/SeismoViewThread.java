@@ -20,7 +20,8 @@ public class SeismoViewThread extends Thread {
         canvas.drawARGB(255, 255, 255, 255);
         float[] pts = new float[canvas_height_ * 2];
         for (int i = 0; i < canvas_height_; ++i) {
-          pts[i * 2] = canvas_width_ / 2 * (1 + z_[i] / MAX_ACCELERATION);
+          pts[i * 2] = canvas_width_ / 2 *
+                           (1 + history_[i][2] / MAX_ACCELERATION);
           pts[i * 2 + 1] = i;
         }
         Paint paint = new Paint();
@@ -47,17 +48,17 @@ public class SeismoViewThread extends Thread {
       if (filter_) {
         acceleration[0] = x * FILTERING_FACTOR +
                           acceleration[0] * (1.0f - FILTERING_FACTOR);
-        x_[next_index_] = x - acceleration[0];
+        history_[next_index_][0] = x - acceleration[0];
         acceleration[1] = y * FILTERING_FACTOR +
                           acceleration[1] * (1.0f - FILTERING_FACTOR);
-        y_[next_index_] = y - acceleration[1];
+        history_[next_index_][1] = y - acceleration[1];
         acceleration[2] = z * FILTERING_FACTOR +
                           acceleration[2] * (1.0f - FILTERING_FACTOR);
-        z_[next_index_] = z - acceleration[2];
+        history_[next_index_][2] = z - acceleration[2];
       } else {
-        x_[next_index_] = x;
-        y_[next_index_] = y;
-        z_[next_index_] = z;
+        history_[next_index_][0] = x;
+        history_[next_index_][1] = y;
+        history_[next_index_][2] = z;
       }
       next_index_ = (next_index_ + 1) % canvas_height_;
     }
@@ -67,9 +68,7 @@ public class SeismoViewThread extends Thread {
     synchronized (holder_) {
       canvas_width_ = canvas_width;
       canvas_height_ = canvas_height;
-      x_ = new float[canvas_height];
-      y_ = new float[canvas_height];
-      z_ = new float[canvas_height];
+      history_ = new float[canvas_height][3];
       next_index_ = 0;
     }
   }
@@ -82,13 +81,11 @@ public class SeismoViewThread extends Thread {
   private static final float FILTERING_FACTOR = 0.1f;
 
   private float[] acceleration = new float[3];
-  private float[] x_;
-  private float[] y_;
-  private float[] z_;
+  private float[][] history_;
   private int next_index_;
   private int canvas_height_ = 0;
   private int canvas_width_ = 1;
-  private boolean filter_ = false;
+  private boolean filter_ = true;
   private boolean running_ = false;
   private SurfaceHolder holder_;
   private Context ctx_;

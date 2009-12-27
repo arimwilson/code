@@ -2,7 +2,6 @@ package com.arilwilson.seismo;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -43,14 +42,16 @@ public class Seismo extends Activity {
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
-    if (item.getTitle() == "Filter") {
+    super.onOptionsItemSelected(item);
+
+    if (item.getTitle().toString() == "Filter") {
       if (item.isChecked()) {
         view_.filter();
       } else {
         view_.unfilter();
       }
       return true;
-    } else if (item.getTitle() == "Pause") {
+    } else if (item.getTitle().toString() == "Pause") {
       if (item.isChecked()) {
         view_.resume();
         item.setChecked(false);
