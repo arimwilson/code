@@ -11,7 +11,7 @@ public class SeismoViewThread extends Thread {
     ctx_ = ctx;
     period_ = period;
   }
-  
+
   @Override
   public void run() {
     while (running_) {
@@ -26,7 +26,7 @@ public class SeismoViewThread extends Thread {
         Paint paint = new Paint();
         paint.setARGB(255, 0, 0, 0);
         paint.setStrokeWidth(2.0f);
-        paint.setAntiAlias(true);
+        paint.setAntiAlias(false);
         canvas.drawLines(pts, paint);
         holder_.unlockCanvasAndPost(canvas);
       }
@@ -44,9 +44,21 @@ public class SeismoViewThread extends Thread {
 
   public void update(float x, float y, float z) {
     synchronized (holder_) {
-      x_[next_index_] = x;
-      y_[next_index_] = y;
-      z_[next_index_] = z;
+      if (filter_) {
+        acceleration[0] = x * FILTERING_FACTOR +
+                          acceleration[0] * (1.0f - FILTERING_FACTOR);
+        x_[next_index_] = x - acceleration[0];
+        acceleration[1] = y * FILTERING_FACTOR +
+                          acceleration[1] * (1.0f - FILTERING_FACTOR);
+        y_[next_index_] = y - acceleration[1];
+        acceleration[2] = z * FILTERING_FACTOR +
+                          acceleration[2] * (1.0f - FILTERING_FACTOR);
+        z_[next_index_] = z - acceleration[2];
+      } else {
+        x_[next_index_] = x;
+        y_[next_index_] = y;
+        z_[next_index_] = z;
+      }
       next_index_ = (next_index_ + 1) % canvas_height_;
     }
   }
@@ -58,17 +70,25 @@ public class SeismoViewThread extends Thread {
       x_ = new float[canvas_height];
       y_ = new float[canvas_height];
       z_ = new float[canvas_height];
+      next_index_ = 0;
     }
+  }
+  
+  public void setFilter(boolean filter) {
+    filter_ = filter;
   }
 
   private static final float MAX_ACCELERATION = 2.0f * 9.806f;
+  private static final float FILTERING_FACTOR = 0.1f;
 
+  private float[] acceleration = new float[3];
   private float[] x_;
   private float[] y_;
   private float[] z_;
-  private int next_index_ = 0;
+  private int next_index_;
   private int canvas_height_ = 0;
   private int canvas_width_ = 1;
+  private boolean filter_ = false;
   private boolean running_ = false;
   private SurfaceHolder holder_;
   private Context ctx_;
