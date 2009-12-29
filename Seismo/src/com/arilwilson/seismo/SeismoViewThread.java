@@ -37,15 +37,18 @@ public class SeismoViewThread extends Thread {
           }
 
           // Draw line.
-          float[] pts = new float[canvas_height_ * 2];
-          for (int i = 0; i < canvas_height_; ++i) {
-            pts[i * 2] = canvas_width_ / 2 *
-                             (1 + history_[i][2] / MAX_ACCELERATION);
-            pts[i * 2 + 1] = i;
+          float[] pts = new float[next_index_ * 4];
+          for (int i = 1; i < next_index_; ++i) {
+            pts[i * 4] = canvas_width_ / 2 *
+                             (1 + history_[i - 1][2] / MAX_ACCELERATION);
+            pts[i * 4 + 1] = i - 1;
+            pts[i * 4 + 2] = canvas_width_ / 2 *
+                                 (1 + history_[i][2] / MAX_ACCELERATION);
+            pts[i * 4 + 3] = i;
           }
           Paint line_paint = new Paint();
           line_paint.setARGB(255, 0, 0, 0);
-          line_paint.setStrokeWidth(canvas_width_ / 200f);
+          line_paint.setStrokeWidth(canvas_width_ / 300f);
           line_paint.setAntiAlias(false);
           canvas.drawLines(pts, line_paint);
           holder_.unlockCanvasAndPost(canvas);

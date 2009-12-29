@@ -17,18 +17,6 @@ public class Seismo extends Activity {
 
     setContentView(layout);
   }
-  
-  @Override
-  public void onPause() {
-    view_.stop();
-    super.onPause();
-  }
-
-  @Override
-  public void onResume() {
-    view_.restart();
-    super.onResume();
-  }
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
