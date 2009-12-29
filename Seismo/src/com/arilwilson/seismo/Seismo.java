@@ -20,14 +20,14 @@ public class Seismo extends Activity {
   
   @Override
   public void onPause() {
+    view_.stop();
     super.onPause();
-    view_.pause();
   }
 
   @Override
   public void onResume() {
-    super.onPause();
-    view_.resume();
+    view_.restart();
+    super.onResume();
   }
 
   @Override
@@ -36,7 +36,7 @@ public class Seismo extends Activity {
  
     MenuInflater inflater = getMenuInflater();
     inflater.inflate(R.menu.options, menu);
-    
+
     return true;
   }
 
@@ -44,20 +44,23 @@ public class Seismo extends Activity {
   public boolean onOptionsItemSelected(MenuItem item) {
     super.onOptionsItemSelected(item);
 
-    if (item.getTitle().toString() == "Filter") {
-      if (item.isChecked()) {
+    switch (item.getItemId()) {
+    case R.id.Filter:
+      if (item.getTitle().equals("Filter")) {
         view_.filter();
+        item.setTitle("Unfilter");
       } else {
         view_.unfilter();
+        item.setTitle("Filter");
       }
       return true;
-    } else if (item.getTitle().toString() == "Pause") {
-      if (item.isChecked()) {
-        view_.resume();
-        item.setChecked(false);
-      } else {
+    case R.id.Pause:
+      if (item.getTitle().equals("Pause")) {
         view_.pause();
-        item.setChecked(true);
+        item.setTitle("Resume");
+      } else {
+        view_.resume();
+        item.setTitle("Pause");
       }
       return true;
     }

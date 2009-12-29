@@ -15,21 +15,41 @@ public class SeismoViewThread extends Thread {
   @Override
   public void run() {
     while (running_) {
-      synchronized (holder_) {
-        Canvas canvas = holder_.lockCanvas();
-        canvas.drawARGB(255, 255, 255, 255);
-        float[] pts = new float[canvas_height_ * 2];
-        for (int i = 0; i < canvas_height_; ++i) {
-          pts[i * 2] = canvas_width_ / 2 *
-                           (1 + history_[i][2] / MAX_ACCELERATION);
-          pts[i * 2 + 1] = i;
+      if (!paused_) {
+        synchronized (holder_) {
+          Canvas canvas = holder_.lockCanvas();
+          canvas.drawARGB(255, 255, 255, 255);
+
+          // Draw scale.
+          Paint scale_paint = new Paint();
+          scale_paint.setARGB(255, 137, 137, 137);
+          scale_paint.setStrokeWidth(canvas_width_ / 300f);
+          scale_paint.setAntiAlias(true);
+          float text_size = canvas_width_ / 35f;
+          scale_paint.setTextSize(text_size);
+          scale_paint.setTextAlign(Paint.Align.CENTER);
+          for (int i = -MAX_G + 1; i <= MAX_G - 1; ++i) {
+            float x = canvas_width_ / 2 * (1 + (float)i / MAX_G);
+            canvas.drawLine(x, 0, x, canvas_height_ / 20, scale_paint);
+            canvas.drawText(Integer.toString(i) + "g", x,
+                            canvas_height_ / 20 + 1.2f * text_size,
+                            scale_paint);
+          }
+
+          // Draw line.
+          float[] pts = new float[canvas_height_ * 2];
+          for (int i = 0; i < canvas_height_; ++i) {
+            pts[i * 2] = canvas_width_ / 2 *
+                             (1 + history_[i][2] / MAX_ACCELERATION);
+            pts[i * 2 + 1] = i;
+          }
+          Paint line_paint = new Paint();
+          line_paint.setARGB(255, 0, 0, 0);
+          line_paint.setStrokeWidth(canvas_width_ / 200f);
+          line_paint.setAntiAlias(false);
+          canvas.drawLines(pts, line_paint);
+          holder_.unlockCanvasAndPost(canvas);
         }
-        Paint paint = new Paint();
-        paint.setARGB(255, 0, 0, 0);
-        paint.setStrokeWidth(2.0f);
-        paint.setAntiAlias(false);
-        canvas.drawLines(pts, paint);
-        holder_.unlockCanvasAndPost(canvas);
       }
       try {
         Thread.sleep(period_);
@@ -41,6 +61,10 @@ public class SeismoViewThread extends Thread {
 
   public void setRunning(boolean running) {
     running_ = running;
+  }
+
+  public void setPaused(boolean paused) {
+    paused_ = paused;
   }
 
   public void update(float x, float y, float z) {
@@ -77,16 +101,18 @@ public class SeismoViewThread extends Thread {
     filter_ = filter;
   }
 
-  private static final float MAX_ACCELERATION = 2.0f * 9.806f;
+  private static final int MAX_G = 3;
+  private static final float MAX_ACCELERATION = MAX_G * 9.807f;
   private static final float FILTERING_FACTOR = 0.1f;
 
   private float[] acceleration = new float[3];
-  private float[][] history_;
-  private int next_index_;
-  private int canvas_height_ = 0;
+  private float[][] history_ = new float[1][3];
+  private int next_index_ = 0;
+  private int canvas_height_ = 1;
   private int canvas_width_ = 1;
   private boolean filter_ = true;
   private boolean running_ = false;
+  private boolean paused_ = false;
   private SurfaceHolder holder_;
   private Context ctx_;
   private int period_;
