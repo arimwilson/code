@@ -2,10 +2,11 @@ package com.arilwilson.seismo;
 
 public class AccelerometerReaderThread extends Thread {
   public AccelerometerReaderThread(AccelerometerReader reader,
-                                   SeismoViewThread view,
+                                   SeismoViewThread view, boolean paused,
                                    int updater_period) {
     reader_ = reader;
     view_ = view;
+    setPaused(paused);
     updater_period_ = updater_period;
   }
 
@@ -32,7 +33,7 @@ public class AccelerometerReaderThread extends Thread {
   }
 
   private boolean running_ = false;
-  private boolean paused_ = false;
+  private boolean paused_;
   private volatile AccelerometerReader reader_;
   private SeismoViewThread view_;
   private int updater_period_;
