@@ -51,6 +51,15 @@ public class Seismo extends Activity {
         item.setTitle("Pause");
       }
       return true;
+    case R.id.x:
+      view_.x();
+      return true;
+    case R.id.y:
+      view_.y();
+      return true;
+    case R.id.z:
+      view_.z();
+      return true;
     }
 
     return false;

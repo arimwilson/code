@@ -17,8 +17,12 @@ public final class R {
         public static final int screenshot2=0x7f020003;
     }
     public static final class id {
+        public static final int Axis=0x7f050002;
         public static final int Filter=0x7f050000;
         public static final int Pause=0x7f050001;
+        public static final int x=0x7f050003;
+        public static final int y=0x7f050004;
+        public static final int z=0x7f050005;
     }
     public static final class menu {
         public static final int options=0x7f040000;
