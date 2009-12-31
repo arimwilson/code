@@ -7,12 +7,14 @@ import android.view.SurfaceHolder;
 
 public class SeismoViewThread extends Thread {
   public SeismoViewThread(SurfaceHolder holder, Context ctx, boolean paused,
-                          boolean filter, int axis, int period) {
+                          boolean filter, int axis, boolean recording,
+                          int period) {
     holder_ = holder;
     ctx_ = ctx;
     setPaused(paused);
     setFilter(filter);
     setAxis(axis);
+    recording_ = recording;
     period_ = period;
   }
 
@@ -78,10 +80,6 @@ public class SeismoViewThread extends Thread {
     }
   }
 
-  public void setRunning(boolean running) {
-    running_ = running;
-  }
-
   public void update(float x, float y, float z) {
     synchronized (holder_) {
       if (filter_) {
@@ -114,8 +112,22 @@ public class SeismoViewThread extends Thread {
     }
   }
 
+  public void setRunning(boolean running) {
+    running_ = running;
+  }
+
   public void setPaused(boolean paused) {
     paused_ = paused;
+  }
+
+  public void record() {
+    recording_ = true;
+    recorded_ = new float[SECONDS_TO_SAVE * 1000 / period_][3];
+  }
+
+  public void save() {
+    recording_ = false;
+    // TODO(ariw): Save!
   }
 
   public void setFilter(boolean filter) {
@@ -133,12 +145,14 @@ public class SeismoViewThread extends Thread {
 
   private float[] acceleration = new float[3];
   private float[][] history_ = new float[1][3];
+  private float[][] recorded_;
   private int next_index_ = 0;
   private int time_ = 0;
   private int canvas_height_ = 1;
   private int canvas_width_ = 1;
   private boolean running_;
   private boolean paused_;
+  private boolean recording_;
   private boolean filter_;
   private int axis_ = 2;
   private SurfaceHolder holder_;
