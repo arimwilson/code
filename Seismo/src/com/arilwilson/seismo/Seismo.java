@@ -60,16 +60,6 @@ public class Seismo extends Activity {
     case R.id.z:
       view_.z();
       return true;
-    case R.id.Record:
-      if (item.getTitle().equals("Record")) {
-        view_.record();
-        item.setTitle("Stop");
-      } else {
-        view_.save();
-        item.setTitle("Record");
-      }
-      view_.record();
-      return true;
     }
 
     return false;

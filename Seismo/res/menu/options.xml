@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
   xmlns:android="http://schemas.android.com/apk/res/android">
-<item android:id="@+id/Filter" android:title="Unfilter" android:alphabeticShortcut="f" android:orderInCategory="3"></item>
+<item android:id="@+id/Filter" android:title="Unfilter" android:alphabeticShortcut="f" android:orderInCategory="2"></item>
 <item android:orderInCategory="1" android:id="@+id/Pause" android:alphabeticShortcut="p" android:title="Pause"></item>
-<item android:title="Axis" android:id="@+id/Axis" android:alphabeticShortcut="a" android:orderInCategory="4"><menu><item android:orderInCategory="1" android:id="@+id/x" android:title="x" android:alphabeticShortcut="x"></item>
+<item android:title="Axis" android:id="@+id/Axis" android:alphabeticShortcut="a" android:orderInCategory="3"><menu><item android:orderInCategory="1" android:id="@+id/x" android:title="x" android:alphabeticShortcut="x"></item>
 <item android:orderInCategory="2" android:id="@+id/y" android:title="y" android:alphabeticShortcut="y"></item>
 <item android:orderInCategory="3" android:id="@+id/z" android:title="z" android:alphabeticShortcut="z"></item>
 </menu>
 </item>
-<item android:id="@+id/Record" android:alphabeticShortcut="r" android:title="Record" android:orderInCategory="2"></item>
 </menu>
