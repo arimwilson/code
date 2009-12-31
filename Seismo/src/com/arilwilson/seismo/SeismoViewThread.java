@@ -43,10 +43,11 @@ public class SeismoViewThread extends Thread {
         // Draw time scale in seconds.
         scale_paint.setTextAlign(Paint.Align.LEFT);
         int num_seconds = canvas_height_ * period_ / 1000;
+        int num_seconds_offset = num_seconds * (time_ / canvas_height_);
         for (int s = 1; s < num_seconds; ++s) {
           float y = canvas_height_ * (float)s / num_seconds;
           canvas.drawLine(0, y, canvas_width_ / 20, y, scale_paint);
-          canvas.drawText(Integer.toString(s) + "s",
+          canvas.drawText(Integer.toString(s + num_seconds_offset) + "s",
                           canvas_width_ / 20 + 0.2f * text_size,
                           y + 0.5f * text_size, scale_paint);
         }
@@ -99,6 +100,7 @@ public class SeismoViewThread extends Thread {
         history_[next_index_][2] = z;
       }
       next_index_ = (next_index_ + 1) % canvas_height_;
+      ++time_;
     }
   }
 
@@ -108,6 +110,7 @@ public class SeismoViewThread extends Thread {
       canvas_height_ = canvas_height;
       history_ = new float[canvas_height][3];
       next_index_ = 0;
+      time_ = 0;
     }
   }
 
@@ -126,10 +129,12 @@ public class SeismoViewThread extends Thread {
   private static final int MAX_G = 3;
   private static final float MAX_ACCELERATION = MAX_G * 9.807f;
   private static final float FILTERING_FACTOR = 0.1f;
+  private static final int SECONDS_TO_SAVE = 60;
 
   private float[] acceleration = new float[3];
   private float[][] history_ = new float[1][3];
   private int next_index_ = 0;
+  private int time_ = 0;
   private int canvas_height_ = 1;
   private int canvas_width_ = 1;
   private boolean running_;
