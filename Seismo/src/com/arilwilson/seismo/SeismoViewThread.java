@@ -1,20 +1,19 @@
 package com.arilwilson.seismo;
 
-import android.content.Context;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.ListIterator;
+
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.view.SurfaceHolder;
 
 public class SeismoViewThread extends Thread {
-  public SeismoViewThread(SurfaceHolder holder, Context ctx, boolean paused,
-                          boolean filter, int axis, boolean recording,
+  public SeismoViewThread(SurfaceHolder holder, boolean filter, int axis,
                           int period) {
     holder_ = holder;
-    ctx_ = ctx;
-    setPaused(paused);
     setFilter(filter);
     setAxis(axis);
-    recording_ = recording;
     period_ = period;
   }
 
@@ -44,26 +43,30 @@ public class SeismoViewThread extends Thread {
 
         // Draw time scale in seconds.
         scale_paint.setTextAlign(Paint.Align.LEFT);
-        int num_seconds = canvas_height_ * period_ / 1000;
-        int num_seconds_offset = num_seconds * (time_ / canvas_height_);
-        for (int s = 1; s < num_seconds; ++s) {
-          float y = canvas_height_ * (float)s / num_seconds;
+        int max_second = time_ * period_ / 1000;
+        int min_second = (int) Math.ceil((time_ - canvas_height_) * period_ /
+                                         1000);
+        for (int s = max_second; s >= 0 && s > min_second; --s) {
+          float y = s * 1000 / period_ - time_ + canvas_height_;
           canvas.drawLine(0, y, canvas_width_ / 20, y, scale_paint);
-          canvas.drawText(Integer.toString(s + num_seconds_offset) + "s",
+          canvas.drawText(Integer.toString(s) + "s",
                           canvas_width_ / 20 + 0.2f * text_size,
                           y + 0.5f * text_size, scale_paint);
         }
 
 
         // Draw line.
-        float[] pts = new float[next_index_ * 4];
-        for (int i = 1; i < next_index_; ++i) {
-          pts[i * 4] = canvas_width_ / 2 *
-                           (1 + history_[i - 1][axis_] / MAX_ACCELERATION);
-          pts[i * 4 + 1] = i - 1;
-          pts[i * 4 + 2] = canvas_width_ / 2 *
-                               (1 + history_[i][axis_] / MAX_ACCELERATION);
-          pts[i * 4 + 3] = i;
+        float[] pts = new float[(history_.size() - start_.nextIndex()) * 4];
+        int i = 0;
+        for (ListIterator<ArrayList<Float>> index = start_; index.hasNext();) {
+          ArrayList<Float> history = index.next();
+          pts[i] = canvas_width_ / 2 *
+                       (1 + history.get(axis_) / MAX_ACCELERATION);
+          pts[i + 1] = i - 1;
+          pts[i + 2] = canvas_width_ / 2 *
+                           (1 + history.get(axis_) / MAX_ACCELERATION);
+          pts[i + 3] = i;
+          i += 4;
         }
         Paint line_paint = new Paint();
         line_paint.setARGB(255, 0, 0, 0);
@@ -82,22 +85,29 @@ public class SeismoViewThread extends Thread {
 
   public void update(float x, float y, float z) {
     synchronized (holder_) {
+      ArrayList<Float> acceleration = new ArrayList<Float>(3);
       if (filter_) {
-        acceleration[0] = x * FILTERING_FACTOR +
-                          acceleration[0] * (1.0f - FILTERING_FACTOR);
-        history_[next_index_][0] = x - acceleration[0];
-        acceleration[1] = y * FILTERING_FACTOR +
-                          acceleration[1] * (1.0f - FILTERING_FACTOR);
-        history_[next_index_][1] = y - acceleration[1];
-        acceleration[2] = z * FILTERING_FACTOR +
-                          acceleration[2] * (1.0f - FILTERING_FACTOR);
-        history_[next_index_][2] = z - acceleration[2];
+        filter_acceleration_[0] = x * FILTERING_FACTOR +
+                           filter_acceleration_[0] * (1.0f - FILTERING_FACTOR);
+        acceleration.add(x - filter_acceleration_[0]);
+        filter_acceleration_[1] = y * FILTERING_FACTOR +
+                           filter_acceleration_[1] * (1.0f - FILTERING_FACTOR);
+        acceleration.add(y - filter_acceleration_[1]);
+        filter_acceleration_[2] = z * FILTERING_FACTOR +
+                           filter_acceleration_[2] * (1.0f - FILTERING_FACTOR);
+        acceleration.add(z - filter_acceleration_[2]);
       } else {
-        history_[next_index_][0] = x;
-        history_[next_index_][1] = y;
-        history_[next_index_][2] = z;
+        acceleration.add(x);
+        acceleration.add(y);
+        acceleration.add(z);
       }
-      next_index_ = (next_index_ + 1) % canvas_height_;
+      history_.add(acceleration);
+      if (history_.size() > canvas_height_) {
+        start_.next();
+      }
+      if (history_.size() > SECONDS_TO_SAVE * 1000 / period_) {
+        history_.removeFirst();
+      }
       ++time_;
     }
   }
@@ -106,8 +116,8 @@ public class SeismoViewThread extends Thread {
     synchronized (holder_) {
       canvas_width_ = canvas_width;
       canvas_height_ = canvas_height;
-      history_ = new float[canvas_height][3];
-      next_index_ = 0;
+      history_ = new LinkedList<ArrayList<Float>>();
+      start_ = history_.listIterator();
       time_ = 0;
     }
   }
@@ -116,17 +126,7 @@ public class SeismoViewThread extends Thread {
     running_ = running;
   }
 
-  public void setPaused(boolean paused) {
-    paused_ = paused;
-  }
-
-  public void record() {
-    recording_ = true;
-    recorded_ = new float[SECONDS_TO_SAVE * 1000 / period_][3];
-  }
-
   public void save() {
-    recording_ = false;
     // TODO(ariw): Save!
   }
 
@@ -143,19 +143,16 @@ public class SeismoViewThread extends Thread {
   private static final float FILTERING_FACTOR = 0.1f;
   private static final int SECONDS_TO_SAVE = 60;
 
-  private float[] acceleration = new float[3];
-  private float[][] history_ = new float[1][3];
-  private float[][] recorded_;
-  private int next_index_ = 0;
+  private LinkedList<ArrayList<Float>> history_ =
+      new LinkedList<ArrayList<Float>>();
+  private ListIterator<ArrayList<Float>> start_ = history_.listIterator();
+  private float[] filter_acceleration_ = new float[3];
   private int time_ = 0;
   private int canvas_height_ = 1;
   private int canvas_width_ = 1;
   private boolean running_;
-  private boolean paused_;
-  private boolean recording_;
   private boolean filter_;
   private int axis_ = 2;
   private SurfaceHolder holder_;
-  private Context ctx_;
   private int period_;
 }
