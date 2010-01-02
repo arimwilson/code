@@ -65,9 +65,10 @@ public class Seismo extends Activity {
     case R.id.z:
       view_.z();
       return true;
-    case R.id.Save:
-      view_.save();
-      return true;
+    // TODO(ariw): REMOVE
+    // case R.id.Save:
+    //  view_.save();
+    //  return true;
     }
 
     return false;
