@@ -1,8 +1,6 @@
 package com.ariwilson.seismo;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.ListIterator;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -56,17 +54,19 @@ public class SeismoViewThread extends Thread {
 
 
         // Draw line.
-        float[] pts = new float[(history_.size() - start_.nextIndex()) * 4];
-        int i = 0;
-        for (ListIterator<ArrayList<Float>> index = start_; index.hasNext();) {
-          ArrayList<Float> history = index.next();
-          pts[i] = canvas_width_ / 2 *
-                       (1 + history.get(axis_) / MAX_ACCELERATION);
-          pts[i + 1] = i - 1;
-          pts[i + 2] = canvas_width_ / 2 *
-                           (1 + history.get(axis_) / MAX_ACCELERATION);
-          pts[i + 3] = i;
-          i += 4;
+        float[] pts = new float[(history_.size() - start_) * 4];
+        // TODO(ariw): Replace j with actual calculation based on i.
+        int j = 0;
+        for (int i = history_.size() - 1; i >= start_ + 1; --i) {
+          ArrayList<Float> history1 = history_.get(i - 1),
+                           history2 = history_.get(i);
+          pts[j * 4] = canvas_width_ / 2 *
+                           (1 + history1.get(axis_) / MAX_ACCELERATION);
+          pts[j * 4 + 1] = canvas_height_ - j - 1;
+          pts[j * 4 + 2] = canvas_width_ / 2 *
+                               (1 + history2.get(axis_) / MAX_ACCELERATION);
+          pts[j * 4 + 3] = canvas_height_ - j;
+          ++j;
         }
         Paint line_paint = new Paint();
         line_paint.setARGB(255, 0, 0, 0);
@@ -102,11 +102,10 @@ public class SeismoViewThread extends Thread {
         acceleration.add(z);
       }
       history_.add(acceleration);
-      if (history_.size() > canvas_height_) {
-        start_.next();
-      }
       if (history_.size() > SECONDS_TO_SAVE * 1000 / period_) {
-        history_.removeFirst();
+        history_.remove(0);
+      } else if (history_.size() - start_ > canvas_height_) {
+        ++start_;
       }
       ++time_;
     }
@@ -116,8 +115,8 @@ public class SeismoViewThread extends Thread {
     synchronized (holder_) {
       canvas_width_ = canvas_width;
       canvas_height_ = canvas_height;
-      history_ = new LinkedList<ArrayList<Float>>();
-      start_ = history_.listIterator();
+      history_ = new ArrayList<ArrayList<Float>>();
+      start_ = 0;
       time_ = 0;
     }
   }
@@ -143,9 +142,9 @@ public class SeismoViewThread extends Thread {
   private static final float FILTERING_FACTOR = 0.1f;
   private static final int SECONDS_TO_SAVE = 60;
 
-  private LinkedList<ArrayList<Float>> history_ =
-      new LinkedList<ArrayList<Float>>();
-  private ListIterator<ArrayList<Float>> start_ = history_.listIterator();
+  private ArrayList<ArrayList<Float>> history_ =
+      new ArrayList<ArrayList<Float>>();
+  private int start_ = 0;
   private float[] filter_acceleration_ = new float[3];
   private int time_ = 0;
   private int canvas_height_ = 1;
