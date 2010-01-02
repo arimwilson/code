@@ -1,4 +1,4 @@
-package com.arilwilson.seismo;
+package com.ariwilson.seismo;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

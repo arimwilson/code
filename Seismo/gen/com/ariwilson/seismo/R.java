@@ -5,7 +5,7 @@
  * should not be modified by hand.
  */
 
-package com.arilwilson.seismo;
+package com.ariwilson.seismo;
 
 public final class R {
     public static final class attr {

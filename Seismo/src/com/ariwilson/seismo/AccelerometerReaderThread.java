@@ -1,4 +1,4 @@
-package com.arilwilson.seismo;
+package com.ariwilson.seismo;
 
 public class AccelerometerReaderThread extends Thread {
   public AccelerometerReaderThread(AccelerometerReader reader,

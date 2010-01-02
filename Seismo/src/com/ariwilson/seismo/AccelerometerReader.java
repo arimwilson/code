@@ -1,4 +1,4 @@
-package com.arilwilson.seismo;
+package com.ariwilson.seismo;
 
 import android.content.Context;
 import android.hardware.Sensor; 
