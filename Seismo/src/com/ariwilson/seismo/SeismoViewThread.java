@@ -115,8 +115,7 @@ public class SeismoViewThread extends Thread {
     synchronized (holder_) {
       canvas_width_ = canvas_width;
       canvas_height_ = canvas_height;
-      history_ = new ArrayList<ArrayList<Float>>();
-      start_ = 0;
+      start_ = Math.max(0, history_.size() - canvas_height);
       time_ = 0;
     }
   }
