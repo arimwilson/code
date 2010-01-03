@@ -19,9 +19,10 @@ public final class R {
     public static final class id {
         public static final int Axis=0x7f050002;
         public static final int Filter=0x7f050000;
+        public static final int Load=0x7f050008;
         public static final int Pause=0x7f050001;
-        public static final int Save=0x7f050006;
-        public static final int View=0x7f050007;
+        public static final int Save=0x7f050007;
+        public static final int Storage=0x7f050006;
         public static final int x=0x7f050003;
         public static final int y=0x7f050004;
         public static final int z=0x7f050005;

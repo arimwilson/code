@@ -52,7 +52,7 @@ public class SeismoViewThread extends Thread {
         int max_second = time_ * period_ / 1000;
         int min_second = (int) Math.ceil((time_ - canvas_height_) * period_ /
                                          1000);
-        for (int s = max_second; s >= 0 && s > min_second; --s) {
+        for (int s = max_second; s >= 0 && s >= min_second; --s) {
           float y = s * 1000 / period_ - time_ + canvas_height_;
           canvas.drawLine(0, y, canvas_width_ / 20, y, scale_paint);
           canvas.drawText(Integer.toString(s) + "s",
