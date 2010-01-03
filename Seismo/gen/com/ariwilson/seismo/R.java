@@ -18,8 +18,9 @@ public final class R {
     }
     public static final class id {
         public static final int Axis=0x7f050002;
+        public static final int Export=0x7f050008;
         public static final int Filter=0x7f050000;
-        public static final int Load=0x7f050008;
+        public static final int Help=0x7f050009;
         public static final int Pause=0x7f050001;
         public static final int Save=0x7f050007;
         public static final int Storage=0x7f050006;

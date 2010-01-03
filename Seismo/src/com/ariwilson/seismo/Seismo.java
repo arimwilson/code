@@ -2,13 +2,17 @@ package com.ariwilson.seismo;
 
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.WindowManager;
-import android.widget.LinearLayout;
+import android.widget.FrameLayout;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class Seismo extends Activity {
   @Override
@@ -17,11 +21,9 @@ public class Seismo extends Activity {
     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                          WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    LinearLayout layout = new LinearLayout(this);
-    seismo_view_ = new SeismoView(this, 25);
-    layout.addView(seismo_view_);
-
-    setContentView(layout);
+    db_ = new SeismoDbAdapter(this);
+    db_.open();
+    setSeismoView();
   }
 
   @Override
@@ -71,16 +73,52 @@ public class Seismo extends Activity {
       seismo_view_.z();
       return true;
     case R.id.Save:
-      seismo_view_.save();
+      String name = seismo_view_.save();
+      Toast.makeText(this, "Saved graph as " + name + ".", Toast.LENGTH_LONG)
+          .show();
       return true;
-    case R.id.Load:
-      // TODO(ariw): Display view of all graphs.
+    case R.id.Export:
+      // TODO(ariw): Use list view to display all saved files and intents to
+      // send via e-mail.
+      setExportView();
+      return true;
+    case R.id.Help:
+      // TODO(ariw): Use text view to show help.
+      setHelpView();
       return true;
     }
 
     return false;
   }
 
+  private void setSeismoView() {
+    FrameLayout layout = new FrameLayout(this);
+    seismo_view_ = new SeismoView(this, db_, 25);
+    layout.addView(seismo_view_);
+    setContentView(layout);
+  }
+
+  private void setExportView() {
+    FrameLayout layout = new FrameLayout(this);
+    export_view_ = new ListView(this);
+    Cursor c = db_.fetchAllGraphs();
+    startManagingCursor(c);
+    String[] from = new String[] { SeismoDbAdapter.KEY_TITLE };
+    int[] to = new int[] { R.id.text1 };
+
+    // Now create an array adapter and set it to display using our row
+    SimpleCursorAdapter notes =
+        new SimpleCursorAdapter(this, R.layout.notes_row, c, from, to);
+    setListAdapter(notes);
+    layout.addView(export_view_);
+    setContentView(layout);
+  }
+
+  private void setHelpView() {
+  }
+
+  private SeismoDbAdapter db_;
   private SeismoView seismo_view_;
-  private ListView graph_view_;
+  private ListView export_view_;
+  private TextView help_view_;
 }

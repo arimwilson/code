@@ -14,12 +14,11 @@ import android.view.SurfaceHolder;
 
 public class SeismoViewThread extends Thread {
   public SeismoViewThread(Context ctx, SurfaceHolder holder, boolean filter,
-                          int axis, int period) {
+                          int axis, SeismoDbAdapter db, int period) {
     holder_ = holder;
     setFilter(filter);
     setAxis(axis);
-    db_ = new SeismoDbAdapter(ctx);
-    db_.open();
+    db_ = db;
     period_ = period;
   }
 
@@ -140,7 +139,7 @@ public class SeismoViewThread extends Thread {
     axis_ = axis;
   }
 
-  public void save() {
+  public String save() {
     SimpleDateFormat date_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     Date date = new Date();
     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -152,7 +151,9 @@ public class SeismoViewThread extends Thread {
     } catch (IOException e) {
       // Do nothing.
     }
-    db_.createGraph(date_format.format(date), bytes.toByteArray());
+    String name = date_format.format(date);
+    db_.createGraph(name, bytes.toByteArray());
+    return name;
   }
 
   private static final int MAX_G = 3;
