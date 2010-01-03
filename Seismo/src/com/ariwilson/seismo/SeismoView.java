@@ -22,7 +22,8 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
 
   public void surfaceCreated(SurfaceHolder holder) {
     AccelerometerReader reader = new AccelerometerReader(ctx_);
-    view_thread_ = new SeismoViewThread(getHolder(), filter_, axis_, period_);
+    view_thread_ = new SeismoViewThread(ctx_, getHolder(), filter_, axis_,
+                                        period_);
     reader_thread_ = new AccelerometerReaderThread(reader, view_thread_,
                                                    paused_, period_);
     view_thread_.setRunning(true);

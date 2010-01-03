@@ -1,17 +1,25 @@
 package com.ariwilson.seismo;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
+import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.view.SurfaceHolder;
 
 public class SeismoViewThread extends Thread {
-  public SeismoViewThread(SurfaceHolder holder, boolean filter, int axis,
-                          int period) {
+  public SeismoViewThread(Context ctx, SurfaceHolder holder, boolean filter,
+                          int axis, int period) {
     holder_ = holder;
     setFilter(filter);
     setAxis(axis);
+    db_ = new SeismoDbAdapter(ctx);
+    db_.open();
     period_ = period;
   }
 
@@ -124,16 +132,27 @@ public class SeismoViewThread extends Thread {
     running_ = running;
   }
 
-  public void save() {
-    // TODO(ariw): Save!
-  }
-
   public void setFilter(boolean filter) {
     filter_ = filter;
   }
   
   public void setAxis(int axis) {
     axis_ = axis;
+  }
+
+  public void save() {
+    SimpleDateFormat date_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    Date date = new Date();
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    try {
+      ObjectOutputStream objects = new ObjectOutputStream(bytes);
+      objects.writeObject(history_);
+      objects.close();
+      bytes.close();
+    } catch (IOException e) {
+      // Do nothing.
+    }
+    db_.createGraph(date_format.format(date), bytes.toByteArray());
   }
 
   private static final int MAX_G = 3;
@@ -148,9 +167,10 @@ public class SeismoViewThread extends Thread {
   private int time_ = 0;
   private int canvas_height_ = 1;
   private int canvas_width_ = 1;
-  private boolean running_;
-  private boolean filter_;
+  private boolean running_ = false;
+  private boolean filter_ = true;
   private int axis_ = 2;
+  private SeismoDbAdapter db_;
   private SurfaceHolder holder_;
   private int period_;
 }

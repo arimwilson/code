@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
   xmlns:android="http://schemas.android.com/apk/res/android">
-<item android:id="@+id/Filter" android:title="Unfilter" android:alphabeticShortcut="f" android:orderInCategory="3"></item>
-<item android:orderInCategory="1" android:id="@+id/Pause" android:alphabeticShortcut="p" android:title="Pause"></item>
-<item android:title="Axis" android:id="@+id/Axis" android:alphabeticShortcut="a" android:orderInCategory="4"><menu><item android:orderInCategory="1" android:id="@+id/x" android:title="x" android:alphabeticShortcut="x"></item>
+<item android:id="@+id/Filter" android:alphabeticShortcut="f" android:title="Unfilter noise" android:titleCondensed="Unfilter" android:orderInCategory="4"></item>
+<item android:orderInCategory="1" android:id="@+id/Pause" android:alphabeticShortcut="p" android:titleCondensed="Pause" android:title="Pause measurement"></item>
+<item android:id="@+id/Axis" android:alphabeticShortcut="a" android:titleCondensed="Axis" android:title="Axis of measurement" android:orderInCategory="5"><menu><item android:orderInCategory="1" android:id="@+id/x" android:title="x" android:alphabeticShortcut="x"></item>
 <item android:orderInCategory="2" android:id="@+id/y" android:title="y" android:alphabeticShortcut="y"></item>
 <item android:orderInCategory="3" android:id="@+id/z" android:title="z" android:alphabeticShortcut="z"></item>
 </menu>
 </item>
 
-<item android:alphabeticShortcut="s" android:id="@+id/Save" android:title="Save" android:orderInCategory="2"></item>
+<item android:alphabeticShortcut="s" android:id="@+id/Save" android:orderInCategory="2" android:title="Save graph" android:titleCondensed="Save"></item>
+<item android:id="@+id/View" android:alphabeticShortcut="v" android:titleCondensed="View" android:title="View graph" android:orderInCategory="3"></item>
 </menu>

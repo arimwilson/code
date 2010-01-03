@@ -39,21 +39,25 @@ public class Seismo extends Activity {
 
     switch (item.getItemId()) {
     case R.id.Filter:
-      if (item.getTitle().equals("Filter")) {
+      if (item.getTitleCondensed().equals("Filter")) {
         view_.filter();
-        item.setTitle("Unfilter");
+        item.setTitle("Unfilter noise");
+        item.setTitleCondensed("Unfilter");
       } else {
         view_.unfilter();
-        item.setTitle("Filter");
+        item.setTitle("Filter noise");
+        item.setTitleCondensed("Filter");
       }
       return true;
     case R.id.Pause:
-      if (item.getTitle().equals("Pause")) {
+      if (item.getTitleCondensed().equals("Pause")) {
         view_.pause();
-        item.setTitle("Resume");
+        item.setTitle("Resume measurement");
+        item.setTitleCondensed("Resume");
       } else {
         view_.resume();
-        item.setTitle("Pause");
+        item.setTitle("Pause measurement");
+        item.setTitleCondensed("Pause");
       }
       return true;
     case R.id.x:
@@ -67,6 +71,9 @@ public class Seismo extends Activity {
       return true;
     case R.id.Save:
       view_.save();
+      return true;
+    case R.id.View:
+      // TODO(ariw): Display view of all graphs.
       return true;
     }
 
