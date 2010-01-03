@@ -9,4 +9,5 @@
 </menu>
 </item>
 
+<item android:alphabeticShortcut="s" android:id="@+id/Save" android:title="Save" android:orderInCategory="2"></item>
 </menu>
