@@ -1,8 +1,8 @@
 package com.ariwilson.seismo;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -10,7 +10,6 @@ import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,7 +23,6 @@ public class Seismo extends Activity {
     db_ = new SeismoDbAdapter(this);
     db_.open();
     setSeismoView();
-    help_view_ = new TextView(this);
   }
 
   @Override
@@ -81,11 +79,9 @@ public class Seismo extends Activity {
     case R.id.Export:
       // TODO(ariw): Use list view to display all saved files and intents to
       // send via e-mail.
-      setExportView();
       return true;
     case R.id.Help:
-      // TODO(ariw): Use text view to show help.
-      setHelpView();
+      startActivity(new Intent(this, Help.class));
       return true;
     }
 
@@ -99,8 +95,8 @@ public class Seismo extends Activity {
     setContentView(layout);
   }
 
-  private void setExportView() {
-    /*FrameLayout layout = new FrameLayout(this);
+  /*private void setExportView() {
+    FrameLayout layout = new FrameLayout(this);
     export_view_ = new ListView(this);
     Cursor c = db_.fetchAllGraphs();
     startManagingCursor(c);
@@ -112,17 +108,9 @@ public class Seismo extends Activity {
         new SimpleCursorAdapter(this, R.layout.notes_row, c, from, to);
     setListAdapter(notes);
     layout.addView(export_view_);
-    setContentView(layout);*/
-  }
-
-  private void setHelpView() {
-    FrameLayout layout = new FrameLayout(this);
-    help_view_.setText("I need help!");
     setContentView(layout);
-  }
+  }*/
 
   private SeismoDbAdapter db_;
   private SeismoView seismo_view_;
-  private ListView export_view_;
-  private TextView help_view_;
 }
