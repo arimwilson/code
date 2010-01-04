@@ -1,15 +1,15 @@
 package com.ariwilson.seismo;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,7 +22,14 @@ public class Seismo extends Activity {
                          WindowManager.LayoutParams.FLAG_FULLSCREEN);
     db_ = new SeismoDbAdapter(this);
     db_.open();
-    setSeismoView();
+    FrameLayout layout = new FrameLayout(this);
+    seismo_view_ = new SeismoView(this, db_, 25);
+    export_view_ = new ExportView(this, db_);
+    help_view_ = new TextView(this);
+    // TODO(ariw): REMOVE
+    help_view_.setText("Hello, Android!");
+    layout.addView(seismo_view_);
+    setContentView(layout);
   }
 
   @Override
@@ -81,18 +88,11 @@ public class Seismo extends Activity {
       // send via e-mail.
       return true;
     case R.id.Help:
-      startActivity(new Intent(this, Help.class));
+      // TODO(ariw): Use text view to show help.
       return true;
     }
 
     return false;
-  }
-
-  private void setSeismoView() {
-    FrameLayout layout = new FrameLayout(this);
-    seismo_view_ = new SeismoView(this, db_, 25);
-    layout.addView(seismo_view_);
-    setContentView(layout);
   }
 
   /*private void setExportView() {
@@ -113,4 +113,6 @@ public class Seismo extends Activity {
 
   private SeismoDbAdapter db_;
   private SeismoView seismo_view_;
+  private ExportView export_view_;
+  private TextView help_view_;
 }
