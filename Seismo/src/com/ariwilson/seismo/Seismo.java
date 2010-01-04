@@ -24,6 +24,7 @@ public class Seismo extends Activity {
     db_ = new SeismoDbAdapter(this);
     db_.open();
     setSeismoView();
+    help_view_ = new TextView(this);
   }
 
   @Override
@@ -99,7 +100,7 @@ public class Seismo extends Activity {
   }
 
   private void setExportView() {
-    FrameLayout layout = new FrameLayout(this);
+    /*FrameLayout layout = new FrameLayout(this);
     export_view_ = new ListView(this);
     Cursor c = db_.fetchAllGraphs();
     startManagingCursor(c);
@@ -111,10 +112,13 @@ public class Seismo extends Activity {
         new SimpleCursorAdapter(this, R.layout.notes_row, c, from, to);
     setListAdapter(notes);
     layout.addView(export_view_);
-    setContentView(layout);
+    setContentView(layout);*/
   }
 
   private void setHelpView() {
+    FrameLayout layout = new FrameLayout(this);
+    help_view_.setText("I need help!");
+    setContentView(layout);
   }
 
   private SeismoDbAdapter db_;
