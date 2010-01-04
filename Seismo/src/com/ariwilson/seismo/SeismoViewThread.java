@@ -1,8 +1,5 @@
 package com.ariwilson.seismo;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -142,17 +139,9 @@ public class SeismoViewThread extends Thread {
   public String save() {
     SimpleDateFormat date_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     Date date = new Date();
-    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-    try {
-      ObjectOutputStream objects = new ObjectOutputStream(bytes);
-      objects.writeObject(history_);
-      objects.close();
-      bytes.close();
-    } catch (IOException e) {
-      // Do nothing.
-    }
     String name = date_format.format(date);
-    db_.createGraph(name, bytes.toByteArray());
+
+    db_.createGraph(name, history_);
     return name;
   }
 

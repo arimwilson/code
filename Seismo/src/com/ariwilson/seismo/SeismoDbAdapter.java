@@ -1,5 +1,12 @@
 package com.ariwilson.seismo;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -27,10 +34,20 @@ public class SeismoDbAdapter {
     db_helper_.close();
   }
 
-  public long createGraph(String title, byte[] body) {
+  public long createGraph(String name, ArrayList<ArrayList<Float>> graph) {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    try {
+      ObjectOutputStream objects = new ObjectOutputStream(bytes);
+      objects.writeObject(graph);
+      objects.close();
+      bytes.close();
+    } catch (IOException e) {
+      // Do nothing.
+    }
+
     ContentValues initial_values = new ContentValues();
-    initial_values.put(KEY_TITLE, title);
-    initial_values.put(KEY_BODY, body);
+    initial_values.put(KEY_TITLE, name);
+    initial_values.put(KEY_BODY, bytes.toByteArray());
 
     return db_.insert(DATABASE_TABLE, null, initial_values);
   }
@@ -39,30 +56,40 @@ public class SeismoDbAdapter {
     return db_.delete(DATABASE_TABLE, KEY_ROWID + "=" + row_id, null) > 0;
   }
 
-  public Cursor fetchAllGraphs() {
-    return db_.query(DATABASE_TABLE, new String[] {KEY_ROWID, KEY_TITLE,
-                     KEY_BODY}, null, null, null, null, null);
+  public ArrayList<String> fetchGraphNames() {
+    Cursor cursor = db_.query(DATABASE_TABLE, new String[] {KEY_ROWID, KEY_TITLE,
+                              KEY_BODY}, null, null, null, null, null);
+    ArrayList<String> graph_names = null;
+    if (cursor != null) {
+      graph_names = new ArrayList<String>();
+      int name_index = cursor.getColumnIndex(KEY_TITLE);
+      do {
+        graph_names.add(cursor.getString(name_index));
+      } while (cursor.moveToNext());
+    }
+    return graph_names;
   }
 
-  public Cursor fetchGraph(long row_id) throws SQLException {
+  @SuppressWarnings("unchecked")
+  public ArrayList<ArrayList<Float>> fetchGraph(String graph_name) {
     Cursor cursor =
         db_.query(true, DATABASE_TABLE, new String[] {KEY_ROWID, KEY_TITLE,
-                  KEY_BODY}, KEY_ROWID + "=" + row_id, null, null, null,
-                  null, null);
+                  KEY_BODY}, KEY_TITLE + "=\"" + graph_name + "\"", null, null,
+                  null, null, null);
+    ArrayList<ArrayList<Float>> graph = null;
     if (cursor != null) {
       cursor.moveToFirst();
+      int graph_index = cursor.getColumnIndex(KEY_BODY);
+      ByteArrayInputStream bytes = new ByteArrayInputStream(cursor.getBlob(
+          graph_index));
+      try {
+        ObjectInputStream objects = new ObjectInputStream(bytes);
+        graph = (ArrayList<ArrayList<Float>>)objects.readObject();
+      } catch (Exception e) {
+        // Do nothing.
+      }
     }
-    return cursor;
-
-  }
-
-  public boolean updateGraph(long row_id, String title, byte[] body) {
-    ContentValues args = new ContentValues();
-    args.put(KEY_TITLE, title);
-    args.put(KEY_BODY, body);
-
-    return db_.update(DATABASE_TABLE, args, KEY_ROWID + "=" + row_id, null) >
-           0;
+    return graph;
   }
 
   private static class DatabaseHelper extends SQLiteOpenHelper {
