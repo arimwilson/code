@@ -11,11 +11,12 @@ import android.view.SurfaceHolder;
 
 public class SeismoViewThread extends Thread {
   public SeismoViewThread(Context ctx, SurfaceHolder holder, boolean filter,
-                          int axis, SeismoDbAdapter db, int period) {
+                          int axis, int period) {
     holder_ = holder;
     setFilter(filter);
     setAxis(axis);
-    db_ = db;
+    db_ = new SeismoDbAdapter(ctx);
+    db_.open();
     period_ = period;
   }
 
@@ -141,7 +142,9 @@ public class SeismoViewThread extends Thread {
     Date date = new Date();
     String name = date_format.format(date);
 
-    db_.createGraph(name, history_);
+    synchronized (holder_) {
+      db_.createGraph(name, history_);
+    }
     return name;
   }
 
@@ -150,7 +153,7 @@ public class SeismoViewThread extends Thread {
   private static final float FILTERING_FACTOR = 0.1f;
   private static final int SECONDS_TO_SAVE = 60;
 
-  // TODO(ariw): Worst data structure ever!
+  // TODO(ariw): Worst data structure choice ever.
   private ArrayList<ArrayList<Float>> history_ =
       new ArrayList<ArrayList<Float>>();
   private int start_ = 0;
