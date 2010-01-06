@@ -7,8 +7,9 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,13 +23,15 @@ public class Seismo extends Activity {
                          WindowManager.LayoutParams.FLAG_FULLSCREEN);
     db_ = new SeismoDbAdapter(this);
     db_.open();
-    FrameLayout layout = new FrameLayout(this);
+    LinearLayout layout = new LinearLayout(this);
     seismo_view_ = new SeismoView(this, db_, 25);
-    export_view_ = new ExportView(this, db_);
-    help_view_ = new TextView(this);
-    // TODO(ariw): REMOVE
-    help_view_.setText("Hello, Android!");
     layout.addView(seismo_view_);
+    export_view_ = new ExportView(this, db_);
+    export_view_.setVisibility(View.GONE);
+    layout.addView(export_view_);
+    help_view_ = new HelpView(this);
+    help_view_.setVisibility(View.GONE);
+    layout.addView(help_view_);
     setContentView(layout);
   }
 
@@ -89,6 +92,8 @@ public class Seismo extends Activity {
       return true;
     case R.id.Help:
       // TODO(ariw): Use text view to show help.
+      seismo_view_.setVisibility(View.GONE);
+      help_view_.setVisibility(View.VISIBLE);
       return true;
     }
 
@@ -114,5 +119,5 @@ public class Seismo extends Activity {
   private SeismoDbAdapter db_;
   private SeismoView seismo_view_;
   private ExportView export_view_;
-  private TextView help_view_;
+  private HelpView help_view_;
 }

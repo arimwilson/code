@@ -150,6 +150,7 @@ public class SeismoViewThread extends Thread {
   private static final float FILTERING_FACTOR = 0.1f;
   private static final int SECONDS_TO_SAVE = 60;
 
+  // TODO(ariw): Worst data structure ever!
   private ArrayList<ArrayList<Float>> history_ =
       new ArrayList<ArrayList<Float>>();
   private int start_ = 0;
