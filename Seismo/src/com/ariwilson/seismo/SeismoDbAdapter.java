@@ -15,17 +15,19 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+// Singleton.
 public class SeismoDbAdapter {
   public static final String KEY_TITLE = "title";
   public static final String KEY_BODY = "body";
   public static final String KEY_ROWID = "_id";
 
-  public SeismoDbAdapter(Context ctx) {
-      ctx_ = ctx;
+  public static SeismoDbAdapter getAdapter() {
+    return instance_;
   }
 
-  public SeismoDbAdapter open() throws SQLException {
-    db_helper_ = new DatabaseHelper(ctx_);
+
+  public SeismoDbAdapter open(Context ctx) throws SQLException {
+    db_helper_ = new DatabaseHelper(ctx);
     db_ = db_helper_.getWritableDatabase();
     return this;
   }
@@ -62,11 +64,12 @@ public class SeismoDbAdapter {
                               null);
     ArrayList<String> graph_names = null;
     if (cursor != null) {
+      cursor.moveToFirst();
       graph_names = new ArrayList<String>();
       int name_index = cursor.getColumnIndex(KEY_TITLE);
-      do {
+      for (; !cursor.isAfterLast(); cursor.moveToNext()) {
         graph_names.add(cursor.getString(name_index));
-      } while (cursor.moveToNext());
+      }
     }
     return graph_names;
   }
@@ -92,6 +95,8 @@ public class SeismoDbAdapter {
     }
     return graph;
   }
+
+  private SeismoDbAdapter() {}
 
   private static class DatabaseHelper extends SQLiteOpenHelper {
     DatabaseHelper(Context context) {
@@ -124,5 +129,5 @@ public class SeismoDbAdapter {
   private static final String DATABASE_TABLE = "seismo";
   private static final int DATABASE_VERSION = 2;
 
-  private final Context ctx_;
+  private static final SeismoDbAdapter instance_ = new SeismoDbAdapter();
 }

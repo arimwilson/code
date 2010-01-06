@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
@@ -20,7 +21,10 @@ public class Export extends Activity {
                          WindowManager.LayoutParams.FLAG_FULLSCREEN);
     FrameLayout layout = new FrameLayout(this);
     // TODO(ariw): Insert db from other Seismo activity context.
-    export_view_ = new ExportView(this, new SeismoDbAdapter(this));
+    export_view_ = new ExportView(this, SeismoDbAdapter.getAdapter());
+    export_view_.setBackgroundColor(0xFFFFFFFF);
+    export_view_.setDivider(new ColorDrawable(0xFF898989));
+    export_view_.setDividerHeight(1);
     layout.addView(export_view_);
     setContentView(layout);
   }
@@ -29,10 +33,9 @@ public class Export extends Activity {
     public ExportView(Context ctx, SeismoDbAdapter db) {
       super(ctx);
       db_ = db;
-      db_.open();
+      db_.open(ctx);
       ArrayList<String> graph_names = db_.fetchGraphNames();
-      // TODO(ariw): Replace 0!
-      setAdapter(new ArrayAdapter<String>(ctx, 0, graph_names)); 
+      setAdapter(new ArrayAdapter<String>(ctx, R.layout.export, graph_names)); 
       db_.close();
     }
     private SeismoDbAdapter db_;
