@@ -1,10 +1,13 @@
 package com.ariwilson.seismo;
 
+import java.util.ArrayList;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ListView;
 
@@ -16,7 +19,8 @@ public class Export extends Activity {
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                          WindowManager.LayoutParams.FLAG_FULLSCREEN);
     FrameLayout layout = new FrameLayout(this);
-    // export_view_ = new ExportView(this, db);
+    // TODO(ariw): Insert db from other Seismo activity context.
+    export_view_ = new ExportView(this, new SeismoDbAdapter(this));
     layout.addView(export_view_);
     setContentView(layout);
   }
@@ -25,8 +29,12 @@ public class Export extends Activity {
     public ExportView(Context ctx, SeismoDbAdapter db) {
       super(ctx);
       db_ = db;
+      db_.open();
+      ArrayList<String> graph_names = db_.fetchGraphNames();
+      // TODO(ariw): Replace 0!
+      setAdapter(new ArrayAdapter<String>(ctx, 0, graph_names)); 
+      db_.close();
     }
-
     private SeismoDbAdapter db_;
   }
 

@@ -52,13 +52,14 @@ public class SeismoDbAdapter {
     return db_.insert(DATABASE_TABLE, null, initial_values);
   }
 
-  public boolean deleteGraph(long row_id) {
-    return db_.delete(DATABASE_TABLE, KEY_ROWID + "=" + row_id, null) > 0;
+  public boolean deleteGraph(String graph_name) {
+    return db_.delete(DATABASE_TABLE, KEY_TITLE + "=" + graph_name, null) > 0;
   }
 
   public ArrayList<String> fetchGraphNames() {
-    Cursor cursor = db_.query(DATABASE_TABLE, new String[] {KEY_ROWID, KEY_TITLE,
-                              KEY_BODY}, null, null, null, null, null);
+    Cursor cursor = db_.query(DATABASE_TABLE, new String[] {KEY_ROWID,
+                              KEY_TITLE, KEY_BODY}, null, null, null, null,
+                              null);
     ArrayList<String> graph_names = null;
     if (cursor != null) {
       graph_names = new ArrayList<String>();

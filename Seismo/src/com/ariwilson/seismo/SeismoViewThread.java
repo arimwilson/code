@@ -16,7 +16,6 @@ public class SeismoViewThread extends Thread {
     setFilter(filter);
     setAxis(axis);
     db_ = new SeismoDbAdapter(ctx);
-    db_.open();
     period_ = period;
   }
 
@@ -142,9 +141,11 @@ public class SeismoViewThread extends Thread {
     Date date = new Date();
     String name = date_format.format(date);
 
+    db_.open();
     synchronized (holder_) {
       db_.createGraph(name, history_);
     }
+    db_.close();
     return name;
   }
 
