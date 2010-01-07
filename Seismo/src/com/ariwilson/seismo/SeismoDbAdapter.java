@@ -25,7 +25,6 @@ public class SeismoDbAdapter {
     return instance_;
   }
 
-
   public SeismoDbAdapter open(Context ctx) throws SQLException {
     db_helper_ = new DatabaseHelper(ctx);
     db_ = db_helper_.getWritableDatabase();
@@ -55,7 +54,8 @@ public class SeismoDbAdapter {
   }
 
   public boolean deleteGraph(String graph_name) {
-    return db_.delete(DATABASE_TABLE, KEY_TITLE + "=" + graph_name, null) > 0;
+    return db_.delete(DATABASE_TABLE, KEY_TITLE + "=\"" + graph_name + "\"",
+                      null) > 0;
   }
 
   public ArrayList<String> fetchGraphNames() {
@@ -70,6 +70,7 @@ public class SeismoDbAdapter {
       for (; !cursor.isAfterLast(); cursor.moveToNext()) {
         graph_names.add(cursor.getString(name_index));
       }
+      cursor.close();
     }
     return graph_names;
   }
@@ -78,8 +79,8 @@ public class SeismoDbAdapter {
   public ArrayList<ArrayList<Float>> fetchGraph(String graph_name) {
     Cursor cursor =
         db_.query(true, DATABASE_TABLE, new String[] {KEY_ROWID, KEY_TITLE,
-                  KEY_BODY}, KEY_TITLE + "=\"" + graph_name + "\"", null, null,
-                  null, null, null);
+                  KEY_BODY}, KEY_TITLE + "=\"" + graph_name + "\"", null, null, null,
+                  null, null);
     ArrayList<ArrayList<Float>> graph = null;
     if (cursor != null) {
       cursor.moveToFirst();
@@ -92,6 +93,7 @@ public class SeismoDbAdapter {
       } catch (Exception e) {
         // Do nothing.
       }
+      cursor.close();
     }
     return graph;
   }

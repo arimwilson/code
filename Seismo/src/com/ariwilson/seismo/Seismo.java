@@ -9,7 +9,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 public class Seismo extends Activity {
   @Override
@@ -71,9 +70,7 @@ public class Seismo extends Activity {
       seismo_view_.z();
       return true;
     case R.id.Save:
-      String name = seismo_view_.save();
-      Toast.makeText(this, "Saved graph as " + name + ".", Toast.LENGTH_LONG)
-          .show();
+      seismo_view_.save();
       return true;
     case R.id.Export:
       startActivity(new Intent(this, Export.class));

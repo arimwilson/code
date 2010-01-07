@@ -81,8 +81,8 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
     view_thread_.setAxis(2);
   }
 
-  public String save() {
-    return view_thread_.save();
+  public void save() {
+    view_thread_.save();
   }
 
   private AccelerometerReaderThread reader_thread_;

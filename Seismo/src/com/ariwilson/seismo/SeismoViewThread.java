@@ -8,6 +8,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.view.SurfaceHolder;
+import android.widget.Toast;
 
 public class SeismoViewThread extends Thread {
   public SeismoViewThread(Context ctx, SurfaceHolder holder, boolean filter,
@@ -46,11 +47,11 @@ public class SeismoViewThread extends Thread {
 
         // Draw time scale in seconds.
         scale_paint.setTextAlign(Paint.Align.LEFT);
-        int max_second = time_ * period_ / 1000;
-        int min_second = (int) Math.ceil((time_ - canvas_height_) * period_ /
-                                         1000);
+        int max_second = canvas_time_ * period_ / 1000;
+        int min_second = (int) Math.ceil((canvas_time_ - canvas_height_) *
+                                         period_ / 1000);
         for (int s = max_second; s >= 0 && s >= min_second; --s) {
-          float y = s * 1000 / period_ - time_ + canvas_height_;
+          float y = s * 1000 / period_ - canvas_time_ + canvas_height_;
           canvas.drawLine(0, y, canvas_width_ / 20, y, scale_paint);
           canvas.drawText(Integer.toString(s) + "s",
                           canvas_width_ / 20 + 0.2f * text_size,
@@ -66,10 +67,10 @@ public class SeismoViewThread extends Thread {
           ArrayList<Float> history1 = history_.get(i - 1),
                            history2 = history_.get(i);
           pts[j * 4] = canvas_width_ / 2 *
-                           (1 + history1.get(axis_) / MAX_ACCELERATION);
+                       (1 + history1.get(axis_ + 1) / MAX_ACCELERATION);
           pts[j * 4 + 1] = canvas_height_ - j - 1;
           pts[j * 4 + 2] = canvas_width_ / 2 *
-                               (1 + history2.get(axis_) / MAX_ACCELERATION);
+                           (1 + history2.get(axis_ + 1) / MAX_ACCELERATION);
           pts[j * 4 + 3] = canvas_height_ - j;
           ++j;
         }
@@ -91,6 +92,7 @@ public class SeismoViewThread extends Thread {
   public void update(float x, float y, float z) {
     synchronized (holder_) {
       ArrayList<Float> acceleration = new ArrayList<Float>(3);
+      acceleration.add((float)(new Date().getTime() - start_time_));
       if (filter_) {
         filter_acceleration_[0] = x * FILTERING_FACTOR +
                            filter_acceleration_[0] * (1.0f - FILTERING_FACTOR);
@@ -112,7 +114,7 @@ public class SeismoViewThread extends Thread {
       } else if (history_.size() - start_ > canvas_height_) {
         ++start_;
       }
-      ++time_;
+      ++canvas_time_;
     }
   }
 
@@ -121,7 +123,8 @@ public class SeismoViewThread extends Thread {
       canvas_width_ = canvas_width;
       canvas_height_ = canvas_height;
       start_ = Math.max(0, history_.size() - canvas_height);
-      time_ = 0;
+      start_time_ = new Date().getTime();
+      canvas_time_ = 0;
     }
   }
 
@@ -137,17 +140,23 @@ public class SeismoViewThread extends Thread {
     axis_ = axis;
   }
 
-  public String save() {
+  public void save() {
     SimpleDateFormat date_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     Date date = new Date();
     String name = date_format.format(date);
 
     db_.open(ctx_);
     synchronized (holder_) {
-      db_.createGraph(name, history_);
+      if (db_.createGraph(name, history_) >= 0) {
+        Toast.makeText(ctx_, "Saved graph as " + name + ".", Toast.LENGTH_LONG)
+            .show();
+      } else {
+        Toast.makeText(ctx_, "Failed to save graph. Please try again.",
+                       Toast.LENGTH_LONG)
+            .show();
+      }
     }
     db_.close();
-    return name;
   }
 
   private static final int MAX_G = 3;
@@ -160,7 +169,8 @@ public class SeismoViewThread extends Thread {
       new ArrayList<ArrayList<Float>>();
   private int start_ = 0;
   private float[] filter_acceleration_ = new float[3];
-  private int time_ = 0;
+  private long start_time_ = new Date().getTime();
+  private int canvas_time_ = 0;
   private int canvas_height_ = 1;
   private int canvas_width_ = 1;
   private boolean running_ = false;
