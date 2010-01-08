@@ -17,7 +17,7 @@ public class AccelerometerReaderThread extends Thread {
         view_.update(reader_.x, reader_.y, reader_.z);
       }
       try {
-        Thread.sleep(updater_period_, 0);
+        Thread.sleep(updater_period_);
       } catch (Exception e) {
         // Ignore.
       }

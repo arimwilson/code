@@ -48,11 +48,13 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
 
   public void pause() {
     paused_ = true;
+    view_thread_.setPaused(true);
     reader_thread_.setPaused(true);
   }
 
   public void resume() {
     paused_ = false;
+    view_thread_.setPaused(false);
     reader_thread_.setPaused(false);
   }
 

@@ -144,6 +144,16 @@ public class SeismoViewThread extends Thread {
     running_ = running;
   }
 
+  public void setPaused(boolean paused) {
+    if (paused) {
+      start_paused_time_ = new Date().getTime();
+    } else {
+      synchronized (history_) {
+        start_time_ += new Date().getTime() - start_paused_time_;
+      }
+    }
+  }
+
   public void setFilter(boolean filter) {
     filter_ = filter;
   }
@@ -184,6 +194,7 @@ public class SeismoViewThread extends Thread {
   private int start_ = 0;
   private float[] filter_acceleration_ = new float[3];
   private long start_time_ = new Date().getTime();
+  private long start_paused_time_;
   private int canvas_height_ = 1;
   private int canvas_width_ = 1;
   private boolean running_ = false;
