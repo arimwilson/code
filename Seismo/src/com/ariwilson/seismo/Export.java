@@ -117,7 +117,8 @@ public class Export extends Activity {
                              "Seismo data from " + graph_names_.get(position));
         send_intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(
             temp_file)); 
-        startActivity(Intent.createChooser(send_intent, "Email"));
+        startActivity(Intent.createChooser(send_intent, "E-mail"));
+        temp_file.deleteOnExit();
       } catch (Exception e) {
         Log.e("Seismo", e.toString());
       }
