@@ -194,7 +194,7 @@ public class SeismoViewThread extends Thread {
   private int start_ = 0;
   private float[] filter_acceleration_ = new float[3];
   private long start_time_ = new Date().getTime();
-  private long start_paused_time_;
+  private long start_paused_time_ = start_time_;
   private int canvas_height_ = 1;
   private int canvas_width_ = 1;
   private boolean running_ = false;
