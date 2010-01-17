@@ -13,7 +13,8 @@
 <item android:alphabeticShortcut="s" android:titleCondensed="Storage" android:id="@+id/Storage" android:title="Storage for graphs" android:orderInCategory="4">
 <menu>
 <item android:alphabeticShortcut="s" android:id="@+id/Save" android:orderInCategory="1" android:titleCondensed="Save" android:title="Save"></item>
-<item android:orderInCategory="2" android:title="Export" android:titleCondensed="Export" android:alphabeticShortcut="e" android:id="@+id/Export"></item>
+<item android:orderInCategory="2" android:title="View" android:titleCondensed="View" android:alphabeticShortcut="v" android:id="@+id/View"></item>
+<item android:orderInCategory="3" android:title="Export" android:titleCondensed="Export" android:alphabeticShortcut="e" android:id="@+id/Export"></item>
 </menu>
 </item>
 <item android:alphabeticShortcut="h" android:titleCondensed="Help" android:id="@+id/Help" android:title="Help" android:orderInCategory="5"></item>
