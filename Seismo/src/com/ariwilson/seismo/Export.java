@@ -107,7 +107,7 @@ public class Export extends Activity {
           position));
       db_.close();
       try {
-        File temp_file = File.createTempFile("graph", ".csv");
+        File temp_file = File.createTempFile("Seismo", ".csv");
         FileOutputStream out = new FileOutputStream(temp_file);
         out.write(graphToCsv(graph).getBytes());
         out.close();
