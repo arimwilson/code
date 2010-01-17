@@ -99,7 +99,6 @@ public class Export extends Activity {
       db_.close();
     }
 
-    @Override
     public void onItemClick(AdapterView<?> parent_view, View child_view,
                             int position, long id) {
       db_.open(ctx_);
@@ -124,7 +123,6 @@ public class Export extends Activity {
       }
     }
 
-    @Override 
     public void onCreateContextMenu(ContextMenu menu, View view,
                                     ContextMenu.ContextMenuInfo menu_info) { 
        menu.setHeaderTitle("Options");
