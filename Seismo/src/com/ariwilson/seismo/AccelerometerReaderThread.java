@@ -3,11 +3,11 @@ package com.ariwilson.seismo;
 public class AccelerometerReaderThread extends Thread {
   public AccelerometerReaderThread(AccelerometerReader reader,
                                    SeismoViewThread view, boolean paused,
-                                   int updater_period) {
+                                   int period) {
     reader_ = reader;
     view_ = view;
     setPaused(paused);
-    updater_period_ = updater_period;
+    period_ = period;
   }
 
   @Override
@@ -17,7 +17,7 @@ public class AccelerometerReaderThread extends Thread {
         view_.update(reader_.x, reader_.y, reader_.z);
       }
       try {
-        Thread.sleep(updater_period_);
+        Thread.sleep(period_);
       } catch (Exception e) {
         // Ignore.
       }
@@ -36,5 +36,5 @@ public class AccelerometerReaderThread extends Thread {
   private boolean paused_ = false;
   private volatile AccelerometerReader reader_;
   private SeismoViewThread view_;
-  private int updater_period_;
+  private int period_;
 }

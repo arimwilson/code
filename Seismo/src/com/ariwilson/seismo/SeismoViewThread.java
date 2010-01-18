@@ -3,6 +3,8 @@ package com.ariwilson.seismo;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -19,18 +21,32 @@ public class SeismoViewThread extends Thread {
     setAxis(axis);
     db_ = SeismoDbAdapter.getAdapter();
     ctx_ = ctx;
+    period_ = period;
+    profiler_ = new Profiler();  // TODO(ariw): REMOVE
   }
 
   @Override
   public void run() {
+    profiler_.start();  // TODO(ariw): REMOVE
     while (running_) {
+      profiler_.record("overhead");  // TODO(ariw): REMOVE
+      // Retrieve measurements from queue.
+      LinkedList<ArrayList<Float>> accelerations =
+          new LinkedList<ArrayList<Float>>();
+      history_queue_.drainTo(accelerations);
       synchronized (history_) {
-        try {
-          // TODO(ariw): Pretty arbitrary choice.
-          history_.wait(200);
-        } catch (Exception e) {
-          // Do nothing.
+        for (ArrayList<Float> acceleration : accelerations) {
+          history_.add(acceleration);
+          while (acceleration.get(0) - history_.get(0).get(0) >
+                 SECONDS_TO_SAVE * 1000) {
+            history_.remove(0);
+          }
+          while (acceleration.get(0) - history_.get(start_).get(0) >
+                 SECONDS_TO_DISPLAY * 1000) {
+            ++start_;
+          }
         }
+        profiler_.record("history queue draining");  // TODO(ariw): REMOVE
         synchronized (holder_) {
           Canvas canvas = holder_.lockCanvas();
           canvas.drawARGB(255, 255, 255, 255);
@@ -51,6 +67,7 @@ public class SeismoViewThread extends Thread {
                             canvas_height_ / 20 + 1.2f * text_size,
                             scale_paint);
           }
+          profiler_.record("drawing background plus g scale");  // TODO(ariw): REMOVE
   
           // Draw time scale in seconds.
           // Don't want to determine scale if no values written yet.
@@ -69,7 +86,10 @@ public class SeismoViewThread extends Thread {
                               y + 0.5f * text_size, scale_paint);
             }
           }
+          profiler_.record("drawing time scale");  // TODO(ariw): REMOVE
 
+          drawFPS(canvas);  // TODO(ariw): REMOVE
+          profiler_.record("drawing FPS");  // TODO(ariw): REMOVE
 
           // Draw line.
           float[] pts = new float[(history_.size() - start_) * 4];
@@ -93,8 +113,14 @@ public class SeismoViewThread extends Thread {
           line_paint.setStrokeWidth(canvas_width_ / 300f);
           line_paint.setAntiAlias(false);
           canvas.drawLines(pts, line_paint);
+          profiler_.record("drawing awesome line");  // TODO(ariw): REMOVE
           holder_.unlockCanvasAndPost(canvas);
         }
+      }
+      try {
+        Thread.sleep(period_);
+      } catch (Exception e) {
+        // Ignore.
       }
     }
   }
@@ -117,18 +143,11 @@ public class SeismoViewThread extends Thread {
       acceleration.add(y);
       acceleration.add(z);
     }
-    synchronized (history_) {
-      history_.add(acceleration);
-      while (acceleration.get(0) - history_.get(0).get(0) > SECONDS_TO_SAVE *
-             1000) {
-        history_.remove(0);
-      }
-      while (acceleration.get(0) - history_.get(start_).get(0) >
-             SECONDS_TO_DISPLAY * 1000) {
-        ++start_;
-      }
-      history_.notify();
-      }
+    try {
+      history_queue_.put(acceleration);
+    } catch (Exception e) {
+      // Do nothing.
+    }
   }
 
   public void setSurfaceSize(int canvas_width, int canvas_height) {
@@ -174,13 +193,36 @@ public class SeismoViewThread extends Thread {
             .show();
       } else {
         Toast.makeText(ctx_, "Failed to save graph. Please try again.",
-                       Toast.LENGTH_LONG)
-            .show();
+                       Toast.LENGTH_LONG).show();
       }
     }
     db_.close();
   }
 
+  // TODO(ariw): REMOVE
+  // FPS-related stuff.
+  private long cur_second;
+  private long last_second = -1;
+  private int frames = 0;
+  private int old_frames = 0;
+  private void drawFPS(Canvas canvas) {
+    cur_second = new Date().getTime() / 1000;
+    if (cur_second != last_second) {
+      if (cur_second % 15 == 0) {
+        profiler_.print();
+      }
+      last_second = cur_second;
+      old_frames = frames;
+      frames = 0;
+    }
+    Paint text_paint = new Paint();
+    text_paint.setARGB(255, 0, 0, 0);
+    text_paint.setTextAlign(Paint.Align.RIGHT);
+    canvas.drawText(Integer.toString(old_frames), canvas_width_, 100, text_paint);
+    ++frames;
+  }
+
+  // Random constants.
   private static final int MAX_G = 3;
   private static final float MAX_ACCELERATION = MAX_G *
                              SensorManager.GRAVITY_EARTH;
@@ -188,9 +230,12 @@ public class SeismoViewThread extends Thread {
   private static final int SECONDS_TO_SAVE = 60;
   private static final int SECONDS_TO_DISPLAY = 10;
 
+  // Important preferences and history.
   // TODO(ariw): Worst data structure choice ever.
   private ArrayList<ArrayList<Float>> history_ =
       new ArrayList<ArrayList<Float>>();
+  private LinkedBlockingQueue<ArrayList<Float>> history_queue_ =
+      new LinkedBlockingQueue<ArrayList<Float>>();
   private int start_ = 0;
   private float[] filter_acceleration_ = new float[3];
   private long start_time_ = new Date().getTime();
@@ -203,4 +248,6 @@ public class SeismoViewThread extends Thread {
   private SeismoDbAdapter db_;
   private SurfaceHolder holder_;
   private Context ctx_;
+  private int period_;
+  private Profiler profiler_; // TODO(ariw): REMOVE
 }

@@ -5,14 +5,15 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
-  public SeismoView(Context ctx, int period) {
+  public SeismoView(Context ctx, int view_period, int reader_period) {
     super(ctx);
 
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
     setKeepScreenOn(true);
     ctx_ = ctx;
-    period_ = period;
+    view_period_ = view_period;
+    reader_period_ = reader_period;
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width,
@@ -23,9 +24,9 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
   public void surfaceCreated(SurfaceHolder holder) {
     AccelerometerReader reader = new AccelerometerReader(ctx_);
     view_thread_ = new SeismoViewThread(ctx_, getHolder(), filter_, axis_,
-                                        period_);
+                                        view_period_);
     reader_thread_ = new AccelerometerReaderThread(reader, view_thread_,
-                                                   paused_, period_);
+                                                   paused_, reader_period_);
     view_thread_.setRunning(true);
     view_thread_.start();
     reader_thread_.setRunning(true);
@@ -93,5 +94,6 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
   private boolean filter_ = true;
   private int axis_ = 2;
   private Context ctx_;
-  private int period_;
+  private int view_period_;
+  private int reader_period_;
 }

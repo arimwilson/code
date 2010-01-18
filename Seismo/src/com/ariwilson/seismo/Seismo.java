@@ -18,7 +18,7 @@ public class Seismo extends Activity {
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                          WindowManager.LayoutParams.FLAG_FULLSCREEN);
     FrameLayout layout = new FrameLayout(this);
-    seismo_view_ = new SeismoView(this, 33);
+    seismo_view_ = new SeismoView(this, 33, 33);
     layout.addView(seismo_view_);
     setContentView(layout);
   }
