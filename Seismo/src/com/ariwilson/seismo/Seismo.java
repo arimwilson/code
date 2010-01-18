@@ -72,6 +72,8 @@ public class Seismo extends Activity {
     case R.id.Save:
       seismo_view_.save();
       return true;
+    case R.id.View:
+      startActivity(new Intent(this, Graph.class));
     case R.id.Export:
       startActivity(new Intent(this, Export.class));
       return true;
