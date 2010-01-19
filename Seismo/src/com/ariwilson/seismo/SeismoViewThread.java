@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -14,17 +15,20 @@ import android.view.SurfaceHolder;
 import android.widget.Toast;
 
 public class SeismoViewThread extends Thread {
-  public SeismoViewThread(Context ctx, boolean filter, int axis, int period) {
+  public SeismoViewThread(Context ctx, SurfaceHolder holder, boolean filter,
+                          int axis, int period) {
     scale_paint_.setARGB(255, 137, 137, 137);
     scale_paint_.setAntiAlias(true);
     line_paint_.setARGB(255, 0, 0, 0);
     line_paint_.setAntiAlias(false);
     pts_ = new float[SECONDS_TO_SAVE * 4000 / period];
 
+    holder_ = holder;
     setFilter(filter);
     setAxis(axis);
     db_ = SeismoDbAdapter.getAdapter();
     ctx_ = ctx;
+    period_ = period;
   }
 
   @Override
@@ -34,7 +38,9 @@ public class SeismoViewThread extends Thread {
       // available.
       accelerations_.clear();
       try {
-        accelerations_.add(history_queue_.take());
+        ArrayList<Float> acceleration = history_queue_.poll(
+            period_, TimeUnit.MILLISECONDS);
+        if (acceleration != null) accelerations_.add(acceleration);
       } catch (Exception e) {
         // Ignore.
       }
@@ -137,10 +143,6 @@ public class SeismoViewThread extends Thread {
     }
   }
 
-  public void setSurfaceHolder(SurfaceHolder holder) {
-    holder_ = holder;
-  }
-  
   public void setSurfaceSize(int canvas_width, int canvas_height) {
     synchronized (holder_) {
       canvas_width_ = canvas_width;
@@ -223,4 +225,5 @@ public class SeismoViewThread extends Thread {
   private SeismoDbAdapter db_;
   private SurfaceHolder holder_;
   private Context ctx_;
+  private int period_;
 }

@@ -24,24 +24,6 @@ public class Seismo extends Activity {
   }
 
   @Override
-  public void onPause() {
-    super.onPause();
-    seismo_view_.pause();
-  }
-
-  @Override
-  public void onResume() {
-    super.onResume();
-    seismo_view_.resume();
-  }
-
-  @Override
-  public void onStop() {
-    super.onStop();
-    seismo_view_.stop();
-  }
-
-  @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
  

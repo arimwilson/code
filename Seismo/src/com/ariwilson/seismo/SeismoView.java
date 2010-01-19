@@ -1,6 +1,7 @@
 package com.ariwilson.seismo;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -11,12 +12,8 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
     setKeepScreenOn(true);
-    AccelerometerReader reader = new AccelerometerReader(ctx);
-    view_thread_ = new SeismoViewThread(ctx, filter_, axis_, period);
-    reader_thread_ = new AccelerometerReaderThread(reader, view_thread_,
-                                                   paused_, period);
-    view_thread_.start();
-    reader_thread_.start();
+    ctx_ = ctx;
+    period_ = period;
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width,
@@ -25,12 +22,23 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   public void surfaceCreated(SurfaceHolder holder) {
-    view_thread_.setSurfaceHolder(holder);
-    reader_thread_.setDisplayable(true);
+    AccelerometerReader reader = new AccelerometerReader(ctx_);
+    view_thread_ = new SeismoViewThread(ctx_, holder, filter_, axis_, period_);
+    reader_thread_ = new AccelerometerReaderThread(reader, view_thread_,
+                                                   paused_, period_);
+    view_thread_.start();
+    reader_thread_.start();
   }
 
   public void surfaceDestroyed(SurfaceHolder holder) {
-    reader_thread_.setDisplayable(false);
+    view_thread_.setRunning(false);
+    reader_thread_.setRunning(false);
+    try {
+      view_thread_.join();
+      reader_thread_.join();
+    } catch (InterruptedException e) {
+      // Do nothing.
+    }
   }
 
   public void pause() {
@@ -43,16 +51,6 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
     paused_ = false;
     view_thread_.setPaused(false);
     reader_thread_.setPaused(false);
-  }
-
-  public void stop() {
-    view_thread_.setRunning(false);
-    reader_thread_.setRunning(false);
-    try {
-      view_thread_.join();
-      reader_thread_.join();
-    } catch (InterruptedException e) {
-    }
   }
 
   public void filter() {
@@ -89,4 +87,6 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
   private boolean paused_ = false;
   private boolean filter_ = true;
   private int axis_ = 2;
+  private Context ctx_;
+  private int period_;
 }
