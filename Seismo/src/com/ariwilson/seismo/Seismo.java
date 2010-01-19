@@ -69,6 +69,11 @@ public class Seismo extends Activity {
     case R.id.z:
       seismo_view_.z();
       return true;
+    case R.id.Logarithmic:
+      seismo_view_.logarithmic();
+      return true;
+    case R.id.Linear:
+      seismo_view_.linear();
     case R.id.Save:
       seismo_view_.save();
       return true;

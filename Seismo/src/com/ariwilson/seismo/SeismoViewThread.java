@@ -16,7 +16,7 @@ import android.widget.Toast;
 
 public class SeismoViewThread extends Thread {
   public SeismoViewThread(Context ctx, SurfaceHolder holder, boolean filter,
-                          int axis, int period) {
+                          int axis, boolean logarithmic_scale, int period) {
     scale_paint_.setARGB(255, 137, 137, 137);
     scale_paint_.setAntiAlias(true);
     line_paint_.setARGB(255, 0, 0, 0);
@@ -26,6 +26,7 @@ public class SeismoViewThread extends Thread {
     holder_ = holder;
     setFilter(filter);
     setAxis(axis);
+    setScale(logarithmic_scale);
     db_ = SeismoDbAdapter.getAdapter();
     ctx_ = ctx;
     period_ = period;
@@ -69,9 +70,18 @@ public class SeismoViewThread extends Thread {
           scale_paint_.setTextAlign(Paint.Align.CENTER);
           for (int i = -MAX_G + 1; i <= MAX_G - 1; ++i) {
             float x = canvas_width_ / 2 * (1 + (float)i / MAX_G);
+            String scale;
+            if (logarithmic_scale_) {
+              if (i >= 0) {
+                scale = "ln(" + Integer.toString(i) + ")g";
+              } else {
+                scale = "-ln(" + Integer.toString(-i) + ")g";
+              }
+            } else {
+              scale = Integer.toString(i) + "g"; 
+            }
             canvas.drawLine(x, 0, x, canvas_height_ / 20, scale_paint_);
-            canvas.drawText(Integer.toString(i) + "g", x,
-                            canvas_height_ / 20 + 1.2f * text_size,
+            canvas.drawText(scale, x, canvas_height_ / 20 + 1.2f * text_size,
                             scale_paint_);
           }
   
@@ -174,6 +184,10 @@ public class SeismoViewThread extends Thread {
     axis_ = axis;
   }
 
+  public void setScale(boolean logarithmic_scale) {
+    logarithmic_scale_ = logarithmic_scale;
+  }
+
   public void save() {
     SimpleDateFormat date_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     Date date = new Date();
@@ -220,8 +234,9 @@ public class SeismoViewThread extends Thread {
   private int canvas_height_ = 1;
   private int canvas_width_ = 1;
   private boolean running_ = true;
-  private boolean filter_ = true;
-  private int axis_ = 2;
+  private boolean filter_;
+  private int axis_;
+  private boolean logarithmic_scale_; 
   private SeismoDbAdapter db_;
   private SurfaceHolder holder_;
   private Context ctx_;

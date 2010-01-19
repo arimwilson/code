@@ -10,12 +10,16 @@
 <item android:orderInCategory="3" android:id="@+id/z" android:title="z" android:alphabeticShortcut="z"></item>
 </menu>
 </item>
-<item android:alphabeticShortcut="s" android:titleCondensed="Storage" android:id="@+id/Storage" android:title="Storage for graphs" android:orderInCategory="4">
+<item android:alphabeticShortcut="s" android:titleCondensed="Storage" android:id="@+id/Storage" android:title="Storage for graphs" android:orderInCategory="5">
 <menu>
 <item android:alphabeticShortcut="s" android:id="@+id/Save" android:orderInCategory="1" android:titleCondensed="Save" android:title="Save"></item>
 <item android:orderInCategory="2" android:title="View" android:titleCondensed="View" android:alphabeticShortcut="v" android:id="@+id/View"></item>
 <item android:orderInCategory="3" android:title="Export" android:titleCondensed="Export" android:alphabeticShortcut="e" android:id="@+id/Export"></item>
 </menu>
 </item>
-<item android:alphabeticShortcut="h" android:titleCondensed="Help" android:id="@+id/Help" android:title="Help" android:orderInCategory="5"></item>
+<item android:alphabeticShortcut="h" android:titleCondensed="Help" android:id="@+id/Help" android:title="Help" android:orderInCategory="6"></item>
+<item android:id="@+id/Scale" android:orderInCategory="4" android:title="Scale" android:titleCondensed="Scale"><menu><item android:titleCondensed="Logarithmic" android:orderInCategory="1" android:title="Logarithmic" android:id="@+id/Logarithmic" android:alphabeticShortcut="o"></item>
+<item android:titleCondensed="Linear" android:orderInCategory="2" android:title="Linear" android:id="@+id/Linear" android:alphabeticShortcut="i"></item>
+</menu>
+</item>
 </menu>

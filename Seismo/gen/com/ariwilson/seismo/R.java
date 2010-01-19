@@ -21,8 +21,11 @@ public final class R {
         public static final int Export=0x7f060009;
         public static final int Filter=0x7f060000;
         public static final int Help=0x7f06000a;
+        public static final int Linear=0x7f06000d;
+        public static final int Logarithmic=0x7f06000c;
         public static final int Pause=0x7f060001;
         public static final int Save=0x7f060007;
+        public static final int Scale=0x7f06000b;
         public static final int Storage=0x7f060006;
         public static final int View=0x7f060008;
         public static final int x=0x7f060003;

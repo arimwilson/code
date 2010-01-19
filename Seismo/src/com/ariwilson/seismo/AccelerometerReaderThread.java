@@ -34,7 +34,7 @@ public class AccelerometerReaderThread extends Thread {
 
 
   private boolean running_ = true;
-  private boolean paused_ = false;
+  private boolean paused_;
   private volatile AccelerometerReader reader_;
   private SeismoViewThread view_;
   private int period_;
