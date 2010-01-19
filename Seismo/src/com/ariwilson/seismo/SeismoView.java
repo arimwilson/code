@@ -1,7 +1,6 @@
 package com.ariwilson.seismo;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
