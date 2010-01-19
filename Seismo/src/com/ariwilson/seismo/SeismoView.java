@@ -23,8 +23,7 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
 
   public void surfaceCreated(SurfaceHolder holder) {
     AccelerometerReader reader = new AccelerometerReader(ctx_);
-    view_thread_ = new SeismoViewThread(ctx_, holder, filter_, axis_,
-                                        logarithmic_scale_, period_);
+    view_thread_ = new SeismoViewThread(ctx_, holder, filter_, axis_, period_);
     reader_thread_ = new AccelerometerReaderThread(reader, view_thread_,
                                                    paused_, period_);
     view_thread_.start();
@@ -79,16 +78,6 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
     view_thread_.setAxis(2);
   }
 
-  public void logarithmic() {
-    logarithmic_scale_ = true;
-    view_thread_.setScale(true);
-  }
-
-  public void linear() {
-    logarithmic_scale_ = false;
-    view_thread_.setScale(false);
-  }
-
   public void save() {
     view_thread_.save();
   }
@@ -98,7 +87,6 @@ public class SeismoView extends SurfaceView implements SurfaceHolder.Callback {
   private boolean paused_ = false;
   private boolean filter_ = true;
   private int axis_ = 2;
-  private boolean logarithmic_scale_ = true;
   private Context ctx_;
   private int period_;
 }
