@@ -27,11 +27,14 @@ public class Profiler {
   }
 
   public synchronized void print() {
+    long total_time = 0;
     for (Entry<String, ProfilerRecord> event : events_.entrySet()) {
       Log.i("Profiler", event.getKey() + ": " +
                         Long.toString(event.getValue().sum_time) + ", " +
                         Long.toString(event.getValue().num_events));
+      total_time += event.getValue().sum_time;
     }
+    Log.i("Profiler", "Total time: " + Long.toString(total_time));
   }
 
   private class ProfilerRecord {

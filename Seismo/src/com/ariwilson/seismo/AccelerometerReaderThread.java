@@ -13,7 +13,7 @@ public class AccelerometerReaderThread extends Thread {
   @Override
   public void run() {
     while (running_) {
-      if (!paused_) {
+      if (displayable_ && !paused_) {
         view_.update(reader_.x, reader_.y, reader_.z);
       }
       try {
@@ -27,12 +27,18 @@ public class AccelerometerReaderThread extends Thread {
   public void setRunning(boolean running) {
     running_ = running;
   }
-  
+
+  public void setDisplayable(boolean displayable) {
+    displayable_ = displayable;
+  }
+
   public void setPaused(boolean paused) {
     paused_ = paused;
   }
 
-  private boolean running_ = false;
+
+  private boolean running_ = true;
+  private boolean displayable_ = false;
   private boolean paused_ = false;
   private volatile AccelerometerReader reader_;
   private SeismoViewThread view_;
