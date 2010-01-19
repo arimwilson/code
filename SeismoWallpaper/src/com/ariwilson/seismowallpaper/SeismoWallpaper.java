@@ -2,10 +2,10 @@ package com.ariwilson.seismowallpaper;
 
 import android.content.Context;
 import android.service.wallpaper.WallpaperService;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 public class SeismoWallpaper extends WallpaperService {
-
   @Override
   public Engine onCreateEngine() {
     return new SeismoEngine(33);
@@ -20,6 +20,7 @@ public class SeismoWallpaper extends WallpaperService {
     @Override
     public void onVisibilityChanged(boolean visible) {
       super.onVisibilityChanged(visible);
+      Log.i("Seismo", "onVisibilityChanged: " + visible);
       if (visible) {
         view_thread_.setPaused(false);
         reader_thread_.setPaused(false);        
@@ -32,11 +33,13 @@ public class SeismoWallpaper extends WallpaperService {
     @Override
     public void onSurfaceChanged(SurfaceHolder holder, int format, int width,
                                  int height) {
+      Log.i("Seismo", "onSurfaceChanged: " + holder.toString() + ", " + Integer.toString(width) + ", " + Integer.toString(height));
       view_thread_.setSurfaceSize(width, height);
     }
 
     @Override
     public void onSurfaceCreated(SurfaceHolder holder) {
+      Log.i("Seismo", "onSurfaceCreated: " + holder.toString());
       AccelerometerReader reader = new AccelerometerReader(ctx_);
       view_thread_ = new SeismoViewThread(ctx_, holder, filter_, axis_, period_);
       reader_thread_ = new AccelerometerReaderThread(reader, view_thread_,
@@ -47,6 +50,7 @@ public class SeismoWallpaper extends WallpaperService {
 
     @Override
     public void onSurfaceDestroyed(SurfaceHolder holder) {
+      Log.i("Seismo", "onSurfaceDestroyed: " + holder.toString());
       view_thread_.setRunning(false);
       reader_thread_.setRunning(false);
       try {

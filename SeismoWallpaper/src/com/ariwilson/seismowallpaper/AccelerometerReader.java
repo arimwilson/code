@@ -5,7 +5,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.util.Log;
 
 public class AccelerometerReader { 
   public volatile float x = 0;
@@ -18,7 +17,6 @@ public class AccelerometerReader {
         Context.SENSOR_SERVICE);
     Sensor accelerometer = sensor_manager.getDefaultSensor(
         Sensor.TYPE_ACCELEROMETER);
-    Log.i("Seismo", accelerometer.getName());
     sensor_manager.registerListener(listener_, accelerometer,
     		                            SensorManager.SENSOR_DELAY_FASTEST); 
   }
