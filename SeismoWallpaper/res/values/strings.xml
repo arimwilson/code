@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Seismo</string>
+    <string name="app_name">Seismo Wallpaper</string>
+    <string name="wallpaper_name">Seismo</string>
     <string name="description">Shows a seismograph of the current acceleration of your Android device.</string>
 </resources>
