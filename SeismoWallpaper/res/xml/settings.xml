@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="Seismo Wallpaper settings">
+    <CheckBoxPreference
+        android:key="filter"
+        android:title="Enable filtering"
+        android:summary="Turn filtering on or off"
+        android:defaultValue="true" />
+    <ListPreference
+        android:key="axis"
+        android:title="Configure axis"
+        android:summary="Set axis of measurement"
+        android:entries="@array/axis"
+        android:entryValues="@array/axis_values" />
+</PreferenceScreen>
