@@ -14,13 +14,15 @@ import android.view.SurfaceHolder;
 
 public class SeismoViewThread extends Thread {
   public SeismoViewThread(Context ctx, SurfaceHolder holder, boolean filter,
-                          int axis, int period) {
-    line_paint_.setARGB(255, 0, 0, 0);
+                          int axis, int line_color, int background_color,
+                          int period) {
     line_paint_.setAntiAlias(false);
 
     holder_ = holder;
     setFilter(filter);
     setAxis(axis);
+    setLineColor(line_color);
+    setBackgroundColor(background_color);
     period_ = period;
   }
 
@@ -52,7 +54,7 @@ public class SeismoViewThread extends Thread {
         }
         synchronized (holder_) {
           Canvas canvas = holder_.lockCanvas();
-          canvas.drawARGB(255, 255, 255, 255);
+          canvas.drawColor(background_color_);
   
           // Don't want to determine scale if no values written yet.
           float end_time = -1, start_time = -1;
@@ -77,6 +79,7 @@ public class SeismoViewThread extends Thread {
                               (history2.get(0) / 1000 - start_time) /
                               SECONDS_TO_DISPLAY;
           }
+          line_paint_.setColor(line_color_);
           line_paint_.setStrokeWidth(canvas_width_ / 300f);
           canvas.drawLines(pts_, 0, (history_.size() - start_) * 4,
                            line_paint_);
@@ -144,6 +147,14 @@ public class SeismoViewThread extends Thread {
     axis_ = axis;
   }
 
+  public void setLineColor(int line_color) {
+    line_color_ = line_color;
+  }
+
+  public void setBackgroundColor(int background_color) {
+    background_color_ = background_color;
+  }  
+
   // Constants.
   private static final int MAX_G = 3;
   private static final float MAX_ACCELERATION = MAX_G *
@@ -173,6 +184,8 @@ public class SeismoViewThread extends Thread {
   private boolean running_ = true;
   private boolean filter_;
   private int axis_;
+  private int line_color_;
+  private int background_color_;
   private SurfaceHolder holder_;
   private int period_;
 }
