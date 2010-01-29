@@ -12,7 +12,7 @@
         android:summary="Set axis of measurement"
         android:entries="@array/axis"
         android:entryValues="@array/axis_values" />
-    <ColorPickerPreference
+    <com.ariwilson.seismowallpaper.ColorPickerPreference
         android:key="line_color"
         android:title="Configure line color"
         android:summary="Set the line color" />
