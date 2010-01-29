@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
@@ -211,8 +211,8 @@ public class SeismoViewThread extends Thread {
   // TODO(ariw): Worst data structure choice ever.
   private ArrayList<ArrayList<Float>> history_ =
       new ArrayList<ArrayList<Float>>();
-  private LinkedBlockingQueue<ArrayList<Float>> history_queue_ =
-      new LinkedBlockingQueue<ArrayList<Float>>();
+  private ArrayBlockingQueue<ArrayList<Float>> history_queue_ =
+      new ArrayBlockingQueue<ArrayList<Float>>(20);
   private int start_ = 0;
   private float[] filter_acceleration_ = new float[3];
   private long start_time_ = new Date().getTime();
