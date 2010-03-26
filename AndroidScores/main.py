@@ -2,6 +2,9 @@ import wsgiref.handlers
 
 from google.appengine.ext import webapp
 
+# TODO(ariw): Replace this with something from the datastore!
+HIGHSCORE_KEY = "12345"
+
 class SubmitHandler(webapp.RequestHandler):
   def get(self):
     pass
