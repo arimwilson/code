@@ -35,9 +35,9 @@ public class DrawThread extends InterruptibleThread {
       // Draw all updated objects.
       for (GameObject object : objects) {
         for (GameComponent component : components_) {
-          component.draw(object);
+          component.draw(object, canvas);
         }
-        object.draw();
+        object.draw(canvas);
       }
       holder_.unlockCanvasAndPost(canvas);
     }

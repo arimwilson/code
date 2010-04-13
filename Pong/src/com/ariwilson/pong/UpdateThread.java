@@ -22,6 +22,8 @@ public class UpdateThread extends InterruptibleThread {
         component.update(object, time - last_update_);
       }
       object.update(time - last_update_);
+      // TODO(ariw): Shouldn't need to always push objects onto the
+      // to-be-updated list.
       updated_objects_.add(object);
     }
     last_update_ = time;

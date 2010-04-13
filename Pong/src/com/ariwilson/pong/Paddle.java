@@ -1,9 +1,22 @@
 package com.ariwilson.pong;
 
-public class Paddle implements GameObject {
-  public void update(long millis) {
+import android.graphics.Canvas;
+
+public abstract class Paddle implements GameObject {
+  public Paddle(int x, int y) {
+    x_ = x;
+    y_ = y;
   }
 
-  public void draw() {
+  @Override
+  public void draw(Canvas canvas) {
+    // TODO(ariw): Draw!
   }
+
+  // TODO(ariw): Adjust based on screen size.
+  protected static final int HEIGHT = 20;
+  protected static final int WIDTH = 5;
+
+  protected int x_;
+  protected int y_;
 }

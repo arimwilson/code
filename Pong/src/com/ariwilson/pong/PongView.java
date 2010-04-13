@@ -4,6 +4,7 @@ import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import android.content.Context;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -14,7 +15,11 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
     setKeepScreenOn(true);
 
     components_ = new Vector<GameComponent>(1);
+    components_.add(new CollisionPrevention());
     objects_ = new Vector<GameObject>(3);
+    objects_.add(new AIPaddle(0, 0));  // TODO(ariw): Fix coords.
+    objects_.add(new AIPaddle(1, 1));  // TODO(ariw): Fix coords.
+    objects_.add(new Ball());
     updated_objects_ = new ArrayBlockingQueue<GameObject>(3);
   } 
 
@@ -39,6 +44,12 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
     } catch (InterruptedException e) {
       // Do nothing.
     }
+  }
+
+  @Override
+  public boolean onTouchEvent(MotionEvent motion) {
+    // TODO(ariw): Pass touch events down to appropriate game objects.
+    return true;
   }
 
   private DrawThread draw_thread_;

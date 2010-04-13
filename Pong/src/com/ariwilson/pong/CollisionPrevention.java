@@ -1,9 +1,13 @@
 package com.ariwilson.pong;
 
+import android.graphics.Canvas;
+
 public class CollisionPrevention implements GameComponent {
-  public void draw(GameObject object) {
+  @Override
+  public void update(GameObject object, long millis) {
   }
 
-  public void update(GameObject object, long millis) {
+  @Override
+  public void draw(GameObject object, Canvas canvas) {
   }
 }

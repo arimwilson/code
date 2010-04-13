@@ -1,9 +1,13 @@
 package com.ariwilson.pong;
 
+import android.graphics.Canvas;
+
 public class Ball implements GameObject {
-  public void draw() {
+  @Override
+  public void update(long millis) {
   }
 
-  public void update(long millis) {
+  @Override
+  public void draw(Canvas canvas) {
   }
 }
