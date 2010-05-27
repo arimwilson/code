@@ -19,7 +19,7 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
     objects_ = new Vector<GameObject>(3);
     objects_.add(new AIPaddle(0, 0));  // TODO(ariw): Fix coords.
     objects_.add(new AIPaddle(1, 1));  // TODO(ariw): Fix coords.
-    objects_.add(new Ball());
+    objects_.add(new Ball(2, 2));  // TODO(ariw): Fix coords.
     updated_objects_ = new ArrayBlockingQueue<GameObject>(3);
   } 
 
