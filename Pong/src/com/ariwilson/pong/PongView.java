@@ -1,7 +1,6 @@
 package com.ariwilson.pong;
 
 import java.util.Vector;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import android.content.Context;
 import android.view.MotionEvent;

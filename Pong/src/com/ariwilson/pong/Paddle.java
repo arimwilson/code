@@ -1,11 +1,7 @@
 package com.ariwilson.pong;
 
-import java.util.LinkedList;
-
 public abstract class Paddle extends GameObject {
-  public Paddle(LinkedList<GameComponent> components, int x, int y) {
-    super(components);
-
+  public Paddle(int x, int y) {
     // TODO(ariw): Adjust width/height based on screen size.
     height_ = 20;
     width_ = 5;

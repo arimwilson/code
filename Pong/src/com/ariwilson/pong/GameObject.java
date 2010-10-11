@@ -3,8 +3,8 @@ package com.ariwilson.pong;
 import java.util.LinkedList;
 
 public class GameObject {
-  public GameObject(LinkedList<GameComponent> components) {
-    components_ = components;
+  public void addComponent(GameComponent component) {
+    components_.add(component);
   }
 
   public void update(long millis) {

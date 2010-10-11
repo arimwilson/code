@@ -1,10 +1,7 @@
 package com.ariwilson.pong;
 
-import java.util.LinkedList;
-
 public class Ball extends GameObject {
-  public Ball(LinkedList<GameComponent> components, int x, int y) {
-    super(components);
+  public Ball(int x, int y) {
     x_ = x;
     y_ = y;
   }
