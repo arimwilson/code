@@ -1,11 +1,10 @@
 package com.ariwilson.pong;
 
-import android.graphics.Color;
+import java.util.LinkedList;
 
 public class AIPaddle extends Paddle {
-  public AIPaddle(int x, int y) {
-    super(x, y);
-    paint_.setColor(Color.RED);
+  public AIPaddle(LinkedList<GameComponent> components, int x, int y) {
+    super(components, x, y);
   }
 
   @Override
