@@ -13,7 +13,7 @@ public class UpdateThread extends InterruptibleThread {
   public void work() {
     long time = System.currentTimeMillis();
     for (GameObject object : objects_) {
-      object.update(time - last_update_);
+      object.update(time - last_update_, null);
     }
     last_update_ = time;
     try {

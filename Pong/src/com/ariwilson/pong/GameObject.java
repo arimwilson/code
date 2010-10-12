@@ -2,16 +2,16 @@ package com.ariwilson.pong;
 
 import java.util.LinkedList;
 
-public class GameObject {
-  public void addComponent(GameComponent component) {
-    components_.add(component);
+public class GameObject extends BaseObject {
+  public void addComponent(BaseObject object) {
+    objects_.add(object);
   }
 
-  public void update(long millis) {
-    for (GameComponent component : components_) {
+  public void update(long millis, BaseObject parent) {
+    for (BaseObject component : objects_) {
       component.update(millis, this);
     }
   }
 
-  private LinkedList<GameComponent> components_;
+  private LinkedList<BaseObject> objects_;
 }
