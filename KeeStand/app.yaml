@@ -1,0 +1,13 @@
+application: keestand
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /resources/.+
+  script: main.py
+  login: required
+# TODO(ariw): Add additional handlers for other static HTML. 
+- url: /
+  static_files: enter_password.html
+  login: required
