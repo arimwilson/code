@@ -4,10 +4,11 @@ runtime: python
 api_version: 1
 
 handlers:
-- url: /resources/.+
-  script: main.py
-  login: required
-# TODO(ariw): Add additional handlers for other static HTML. 
 - url: /
-  static_files: enter_password.html
-  login: required
+  static_files: login.html
+  upload: login.html
+- url: /sha1.js
+  static_files: sha1.js
+  upload: sha1.js
+- url: /(view|edit)
+  script: keestand.py

@@ -1,0 +1,16 @@
+<html>
+<head><title>KeeStand</title>
+<body>
+<script type="text/javascript" src="sha1.js"></script>
+<script type="text/javascript">
+function hash_password(password) {
+  password.value = Sha1.hash(password.value, null);  
+}
+</script>
+<form onsubmit="hash_password(this.password)" method="post" action="view">
+Username: <input type="text" name="username"><br>
+Password: <input type="password" name="password"><br>
+<input type="submit" name="submit">
+</form>
+</body>
+</html>
