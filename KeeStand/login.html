@@ -1,10 +1,11 @@
 <html>
 <head><title>KeeStand</title>
 <body>
-<script type="text/javascript" src="crypto/crypto-sha1.js"></script>
+<script type="text/javascript" src="sjcl.js"></script>
 <script type="text/javascript">
 function hash_password(password) {
-  password.value = Crypto.SHA1(password.value, { asString: true });  
+  password.value = sjcl.codec.base64.fromBits(
+      sjcl.hash.sha256.hash(password.value), true);
 }
 </script>
 <form onsubmit="hash_password(this.password)" method="post" action="script/login">

@@ -4,13 +4,17 @@ runtime: python
 api_version: 1
 
 handlers:
-- url: /crypto
-  static_dir: crypto
+- url: /sjcl.js
+  static_files: sjcl.js
+  upload: sjcl.js
 - url: /
   static_files: login.html
   upload: login.html
+  secure: always
 - url: /edit
   static_files: edit.html
   upload: edit.html
+  secure: always
 - url: /script/.*
   script: keestand.py
+  secure: always
