@@ -20,8 +20,8 @@ $(document).ready(function() {
   $("#login_button").click(function() {
     username_ = $("#username").val();
     password_ = $("#password").val();
-    // TODO(ariw): Add salt to prevent me/Google from rainbow attacking these
-    // passwords.
+    // TODO(ariw): Add salt/adaptive hash to prevent me/Google from rainbow
+    // attacking/brute forcing these passwords.
     password_hash_ = sjcl.codec.base64.fromBits(sjcl.hash.sha256.hash(password_, true));
     encrypted_path = ""
     $.get("script/login", { username: username_, password_hash: password_hash_ },
