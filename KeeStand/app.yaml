@@ -8,12 +8,8 @@ handlers:
   static_files: sjcl.js
   upload: sjcl.js
 - url: /
-  static_files: login.html
-  upload: login.html
-  secure: always
-- url: /edit
-  static_files: edit.html
-  upload: edit.html
+  static_files: keestand.html
+  upload: keestand.html
   secure: always
 - url: /script/.*
   script: keestand.py

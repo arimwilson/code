@@ -1,0 +1,31 @@
+<html>
+<head><title>KeeStand</title>
+<script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+<script type="text/javascript" src="sjcl.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+  password = "";
+  $("#submit_button").click(function() {
+    password = $("#password").val();
+    $("#password").val(
+        sjcl.codec.base64.fromBits(sjcl.hash.sha256.hash(password, true)));
+    $("#login").hide();
+    $("#edit").show();
+    return false;
+  });
+});
+</script>
+<body>
+<span id="login">
+<form action="">
+Username: <input type="text" name="username" id="username"><br>
+Password: <input type="password" name="password" id="password"><br>
+<input type="submit" id="submit_button">
+</form>
+</span>
+<span id="edit" style="display:none">
+Editor!
+</span>
+</body>
+</html>
