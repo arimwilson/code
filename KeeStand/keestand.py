@@ -9,9 +9,9 @@ class User(db.Model):
   file_key = blobstore.BlobReferenceProperty()
 
 class LoginHandler(webapp.RequestHandler):
-  def post(self):
+  def get(self):
     username = self.request.get("username")
-    password_hash = self.request.get("password")
+    password_hash = self.request.get("password_hash")
     query = User.all()
     query.filter("username =", username)
     user = query.get()
@@ -22,10 +22,9 @@ class LoginHandler(webapp.RequestHandler):
       user.username = username
       user.password_hash = password_hash
       user.put()
-    self.response.headers["Set-Cookie"] = "username:%s" % username
 
 class SaveHandler(webapp.RequestHandler):
-  def post(self):
+  def get(self):
     pass
 
 def main():

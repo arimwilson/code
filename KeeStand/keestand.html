@@ -4,28 +4,59 @@
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
 <script type="text/javascript" src="sjcl.js"></script>
 <script type="text/javascript">
+
+
 $(document).ready(function() {
-  password = "";
-  $("#submit_button").click(function() {
-    password = $("#password").val();
-    $("#password").val(
-        sjcl.codec.base64.fromBits(sjcl.hash.sha256.hash(password, true)));
-    $("#login").hide();
-    $("#edit").show();
+  username_ = "";
+  password_ = ""
+  password_hash_ = "";
+
+  function decrypt(data) {
+  }
+
+  function editor(data) {
+  }
+
+  $("#login_button").click(function() {
+    username_ = $("#username").val();
+    password_ = $("#password").val();
+    // TODO(ariw): Add salt to prevent me/Google from rainbow attacking these
+    // passwords.
+    password_hash_ = sjcl.codec.base64.fromBits(sjcl.hash.sha256.hash(password_, true));
+    encrypted_path = ""
+    $.get("script/login", { username: username_, password_hash: password_hash_ },
+          function(data) { encrypted_path = data; });
+    if (encrypted_path != "FAIL") {  // Magic constants!
+      $("#login").hide();
+      encrypted = ""
+      if (encrypted_path) {
+        $.get(data_path, function(data) { encrypted = data });
+      }
+      editor(decrypt(encrypted));
+      $("#edit").show();
+    }
     return false;
+  });
+
+  function encrypt(data) {
+  }
+
+  $("#save_button").click(function() {
   });
 });
 </script>
 <body>
 <span id="login">
-<form action="">
+<form>
 Username: <input type="text" name="username" id="username"><br>
 Password: <input type="password" name="password" id="password"><br>
-<input type="submit" id="submit_button">
+<input type="submit" id="login_button">
 </form>
 </span>
 <span id="edit" style="display:none">
-Editor!
+<form>
+<input type="submit" value="Save" id="save_button">
+</form>
 </span>
 </body>
 </html>
