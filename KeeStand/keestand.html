@@ -5,6 +5,21 @@
 <script type="text/javascript" src="sjcl.js"></script>
 <script type="text/javascript">
 
+function AssertException(message) {
+  this.message = message;
+}
+
+AssertException.prototype.toString = function () {
+  return 'AssertException: ' + this.message;
+}
+
+function assert(exp, message) {
+  if (!exp) {
+    throw new AssertException(message);
+  }
+}
+
+$.ajaxSetup({async: false});
 
 $(document).ready(function() {
   username_ = "";
@@ -12,6 +27,11 @@ $(document).ready(function() {
   password_hash_ = "";
 
   function decrypt(data) {
+    assert(password_, "password_ is null.");
+    if (data)
+      return sjcl.decrypt(password_, data);
+    else
+      return ""
   }
 
   function editor(data) {
@@ -22,9 +42,11 @@ $(document).ready(function() {
     password_ = $("#password").val();
     // TODO(ariw): Add salt/adaptive hash to prevent me/Google from rainbow
     // attacking/brute forcing these passwords.
-    password_hash_ = sjcl.codec.base64.fromBits(sjcl.hash.sha256.hash(password_, true));
+    password_hash_ = sjcl.codec.base64.fromBits(
+        sjcl.hash.sha256.hash(password_, true));
     encrypted_path = ""
-    $.get("script/login", { username: username_, password_hash: password_hash_ },
+    $.get("script/login",
+          { username: username_, password_hash: password_hash_ },
           function(data) { encrypted_path = data; });
     if (encrypted_path != "FAIL") {  // Magic constants!
       $("#login").hide();
@@ -38,7 +60,18 @@ $(document).ready(function() {
     return false;
   });
 
+  $("#add_button").click(function() {
+    $("#add_button").before(
+        "Username: <input type='text'> Password: <input type='text'> Notes: " +
+        "<input type='text'> <br>");
+  });
+
   function encrypt(data) {
+    assert(password_, "password_ is null.");
+    if (data)
+      return sjcl.encrypt(password_, data);
+    else
+      return ""
   }
 
   $("#save_button").click(function() {
@@ -55,7 +88,8 @@ Password: <input type="password" name="password" id="password"><br>
 </span>
 <span id="edit" style="display:none">
 <form>
-<input type="submit" value="Save" id="save_button">
+<input type="button" value="Add new password" id="add_button">
+<input type="button" value="Save" id="save_button">
 </form>
 </span>
 </body>

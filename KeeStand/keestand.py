@@ -1,3 +1,5 @@
+import urllib
+
 from google.appengine.ext import blobstore
 from google.appengine.ext import db
 from google.appengine.ext import webapp
@@ -16,15 +18,17 @@ class LoginHandler(webapp.RequestHandler):
     query = User.all()
     query.filter("username =", username)
     user = query.get()
-    if user and password_hash == user.password_hash:
-      self.response.out.write(str(user.file_ref.key()))
-    elif user:
+    if user and password_hash != user.password_hash:
       self.response.out.write("FAIL")
+      return
+    elif user:
+      if user.file_ref:
+        self.response.out.write(str(user.file_ref.key()))
     else:
-      user = User()
-      user.username = username
-      user.password_hash = password_hash
+      user = User(username=username, password_hash=password_hash)
       user.put()
+    self.response.headers.add_header(
+        "Set-Cookie", "username=%s:password_hash=%s" % (username, password_hash))
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
