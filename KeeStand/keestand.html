@@ -75,6 +75,7 @@ $(document).ready(function() {
   }
 
   $("#save_button").click(function() {
+    return false;
   });
 });
 </script>
@@ -89,7 +90,7 @@ Password: <input type="password" name="password" id="password"><br>
 <span id="edit" style="display:none">
 <form>
 <input type="button" value="Add new password" id="add_button">
-<input type="button" value="Save" id="save_button">
+<input type="submit" value="Save" id="save_button">
 </form>
 </span>
 </body>
