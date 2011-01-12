@@ -22,9 +22,8 @@ function assert(exp, message) {
 $.ajaxSetup({async: false});
 
 $(document).ready(function() {
-  username_ = "";
   password_ = ""
-  password_hash_ = "";
+  upload_url_ = ""
 
   function decrypt(data) {
     assert(password_, "password_ is null.");
@@ -35,23 +34,28 @@ $(document).ready(function() {
   }
 
   function editor(data) {
+    // TODO(ariw): Generate an editor based on decrypted data.
+    // TODO(ariw): REMOVE
+    if (data)
+      alert(data);
   }
 
   $("#login_button").click(function() {
-    username_ = $("#username").val();
+    username = $("#username").val();
     password_ = $("#password").val();
     // TODO(ariw): Add salt/adaptive hash to prevent me/Google from rainbow
     // attacking/brute forcing these passwords.
-    password_hash_ = sjcl.codec.base64.fromBits(
+    password_hash = sjcl.codec.base64.fromBits(
         sjcl.hash.sha256.hash(password_, true));
     encrypted_path = ""
     $.get("script/login",
-          { username: username_, password_hash: password_hash_ },
+          { username: username, password_hash: password_hash },
           function(data) { encrypted_path = data; });
     if (encrypted_path != "FAIL") {  // Magic constants!
       $("#login").hide();
       encrypted = ""
-      if (encrypted_path) {
+      // TODO(ariw): Fill in upload_url_.
+      if (encrypted_path[0] != "\n") {  // Existing data!
         $.get(data_path, function(data) { encrypted = data });
       }
       editor(decrypt(encrypted));
@@ -62,8 +66,8 @@ $(document).ready(function() {
 
   $("#add_button").click(function() {
     $("#add_button").before(
-        "Username: <input type='text'> Password: <input type='text'> Notes: " +
-        "<input type='text'> <br>");
+        "Username: <input type='text' id='data'> Password: <input " +
+        "type='text' id='data'> Notes: <input type='text' id='data'> <br>");
   });
 
   function encrypt(data) {
@@ -75,6 +79,7 @@ $(document).ready(function() {
   }
 
   $("#save_button").click(function() {
+    // TODO(ariw): Convert to CSV, encrypt, call /save URL.
     return false;
   });
 });
