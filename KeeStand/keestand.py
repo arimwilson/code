@@ -51,6 +51,8 @@ class SaveHandler(webapp.RequestHandler):
     success, user = AuthorizedUser(self.request.cookies)
     if not success:
       return
+    # TODO(ariw): Deal with splitting large passwords files into 1 megabyte
+    # chunks and storing in separate TextProperty fields.
     user.passwords = db.Text(self.request.get("passwords"))
     user.put()
 
