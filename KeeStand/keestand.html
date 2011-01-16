@@ -31,9 +31,9 @@ $(document).ready(function() {
 
   function add_input(username, password, notes) {
     $("#data").append(
-        "<tr><td><input type='text' value=" + username + "></td>" +
-        "<td><input type='text' value=" + password + "></td>" +
-        "<td><input type='text' value=" + notes + "></td>" +
+        "<tr><td><input type='text' value='" + username + "'></td>" +
+        "<td><input type='text' value='" + password + "'></td>" +
+        "<td><input type='text' value='" + notes + "'></td>" +
         "<td><input type='button' value='Delete'></td></tr>");
     $("#data > tbody > tr > td >:last").click(function() {
       row = this.parentNode.parentNode;
