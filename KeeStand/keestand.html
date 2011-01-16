@@ -2,10 +2,8 @@
 <head><title>KeeStand</title>
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/dojo.xd.js"></script>
 <script type="text/javascript" src="sjcl.js"></script>
 <script type="text/javascript">
-dojo.require("dojo.io.iframe");
 
 function AssertException(message) {
   this.message = message;
@@ -31,8 +29,27 @@ $(document).ready(function() {
     return sjcl.decrypt(password_, data);
   }
 
+  function add_input(username, password, notes) {
+    $("#data").append(
+        "<tr><td><input type='text' value=" + username + "></td>" +
+        "<td><input type='text' value=" + password + "></td>" +
+        "<td><input type='text' value=" + notes + "></td>" +
+        "<td><input type='button' value='Delete'></td></tr>");
+    $("#data > tbody > tr > td >:last").click(function() {
+      row = this.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+    });
+  }
+
   function editor(data) {
-    // TODO(ariw): Generate an editor based on decrypted data.
+    data = data.split("\n");
+    for (i = 0; i < data.length - 1; ++i) {
+      data[i] = data[i].split(" ");
+      for (j = 0; j < data[i].length; ++j) {
+        data[i][j] = unescape(data[i][j]);
+      }
+      add_input(data[i][0], data[i][1], data[i][2]);
+    }
   }
 
   // TODO(ariw): Validation on password length/content.
@@ -43,28 +60,22 @@ $(document).ready(function() {
     // attacking/brute forcing these passwords.
     password_hash = sjcl.codec.base64.fromBits(
         sjcl.hash.sha256.hash(password_, true));
-    paths = "";
+    encrypted = "";
     $.post("script/login",
           { username: username, password_hash: password_hash },
-          function(data) { paths = data; });
-    if (paths != "FAIL") {  // Magic constants!
+          function(data) { encrypted = data; });
+    if (encrypted != "FAIL") {  // Magic constants!
       $("#login").hide();
-      encrypted = "";
-      if (paths) {  // Existing data!
-        encrypted_path = "script/load/" + paths;
-        $.post(encrypted_path, function(data) { encrypted = data });
-        editor(decrypt(encrypted));
-      }
+      if (encrypted) editor(decrypt(encrypted));
       $("#edit").show();
     }
     return false;
   });
 
   $("#add_button").click(function() {
-    $("#data > form").append(
-        "Username: <input type='text'> Password: <input type='text'> Notes: " +
-        "<input type='text'> <br>");
+    add_input("", "", "");
   });
+
 
   function encrypt(data) {
     assert(password_, "password_ is null.");
@@ -72,17 +83,13 @@ $(document).ready(function() {
   }
 
   $("#save_button").click(function() {
-    input = $("#data > form > input");
-    data = ""
+    input = $("#data").find("input:text");
+    data = "";
     for (i = 0; i < input.length; i += 3) {
-      data += escape(input[i].value) + " " + escape(input[i + 1].value) + " " +
-              escape(input[i + 2].value) + "\n";
+      data += escape(input[i].value) + " " + escape(input[i + 1].value) +
+              " " + escape(input[i + 2].value) + "\n";
     }
-    data = encrypt(data);
-    save_url = ""
-    $.post("/save_url", function(data) { save_url = data });
-    // TODO(ariw): Call save URL.
-    dojo.io.iframe.send({url: upload_url});
+    $.post("script/save", {passwords: encrypt(data)});
     return false;
   });
 });
@@ -96,15 +103,16 @@ Password: <input type="password" name="password" id="password"><br>
 </form>
 </span>
 <span id="edit" style="display:none">
-<span id="data">
 <form>
-</form>
-</span>
-<span id="controls">
-<form>
-<input type="button" value="Add new password" id="add_button">
+<table id="data">
+<tr>
+  <th>Username</th>
+  <th>Password</th>
+  <th>Comments</th>
+</tr>
+</table>
+<input type="button" value="Add" id="add_button">
 <input type="submit" value="Save" id="save_button">
 </form>
-</span>
 </body>
 </html>
