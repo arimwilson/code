@@ -2,8 +2,10 @@
 <head><title>KeeStand</title>
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/dojo.xd.js"></script>
 <script type="text/javascript" src="sjcl.js"></script>
 <script type="text/javascript">
+dojo.require("dojo.io.iframe");
 
 function AssertException(message) {
   this.message = message;
@@ -22,22 +24,15 @@ function assert(exp, message) {
 $.ajaxSetup({async: false});
 
 $(document).ready(function() {
-  password_ = ""
-  upload_url_ = ""
+  password_ = "";
 
   function decrypt(data) {
     assert(password_, "password_ is null.");
-    if (data)
-      return sjcl.decrypt(password_, data);
-    else
-      return ""
+    return sjcl.decrypt(password_, data);
   }
 
   function editor(data) {
     // TODO(ariw): Generate an editor based on decrypted data.
-    // TODO(ariw): REMOVE
-    if (data)
-      alert(data);
   }
 
   // TODO(ariw): Validation on password length/content.
@@ -48,39 +43,46 @@ $(document).ready(function() {
     // attacking/brute forcing these passwords.
     password_hash = sjcl.codec.base64.fromBits(
         sjcl.hash.sha256.hash(password_, true));
-    encrypted_path = ""
-    $.get("script/login",
+    paths = "";
+    $.post("script/login",
           { username: username, password_hash: password_hash },
-          function(data) { encrypted_path = data; });
-    if (encrypted_path != "FAIL") {  // Magic constants!
+          function(data) { paths = data; });
+    if (paths != "FAIL") {  // Magic constants!
       $("#login").hide();
-      encrypted = ""
-      // TODO(ariw): Fill in upload_url_.
-      if (encrypted_path[0] != "\n") {  // Existing data!
-        $.get(data_path, function(data) { encrypted = data });
+      encrypted = "";
+      if (paths) {  // Existing data!
+        encrypted_path = "script/load/" + paths;
+        $.post(encrypted_path, function(data) { encrypted = data });
+        editor(decrypt(encrypted));
       }
-      editor(decrypt(encrypted));
       $("#edit").show();
     }
     return false;
   });
 
   $("#add_button").click(function() {
-    $("#add_button").before(
-        "Username: <input type='text' id='data'> Password: <input " +
-        "type='text' id='data'> Notes: <input type='text' id='data'> <br>");
+    $("#data > form").append(
+        "Username: <input type='text'> Password: <input type='text'> Notes: " +
+        "<input type='text'> <br>");
   });
 
   function encrypt(data) {
     assert(password_, "password_ is null.");
-    if (data)
-      return sjcl.encrypt(password_, data);
-    else
-      return ""
+    return sjcl.encrypt(password_, data);
   }
 
   $("#save_button").click(function() {
-    // TODO(ariw): Convert to CSV, encrypt, call /save URL.
+    input = $("#data > form > input");
+    data = ""
+    for (i = 0; i < input.length; i += 3) {
+      data += escape(input[i].value) + " " + escape(input[i + 1].value) + " " +
+              escape(input[i + 2].value) + "\n";
+    }
+    data = encrypt(data);
+    save_url = ""
+    $.post("/save_url", function(data) { save_url = data });
+    // TODO(ariw): Call save URL.
+    dojo.io.iframe.send({url: upload_url});
     return false;
   });
 });
@@ -94,6 +96,11 @@ Password: <input type="password" name="password" id="password"><br>
 </form>
 </span>
 <span id="edit" style="display:none">
+<span id="data">
+<form>
+</form>
+</span>
+<span id="controls">
 <form>
 <input type="button" value="Add new password" id="add_button">
 <input type="submit" value="Save" id="save_button">

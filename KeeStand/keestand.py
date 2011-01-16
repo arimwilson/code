@@ -13,7 +13,7 @@ class User(db.Model):
   file_ref = blobstore.BlobReferenceProperty()
 
 class LoginHandler(webapp.RequestHandler):
-  def get(self):
+  def post(self):
     username = self.request.get("username")
     password_hash = self.request.get("password_hash")
     query = User.all()
@@ -28,7 +28,6 @@ class LoginHandler(webapp.RequestHandler):
     else:  # New user.
       user = User(username=username, password_hash=password_hash)
       user.put()
-    self.response.out.write("\n" + blobstore.create_upload_url("/save"))
     self.response.headers.add_header(
         "Set-Cookie",
         "username=%s:password_hash=%s" % (username, password_hash))
@@ -47,18 +46,25 @@ def AuthorizedUser(cookies):
   return user == None, user
 
 class LoadHandler(blobstore_handlers.BlobstoreDownloadHandler):
-  def get(self, resource):
-    success, _ = AuthorizedUser(self.str_cookies):
-    if not success
+  def post(self, resource):
+    success, _ = AuthorizedUser(self.str_cookies)
+    if not success:
       return
     resource = str(urllib.unquote(resource))
     blob_info = blobstore.BlobInfo.get(resource)
     self.send_blob(blob_info)
 
+class SaveUrlHandler(webapp.RequestHandler):
+  def post(self):
+    success, _ = AuthorizedUser(self.str_cookies)
+    if not success:
+      return
+    self.response.out.write(blobstore.create_upload_url("/script/save"))
+
 class SaveHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
     file_ref = self.get_uploads("file")[0]
-    success, user = AuthorizedUser(self.str_cookies):
+    success, user = AuthorizedUser(self.str_cookies)
     if not success:
       file_ref.delete()
       return
@@ -72,6 +78,7 @@ def main():
   application = webapp.WSGIApplication([
       ('/script/login', LoginHandler),
       ('/script/load/([^/]+)?', LoadHandler),
+      ('/script/save_url', SaveUrlHandler),
       ('/script/save', SaveHandler),
     ])
   run_wsgi_app(application)
