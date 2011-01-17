@@ -1,6 +1,9 @@
 import base64
+import pickle
+import json
 import logging
 import os
+import re
 import string
 
 from google.appengine.ext import blobstore
@@ -11,14 +14,14 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 class User(db.Model):
   version = db.IntegerProperty(required = True)
   username = db.StringProperty(required = True)
-  salt = db.StringProperty(required = True)
-  password_hash = db.StringProperty(required = True)
+  salt = db.BlobProperty(required = True)
+  password_hash = db.ByteStringProperty(required = True)
 
 # We can only store up to 1 megabyte of passwords per datastore entity. So we
 # split up passwords into multiple chunks.
 class PasswordChunk(db.Model):
   user = db.ReferenceProperty(User)
-  chunk = db.TextProperty()
+  chunk = db.BlobProperty()
 
 class SaltHandler(webapp.RequestHandler):
   def post(self):
@@ -27,9 +30,20 @@ class SaltHandler(webapp.RequestHandler):
     query.filter("username =", username)
     user = query.get()
     if user:
-      self.response.out.write(user.salt)
+      self.response.out.write(base64.standard_b64encode(user.salt))
     else:
-      self.response.out.write(base64.b64encode(os.urandom(16)))
+      self.response.out.write(base64.standard_b64encode(os.urandom(16)))
+
+# Convert pickled Python dictionary back to JSON.
+def Decode(string):
+  # TODO(ariw): WTF why can't I depickle?!
+  dictionary = pickle.loads(string)
+  for (key, value) in dictionary.iteritems():
+    dictionary[key] = base64.standard_b64encode(value)
+  output = json.dumps(dictionary)
+  # SJCL wants invalid JSON which we hack around here.
+  output = re.sub("([\{,])\"(.*?)\":", r"\1\2:", output)
+  return output
 
 class LoginHandler(webapp.RequestHandler):
   def post(self):
@@ -40,38 +54,53 @@ class LoginHandler(webapp.RequestHandler):
     query = User.all()
     query.filter("username =", username)
     user = query.get()
-    if user and password_hash != user.password_hash:  # Failed login.
+    if user and password_hash != base64.standard_b64encode(user.password_hash):
+      # Failed login.
       self.error(401)
       return
     elif user:  # Existing user, success.
-      if user.passwordchunk_set:  # Existing data.
-        for passwordchunk in user.passwordchunk_set:
-          self.response.out.write(str(passwordchunk.chunk))
+        passwords = "".join(
+            [str(chunk.chunk) for chunk in user.passwordchunk_set])
+        if passwords:  # Existing data.
+          self.response.out.write(Decode(passwords))
     else:  # New user.
       salt = self.request.get("salt")
       assert salt
-      user = User(version = 1, username = username, salt = salt,
-                  password_hash = password_hash)
+      user = User(
+          version = 1, username = username,
+          salt = db.Blob(base64.standard_b64decode(salt)),
+          password_hash = db.ByteString(
+              base64.standard_b64decode(password_hash)))
       user.put()
     self.response.headers.add_header(
         "Set-Cookie",
         "session=%s.%s" % (
-            base64.b64encode(username), password_hash))
+            base64.standard_b64encode(username), password_hash))
 
 def AuthorizedUser(cookies):
   session = cookies.get("session", "").split(".")
-  username = base64.b64decode(session[0])
+  username = base64.standard_b64decode(session[0])
   password_hash = session[1]
   query = User.all()
   query.filter("username =", username)
-  query.filter("password_hash =", password_hash)
+  query.filter("password_hash =",
+               db.ByteString(base64.standard_b64decode(password_hash)))
   user = query.get()
   if not user:
     logging.error("Should never get here! Data received but username (%s) or "
                   "password_hash (%s) is wrong!" % (username, password_hash))
   return user <> None, user
 
-# Split a large string into a list of chunks of size n.
+# Convert JSON to pickled Python dictionary.
+def Encode(string):
+  # SJCL produces invalid JSON which we hack around here.
+  string = re.sub(r"([\{,])(.*?):", "\\1\"\\2\":", string)
+  dictionary = json.loads(string)
+  for (key, value) in dictionary.iteritems():
+    dictionary[key] = base64.standard_b64decode(value)
+  return pickle.dumps(dictionary)
+
+# Split a large string into a list of chunks of at most size n.
 def Split(string, n):
   split = []
   for i in xrange(0, len(string), n):
@@ -87,10 +116,10 @@ class SaveHandler(webapp.RequestHandler):
     if user.passwordchunk_set:
       for passwordchunk in user.passwordchunk_set:
         passwordchunk.delete()
-    # Since no characters in base64-encoded JSON are Unicode, we can store
-    # exactly 1 << 20 characters in one entity property.
-    for chunk in Split(self.request.get("passwords"), 1 << 20):
-      PasswordChunk(user = user, chunk = db.Text(chunk)).put()
+    passwords = Encode(self.request.get("passwords"))
+    # Can store exactly 1 << 20 characters in one entity property.
+    for chunk in Split(passwords, 1 << 20):
+      PasswordChunk(user = user, chunk = db.Blob(chunk)).put()
 
 class DeleteAccountHandler(webapp.RequestHandler):
   def post(self):

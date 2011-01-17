@@ -62,7 +62,7 @@ $(document).ready(function() {
       // TODO(ariw): Is 1000 right here? I wish I could use bcrypt...
       for (i = 1; i < 1000; ++i)
         password_hash = sjcl.hash.sha256.hash(password_hash);
-      password_hash = sjcl.codec.base64.fromBits(password_hash, true);
+      password_hash = sjcl.codec.base64.fromBits(password_hash, false);
       // TODO(ariw): Don't silently fail.
       $.post("script/login",
              { username: username, password_hash: password_hash, salt: salt },
