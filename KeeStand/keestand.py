@@ -1,6 +1,5 @@
 import base64
 import gzip
-import json
 import logging
 import pickle
 import os
@@ -8,6 +7,7 @@ import re
 import string
 import StringIO
 
+from django.utils import simplejson as json
 from google.appengine.ext import blobstore
 from google.appengine.ext import db
 from google.appengine.ext import webapp
@@ -38,14 +38,17 @@ class SaltHandler(webapp.RequestHandler):
 
 # Convert gzipped pickled Python dictionary back to JSON.
 def Decode(string):
-  string = gzip.GZipFile(fileobj=StringIO.StringIO(string)).read()
+  string = gzip.GzipFile(fileobj=StringIO.StringIO(string)).read()
   # TODO(ariw): WTF why can't I depickle?!
-  dictionary = pickle.loads(string, pickle.HIGHEST_PROTOCOL)
+  dictionary = pickle.loads(string)
   for (key, value) in dictionary.iteritems():
     dictionary[key] = base64.standard_b64encode(value)
   output = json.dumps(dictionary)
   # SJCL wants invalid JSON which we hack around here.
-  output = re.sub("([\{,])\"(.*?)\":", r"\1\2:", output)
+  output = re.sub("([\{,]) ?\"(.*?)\": ", r"\1\2:", output)
+  # Python puts in dumb \ characters in base64-decoded strings, so let's get rid
+  # of them.
+  output = output.replace("\\", "")
   return output
 
 class LoginHandler(webapp.RequestHandler):
@@ -103,7 +106,7 @@ def Encode(string):
     dictionary[key] = base64.standard_b64decode(value)
   pickled = pickle.dumps(dictionary, pickle.HIGHEST_PROTOCOL)
   output = StringIO.StringIO()
-  gzip.GZipFile(fileobj=output, mode="wb").write(string)
+  gzip.GzipFile(fileobj=output, mode="wb").write(pickled)
   return output.getvalue()
 
 # Split a large string into a list of chunks of at most size n.
