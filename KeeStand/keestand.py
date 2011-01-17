@@ -9,6 +9,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 class User(db.Model):
+  version = db.IntegerProperty(required = True)
   username = db.StringProperty(required = True)
   salt = db.StringProperty(required = True)
   password_hash = db.StringProperty(required = True)
@@ -49,7 +50,7 @@ class LoginHandler(webapp.RequestHandler):
     else:  # New user.
       salt = self.request.get("salt")
       assert salt
-      user = User(username = username, salt = salt,
+      user = User(version = 1, username = username, salt = salt,
                   password_hash = password_hash)
       user.put()
     self.response.headers.add_header(

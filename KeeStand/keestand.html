@@ -29,8 +29,8 @@ $(document).ready(function() {
 
   function add_input(organization, username, password, notes) {
     $("#data").append(
-        "<tr><td><input type='text' value='" + organization + "'></td>" +
-        "<td><input type='text' value='" + username + "'></td>" +
+        "<tr id='data_row'><td><input type='text' value='" + organization +
+        "'></td><td><input type='text' value='" + username + "'></td>" +
         "<td><input type='text' value='" + password + "'></td>" +
         "<td><textarea rows=1 cols=20>" + notes + "</textarea></td>" +
         "<td><input type='button' value='Delete'></td></tr>");
@@ -40,10 +40,11 @@ $(document).ready(function() {
     });
   }
 
-  function editor(data, status) {
+  function editor(data) {
+    $("#data_row").remove();
     data = data.split("\n");
     for (i = 0; i < data.length - 1; ++i) {
-      data[i] = data[i].split(" ");
+      data[i] = data[i].split(",");
       for (j = 0; j < data[i].length; ++j) {
         data[i][j] = unescape(data[i][j]);
       }
@@ -67,16 +68,28 @@ $(document).ready(function() {
              { username: username, password_hash: password_hash, salt: salt },
              function(data, status) {
                if (status == "success") {
-                 $("#login").hide();
                  if (data) editor(decrypt(data));
+                 $("#login").hide();
                  $("#edit").show();
-               }});});
+               }
+             });
+    });
     return false;
   });
 
   $("#add_button").click(function() {
     add_input("", "", "", "");
   });
+
+  function create_csv(input) {
+    data = "";
+    for (i = 0; i < input.length; i += 4) {
+      data += escape(input[i].value) + "," + escape(input[i + 1].value) + "," +
+              escape(input[i + 2].value) + "," + escape(input[i + 3].value) +
+              "\n";
+    }
+    return data;
+  }
 
   function encrypt(data) {
     assert(password_, "password_ is null.");
@@ -85,18 +98,14 @@ $(document).ready(function() {
 
   $("#save_button").click(function() {
     input = $("#data").find("input:text,textarea");
-    data = "";
-    for (i = 0; i < input.length; i += 4) {
-      data += escape(input[i].value) + " " + escape(input[i + 1].value) + " " +
-              escape(input[i + 2].value) + " " + escape(input[i + 3].value) +
-              "\n";
-    }
     // TODO(ariw): Don't silently fail.
-    $.post("script/save", { passwords: encrypt(data) });
+    $.post("script/save", { passwords: encrypt(create_csv(input)) });
   });
 
-  $("#options_button").click(function() {
+  $(".options_button").click(function() {
     $("#edit").hide();
+    $("#import_csv").hide();
+    $("#export_csv").hide();
     $("#options").show();
   });
 
@@ -106,19 +115,34 @@ $(document).ready(function() {
   });
 
   $("#import_csv_button").click(function() {
-    # TODO(ariw): Fill out!
+    $("#options").hide();
+    $("#import_csv").show();
+  });
+
+  $("#import_button").click(function() {
+    data = $("#import_csv > form > textarea").val();
+    if (!data) {
+      alert("CSV is empty.");
+      return;
+    }
+    editor(data);
+    $("#import_csv").hide();
+    $("#edit").show();
   });
 
   $("#export_csv_button").click(function() {
-    # TODO(ariw): Fill out!
+    input = $("#data").find("input:text,textarea");
+    $("#export_csv").prepend(create_csv(input).replace(/\n/g, "<br>"));
+    $("#options").hide();
+    $("#export_csv").show();
   });
 
   $("#delete_account_button").click(function() {
     var sure = confirm("Are you sure you want to delete your account?");
     if (sure) {
       var really_sure = confirm(
-          "Do you really want to delete your account? This action cannot be " +
-          "undone!");
+          "Are you really sure you want to delete your account? This action " +
+          "cannot be undone!");
       if (really_sure)
         $.post("script/deleteaccount", {}, function() { location.reload(true); });
     }
@@ -161,7 +185,7 @@ Password: <input type="password" name="password" id="password"><br>
 </table>
 <input type="button" value="Add" id="add_button">
 <input type="button" value="Save" id="save_button">
-<input type="button" value="Options" id="options_button">
+<input type="button" value="Options" class="options_button">
 </form>
 </span>
 <span id="options" style=display:none">
@@ -169,6 +193,14 @@ Password: <input type="password" name="password" id="password"><br>
 <input type="button" value="Import from CSV" id="import_csv_button">
 <input type="button" value="Export to CSV" id="export_csv_button">
 <input type="button" value="Delete account" id="delete_account_button">
+</span>
+<span id="import_csv" style="display:none">
+<form><textarea rows=20 cols=80></textarea></form>
+<input type="button" value="Back to options" class="options_button">
+<input type="button" value="Import" id="import_button">
+</span>
+<span id="export_csv" style="display:none">
+<input type="button" value="Back to options" class="options_button">
 </span>
 </body>
 </html>
