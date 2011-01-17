@@ -132,7 +132,11 @@ $(document).ready(function() {
 
   $("#export_csv_button").click(function() {
     input = $("#data").find("input:text,textarea");
-    $("#export_csv").prepend(create_csv(input).replace(/\n/g, "<br>"));
+    $("#export_csv_data").remove();
+    $("#export_csv").prepend(
+        "<div id='export_csv_data'>" +
+        create_csv(input).replace(/\n/g, "<br>") +
+        "</div>");
     $("#options").hide();
     $("#export_csv").show();
   });
