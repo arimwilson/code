@@ -29,7 +29,7 @@ $(document).ready(function() {
 
   function add_input(organization, username, password, notes) {
     $("#data").append(
-        "<tr id='data_row'><td><input type='text' value='" + organization +
+        "<tr class='data_row'><td><input type='text' value='" + organization +
         "'></td><td><input type='text' value='" + username + "'></td>" +
         "<td><input type='text' value='" + password + "'></td>" +
         "<td><textarea rows=1 cols=20>" + notes + "</textarea></td>" +
@@ -41,7 +41,7 @@ $(document).ready(function() {
   }
 
   function editor(data) {
-    $("#data_row").remove();
+    $(".data_row").remove();
     data = data.split("\n");
     for (i = 0; i < data.length - 1; ++i) {
       data[i] = data[i].split(",");
