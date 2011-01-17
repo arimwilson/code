@@ -1,10 +1,12 @@
 import base64
+import gzip
 import json
 import logging
 import pickle
 import os
 import re
 import string
+import StringIO
 
 from google.appengine.ext import blobstore
 from google.appengine.ext import db
@@ -34,10 +36,11 @@ class SaltHandler(webapp.RequestHandler):
     else:
       self.response.out.write(base64.standard_b64encode(os.urandom(16)))
 
-# Convert pickled Python dictionary back to JSON.
+# Convert gzipped pickled Python dictionary back to JSON.
 def Decode(string):
+  string = gzip.GZipFile(fileobj=StringIO.StringIO(string)).read()
   # TODO(ariw): WTF why can't I depickle?!
-  dictionary = pickle.loads(string)
+  dictionary = pickle.loads(string, pickle.HIGHEST_PROTOCOL)
   for (key, value) in dictionary.iteritems():
     dictionary[key] = base64.standard_b64encode(value)
   output = json.dumps(dictionary)
@@ -91,14 +94,17 @@ def AuthorizedUser(cookies):
                   "password_hash (%s) is wrong!" % (username, password_hash))
   return user <> None, user
 
-# Convert JSON to pickled Python dictionary.
+# Convert JSON to gzipped pickled Python dictionary.
 def Encode(string):
   # SJCL produces invalid JSON which we hack around here.
   string = re.sub(r"([\{,])(.*?):", "\\1\"\\2\":", string)
   dictionary = json.loads(string)
   for (key, value) in dictionary.iteritems():
     dictionary[key] = base64.standard_b64decode(value)
-  return pickle.dumps(dictionary)
+  pickled = pickle.dumps(dictionary, pickle.HIGHEST_PROTOCOL)
+  output = StringIO.StringIO()
+  gzip.GZipFile(fileobj=output, mode="wb").write(string)
+  return output.getvalue()
 
 # Split a large string into a list of chunks of at most size n.
 def Split(string, n):
