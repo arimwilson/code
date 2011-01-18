@@ -29,11 +29,16 @@ $(document).ready(function() {
 
   function add_input(organization, username, password, notes) {
     $("#data").append(
-        "<tr class='data_row'><td><input type='text' value='" + organization +
-        "'></td><td><input type='text' value='" + username + "'></td>" +
-        "<td><input type='text' value='" + password + "'></td>" +
+        "<tr class='data_row'><td><input type='text'></td>" +
+        "<td><input type='text'></td>" +
+        "<td><input type='text'></td>" +
         "<td><textarea rows=1 cols=20>" + notes + "</textarea></td>" +
         "<td><input type='button' value='Delete'></td></tr>");
+    // TODO(ariw): Less hacky way to get around quotes in org/user/pass.
+    var texts = $("#data > tbody > tr > td > input:text");
+    texts[0].value = organization;
+    texts[1].value = username;
+    texts[2].value = password;
     $("#data > tbody > tr > td >:last").click(function() {
       row = this.parentNode.parentNode;
       row.parentNode.removeChild(row);
