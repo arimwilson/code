@@ -35,7 +35,7 @@ $(document).ready(function() {
         "<td><textarea rows=1 cols=20>" + notes + "</textarea></td>" +
         "<td><input type='button' value='Delete'></td></tr>");
     // TODO(ariw): Less hacky way to get around quotes in org/user/pass.
-    var texts = $("#data > tbody > tr > td > input:text");
+    var texts = $("#data > tbody > tr:last > td > input:text");
     texts[0].value = organization;
     texts[1].value = username;
     texts[2].value = password;
