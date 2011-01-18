@@ -14,7 +14,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 class User(db.Model):
-  version = db.IntegerProperty(required)
+  version = db.IntegerProperty(required = True)
   username = db.StringProperty(required = True)
   salt = db.BlobProperty(required = True)
   password_hash = db.ByteStringProperty(required = True)
