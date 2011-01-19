@@ -10,6 +10,7 @@ handlers:
 - url: /sjcl.js
   static_files: sjcl.js
   upload: sjcl.js
+  secure: always
 - url: /
   static_files: keestand.html
   upload: keestand.html
