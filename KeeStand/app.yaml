@@ -7,6 +7,9 @@ builtins:
 - datastore_admin: on
 
 handlers:
+- url: /css
+  static_dir: css
+  secure: always
 - url: /sjcl.js
   static_files: sjcl.js
   upload: sjcl.js
