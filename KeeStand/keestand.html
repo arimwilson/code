@@ -23,7 +23,6 @@ function assert(exp, message) {
 
 $(document).ready(function() {
   password_ = "";
-  row_ = 0;
 
   function decrypt(data) {
     assert(password_, "password_ is null.");
@@ -44,7 +43,6 @@ $(document).ready(function() {
       div = this.parentNode.parentNode;
       row.parentNode.removeChild(row);
     });
-    ++row_;
   }
 
   function editor(data) {
