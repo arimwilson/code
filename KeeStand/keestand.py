@@ -134,7 +134,7 @@ class DeleteAccountHandler(webapp.RequestHandler):
     if not success:
       self.error(401)
       return
-    db.delete([user] + [chunk for chunk in user.passwordchunk_set])
+    db.delete([chunk for chunk in user.passwordchunk_set] + [user])
 
 def main():
   application = webapp.WSGIApplication([
