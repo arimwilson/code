@@ -4,7 +4,6 @@ import logging
 import pickle
 import os
 import re
-import string
 import StringIO
 
 from django.utils import simplejson as json
