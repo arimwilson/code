@@ -1,6 +1,7 @@
-<html>
+<!DOCTYPE HTML>
+<html lang="en">
 <head><title>KeeStand</title>
-<link type="text/css" href="css/redmond/jquery-ui-1.8.9.custom.css" rel="Stylesheet" />
+<link type="text/css" href="css/ui-lightness/jquery-ui-1.8.9.custom.css" rel="Stylesheet" />
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js"></script>
@@ -31,7 +32,7 @@ $(document).ready(function() {
   }
 
   function create_accordion(active, element) {
-    $("#data h3").click(function(event) {
+    $("#data > h3").click(function(event) {
       if (stop_) {
         event.stopImmediatePropagation();
         event.preventDefault();
