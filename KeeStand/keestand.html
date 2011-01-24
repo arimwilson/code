@@ -21,28 +21,63 @@ function assert(exp, message) {
   }
 }
 
+String.prototype.format = function() {
+  var formatted = this;
+  for (arg in arguments) {
+    formatted = formatted.replace("{" + arg + "}", arguments[arg]);
+  }
+  return formatted;
+};
+
 $(document).ready(function() {
   password_ = "";
+  stop_ = false;
 
   function decrypt(data) {
     assert(password_, "password_ is null.");
     return sjcl.decrypt(password_, data);
   }
 
-  function add_input(input) {
-    $("#data").append(
-        "<h3><a href='#'><input type='text'></a></h3><div>" +
-        "<input type='text'><input type='text'><textarea rows=1 cols=20>" +
-        input[3] + "</textarea><input type='button' value='Delete'></div>");
-    // TODO(ariw): Less hacky way to get around quotes in user fields.
-    var texts = $("#data").find("input:text");
-    texts[0].value = input[0];
-    texts[1].value = input[1];
-    texts[2].value = input[2];
-    $("#data > div:last >:last").click(function() {
-      div = this.parentNode.parentNode;
-      row.parentNode.removeChild(row);
+  function create_accordion(active, element) {
+    $("#data > h3").click(function(event) {
+      if (stop_) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+        stop_ = false;
+      }
     });
+    $("#data").accordion({collapsible: true, active: active})
+              .sortable({axis: "y", handle: "h3",
+                         stop: function() { stop_ = true; }});
+    if (active)
+      $("#data").accordion("options", "active", element);
+  }
+
+  function add_input(input) {
+    var output = $(
+        "<h3><div><span class='header'>" + input[0] + "</span><small><a> edit" +
+        "</a><a> delete</a></small></h3><div><textarea rows=1 cols=20>" +
+        input[1] + "</textarea><textarea rows=1 cols=20>" + input[2] +
+        "</textarea><textarea rows=1 cols=20>" + input[3] + "</textarea>" +
+        "</div>");
+    output.find("a:first").click(function() {
+      var name = prompt("Name?", $(event.srcElement.parentNode).prev().html());
+      if (name !== null)
+        $(event.srcElement.parentNode).prev().html(name);
+      return false;
+    });
+    output.find("a:last").click(function() {
+      var sure = confirm("Are you sure you want to delete this password?");
+      if (sure) {
+        $("#data").accordion("destroy");
+        var div = $(event.srcElement.parentNode.parentNode.parentNode);
+        div.next().remove();
+        div.remove();
+        create_accordion(false);
+      }
+      return false;
+    });
+    return output;
   }
 
   function editor(data) {
@@ -53,10 +88,9 @@ $(document).ready(function() {
       for (j = 0; j < data[i].length; ++j) {
         data[i][j] = unescape(data[i][j]);
       }
-      add_input(data[i]);
+      $("#data").append(add_input(data[i]));
     }
-    $("#data").accordion({collapsible: true, active: false, event: "mouseover"})
-              .sortable({axis: "y", handle: "h3"});
+    create_accordion(false);
   }
 
   // TODO(ariw): Validation on password length/content.
@@ -75,9 +109,9 @@ $(document).ready(function() {
              { username: username, password_hash: password_hash, salt: salt },
              function(data, status) {
                if (status == "success") {
-                 if (data) editor(decrypt(data));
                  $("#login").hide();
                  $("#edit").show();
+                 if (data) editor(decrypt(data));
                }
              });
     });
@@ -85,15 +119,17 @@ $(document).ready(function() {
   });
 
   $("#add_button").click(function() {
-    add_input(["", "", "", ""]);
+    $("#data").accordion("destroy").append(add_input(["", "", "", ""]));
+    create_accordion(true, "h3:last");
   });
 
   function create_csv(input) {
     data = "";
     for (i = 0; i < input.length; i += 4) {
-      data += escape(input[i].value) + "," + escape(input[i + 1].value) + "," +
-              escape(input[i + 2].value) + "," + escape(input[i + 3].value) +
-              "\n";
+      data += escape(input[i].innerHTML) + "," +
+              escape(input[i + 1].value) + "," +
+              escape(input[i + 2].value) + "," +
+              escape(input[i + 3].value) + "\n";
     }
     return data;
   }
@@ -104,7 +140,7 @@ $(document).ready(function() {
   }
 
   $("#save_button").click(function() {
-    input = $("#data").find("input:text,textarea");
+    input = $("#data").find(".header,textarea");
     // TODO(ariw): Don't silently fail.
     $.post("script/save", { passwords: encrypt(create_csv(input)) });
   });
@@ -132,13 +168,13 @@ $(document).ready(function() {
       alert("CSV is empty.");
       return;
     }
-    editor(data);
     $("#import_csv").hide();
     $("#edit").show();
+    editor(data);
   });
 
   $("#export_csv_button").click(function() {
-    input = $("#data").find("input:text,textarea");
+    input = $("#data").find(".header,textarea");
     $("#export_csv_data").remove();
     $("#export_csv").prepend(
         "<div id='export_csv_data'>" +
@@ -186,14 +222,14 @@ Password: <input type="password" name="password" id="password"><br>
 </span>
 <span id="edit" style="display:none">
 <form>
+<div id="data">
+</div>
 <input type="button" value="Add" id="add_button">
 <input type="button" value="Save" id="save_button">
 <input type="button" value="Options" class="options_button">
-<div id="data">
-</div>
 </form>
 </span>
-<span id="options" style=display:none">
+<span id="options" style="display:none">
 <input type="button" value="Back to editing" id="edit_button">
 <input type="button" value="Import from CSV" id="import_csv_button">
 <input type="button" value="Export to CSV" id="export_csv_button">
