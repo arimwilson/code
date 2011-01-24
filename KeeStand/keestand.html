@@ -30,8 +30,8 @@ String.prototype.format = function() {
 };
 
 $(document).ready(function() {
-  password_ = "";
-  stop_ = false;
+  var password_ = "";
+  var stop_ = false;
 
   function decrypt(data) {
     assert(password_, "password_ is null.");
@@ -39,14 +39,14 @@ $(document).ready(function() {
   }
 
   function create_accordion(active, element) {
-    $("#data > h3").click(function(event) {
+    $("#data h3").click(function(event) {
       if (stop_) {
         event.stopImmediatePropagation();
         event.preventDefault();
         stop_ = false;
       }
     });
-    $("#data").accordion({collapsible: true, active: active})
+    $("#data").accordion({collapsible: true, active: active, header: "h3"})
               .sortable({axis: "y", handle: "h3",
                          stop: function() { stop_ = true; }});
     if (active)
@@ -55,7 +55,7 @@ $(document).ready(function() {
 
   function add_input(input) {
     var output = $(
-        "<h3><div><span class='header'>" + input[0] + "</span><small><a> edit" +
+        "<div><h3><span class='header'>" + input[0] + "</span><small><a> edit" +
         "</a><a> delete</a></small></h3><div><textarea rows=1 cols=20>" +
         input[1] + "</textarea><textarea rows=1 cols=20>" + input[2] +
         "</textarea><textarea rows=1 cols=20>" + input[3] + "</textarea>" +
