@@ -21,14 +21,6 @@ function assert(exp, message) {
   }
 }
 
-String.prototype.format = function() {
-  var formatted = this;
-  for (arg in arguments) {
-    formatted = formatted.replace("{" + arg + "}", arguments[arg]);
-  }
-  return formatted;
-};
-
 $(document).ready(function() {
   var password_ = "";
   var stop_ = false;
