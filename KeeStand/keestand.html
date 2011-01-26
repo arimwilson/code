@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="en">
 <head><title>KeeStand</title>
-<link type="text/css" href="css/ui-lightness/jquery-ui-1.8.9.custom.css" rel="Stylesheet" />
+<link type="text/css" href="css/cupertino/jquery-ui-1.8.9.custom.css" rel="Stylesheet" />
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js"></script>
@@ -31,44 +31,41 @@ $(document).ready(function() {
     return sjcl.decrypt(password_, data);
   }
 
-  function create_accordion(active, element) {
-    $("#data > h3").click(function(event) {
+  function create_accordion(active) {
+    $("#data > div > h3").click(function(event) {
       if (stop_) {
         event.stopImmediatePropagation();
         event.preventDefault();
         stop_ = false;
       }
     });
-    $("#data").accordion({collapsible: true, active: active, header: "h3"})
+    $("#data").accordion({collapsible: true, active: active,
+                          header: "> div > h3"})
               .sortable({axis: "y", handle: "h3",
                          stop: function() { stop_ = true; }});
-    if (active)
-      $("#data").accordion("options", "active", element);
   }
 
   function add_input(input) {
     var output = $(
-        "<div><h3><span class='header'>" + input[0] + "</span><small><a> edit" +
-        "</a><a> delete</a></small></h3><div><textarea rows=1 cols=20>" +
-        input[1] + "</textarea><textarea rows=1 cols=20>" + input[2] +
-        "</textarea><textarea rows=1 cols=20>" + input[3] + "</textarea>" +
-        "</div>");
-    output.find("a:first").click(function() {
-      var name = prompt("Name?", $(event.srcElement.parentNode).prev().html());
-      if (name !== null)
-        $(event.srcElement.parentNode).prev().html(name);
-      return false;
+        "<div><h3><a href='#'><span class='org'>" + input[0] + "</span></a>" +
+        "</h3><div><textarea rows=1 cols=20>" + input[1] + "</textarea>" +
+        "<textarea rows=1 cols=20>" + input[2] + "</textarea>" +
+        "<textarea rows=1 cols=20>" + input[3] + "</textarea>" +
+        "<input type='button' value='Delete'></div>");
+    output.find(".org").click(function() {
+      var name = prompt("New name?", $(event.srcElement).html());
+      if (name !== null && name !== "")
+        $(event.srcElement).html(name);
+      event.stopImmediatePropagation();
     });
-    output.find("a:last").click(function() {
-      var sure = confirm("Are you sure you want to delete this password?");
+    output.find("input:button").click(function() {
+      var sure = confirm("Delete this password?");
       if (sure) {
         $("#data").accordion("destroy");
-        var div = $(event.srcElement.parentNode.parentNode.parentNode);
-        div.next().remove();
+        var div = $(event.srcElement.parentNode.parentNode);
         div.remove();
         create_accordion(false);
       }
-      return false;
     });
     return output;
   }
@@ -112,8 +109,9 @@ $(document).ready(function() {
   });
 
   $("#add_button").click(function() {
-    $("#data").accordion("destroy").append(add_input(["", "", "", ""]));
-    create_accordion(true, "h3:last");
+    $("#data").accordion("destroy").append(
+        add_input(["Organization", "Username", "Password", "Notes"]));
+    create_accordion($("#data > div:last > h3"));
   });
 
   function create_csv(input) {
@@ -133,7 +131,7 @@ $(document).ready(function() {
   }
 
   $("#save_button").click(function() {
-    input = $("#data").find(".header,textarea");
+    input = $("#data").find(".org,textarea");
     // TODO(ariw): Don't silently fail.
     $.post("script/save", { passwords: encrypt(create_csv(input)) });
   });
@@ -167,7 +165,7 @@ $(document).ready(function() {
   });
 
   $("#export_csv_button").click(function() {
-    input = $("#data").find(".header,textarea");
+    input = $("#data").find(".org,textarea");
     $("#export_csv_data").remove();
     $("#export_csv").prepend(
         "<div id='export_csv_data'>" +
