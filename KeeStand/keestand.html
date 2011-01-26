@@ -138,6 +138,7 @@ $(document).ready(function() {
 
   $(".options_button").click(function() {
     $("#edit").hide();
+    $("#gen_pw").hide();
     $("#import_csv").hide();
     $("#export_csv").hide();
     $("#options").show();
@@ -146,6 +147,32 @@ $(document).ready(function() {
   $("#edit_button").click(function() {
     $("#options").hide();
     $("#edit").show();
+  });
+
+  function get_random_num(lower, upper) {
+    return (Math.floor(Math.random() * (upper - lower)) + lower);
+  }
+
+  var char_set = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVW" +
+                 "XYZ`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/? ";
+  function get_random_char() {
+    return char_set.charAt(get_random_num(0, char_set.length));
+  }
+
+  function generate_password(length) {
+    password = "";
+    for (i = 0; i < length; ++i) {
+      password += get_random_char();
+    }
+    return password;
+  }
+
+  $("#gen_pw_button").click(function() {
+    $("#gen_pw_data").remove();
+    $("#gen_pw").prepend("<div id='gen_pw_data'>" + generate_password(10) +
+                         "</div>");
+    $("#options").hide();
+    $("#gen_pw").show();
   });
 
   $("#import_csv_button").click(function() {
@@ -167,10 +194,9 @@ $(document).ready(function() {
   $("#export_csv_button").click(function() {
     input = $("#data").find(".org,textarea");
     $("#export_csv_data").remove();
-    $("#export_csv").prepend(
-        "<div id='export_csv_data'>" +
-        create_csv(input).replace(/\n/g, "<br>") +
-        "</div>");
+    $("#export_csv").prepend("<div id='export_csv_data'>" +
+                             create_csv(input).replace(/\n/g, "<br>") +
+                             "</div>");
     $("#options").hide();
     $("#export_csv").show();
   });
@@ -222,9 +248,13 @@ Password: <input type="password" name="password" id="password"><br>
 </span>
 <span id="options" style="display:none">
 <input type="button" value="Back to editing" id="edit_button">
+<input type="button" value="Generate password" id="gen_pw_button">
 <input type="button" value="Import from CSV" id="import_csv_button">
 <input type="button" value="Export to CSV" id="export_csv_button">
 <input type="button" value="Delete account" id="delete_account_button">
+</span>
+<span id="gen_pw" style="display:none">
+<input type="button" value="Back to options" class="options_button">
 </span>
 <span id="import_csv" style="display:none">
 <form><textarea rows=20 cols=80></textarea></form>
