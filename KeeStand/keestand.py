@@ -12,10 +12,18 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 class User(db.Model):
+  # Used to upgrade legacy user authentication / encryption methods if code
+  # changes.
   version = db.IntegerProperty(required = True)
   username = db.StringProperty(required = True)
+  # Salt needed for client to generate authentication hash.
   salt = db.BlobProperty(required = True)
+  # Password hash used for authentication.
   password_hash = db.ByteStringProperty(required = True)
+  # When this user was created.
+  created = db.DateTimeProperty(required = True, auto_now_add = True)
+  # When this user / user's password was last modified.
+  last_modified = db.DateTimeProperty(required = True, auto_now = True)
 
 # We can only store up to 1 megabyte of passwords per datastore entity. So we
 # split up passwords into multiple chunks.
@@ -127,6 +135,8 @@ class SaveHandler(webapp.RequestHandler):
     # Can store exactly 1 << 20 characters in one entity property.
     for chunk in Split(passwords, 1 << 20):
       PasswordChunk(user = user, chunk = db.Blob(chunk)).put()
+    # Update last_modified.
+    user.put()
 
 class DeleteAccountHandler(webapp.RequestHandler):
   def post(self):
