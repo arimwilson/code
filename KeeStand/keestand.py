@@ -128,13 +128,13 @@ class SaveHandler(webapp.RequestHandler):
     if not success:
       self.error(401)
       return
-    if user.passwordchunk_set:
-      for passwordchunk in user.passwordchunk_set:
-        passwordchunk.delete()
+    old_keys = [passwordchunk.key() for passwordchunk in user.passwordchunk_set]
     passwords = Encode(self.request.get("passwords"))
     # Can store exactly 1 << 20 characters in one entity property.
     for chunk in Split(passwords, 1 << 20):
       PasswordChunk(user = user, chunk = db.Blob(chunk)).put()
+    for passwordchunk in PasswordChunk.get(old_keys):
+      passwordchunk.delete()
     # Update last_modified.
     user.put()
 
