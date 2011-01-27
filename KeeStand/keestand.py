@@ -122,6 +122,7 @@ def Split(string, n):
     split.append(string[i:i + n])
   return split
 
+# Save new password file as one datastore transaction.
 def Save(user, password_chunks, old_password_chunks):
   for chunk in password_chunks:
     PasswordChunk(parent = user, user = user, chunk = db.Blob(chunk)).put()
