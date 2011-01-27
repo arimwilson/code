@@ -208,7 +208,8 @@ $(document).ready(function() {
           "Are you really sure you want to delete your account? This action " +
           "cannot be undone!");
       if (really_sure)
-        $.post("script/deleteaccount", {}, function() { location.reload(true); });
+        $.post("script/deleteaccount", {},
+               function() { location.reload(true); });
     }
   });
 });
