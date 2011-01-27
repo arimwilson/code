@@ -4,6 +4,7 @@ runtime: python
 api_version: 1
 
 builtins:
+- remote_api: on
 - datastore_admin: on
 
 handlers:

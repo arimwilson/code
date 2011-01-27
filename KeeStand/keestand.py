@@ -28,8 +28,8 @@ class User(db.Model):
 # We can only store up to 1 megabyte of passwords per datastore entity. So we
 # split up passwords into multiple chunks.
 class PasswordChunk(db.Model):
-  user = db.ReferenceProperty(User)
-  chunk = db.BlobProperty()
+  user = db.ReferenceProperty(User, required = True)
+  chunk = db.BlobProperty(required = True)
 
 class SaltHandler(webapp.RequestHandler):
   def post(self):
@@ -122,21 +122,26 @@ def Split(string, n):
     split.append(string[i:i + n])
   return split
 
+def Save(user, password_chunks, old_password_chunks):
+  for chunk in password_chunks:
+    PasswordChunk(parent = user, user = user, chunk = db.Blob(chunk)).put()
+  for chunk in old_password_chunks:
+    chunk.delete()
+  # Update last_modified.
+  user.put()
+
 class SaveHandler(webapp.RequestHandler):
   def post(self):
     success, user = AuthorizedUser(self.request.cookies)
     if not success:
       self.error(401)
       return
-    old_keys = [passwordchunk.key() for passwordchunk in user.passwordchunk_set]
     passwords = Encode(self.request.get("passwords"))
     # Can store exactly 1 << 20 characters in one entity property.
-    for chunk in Split(passwords, 1 << 20):
-      PasswordChunk(user = user, chunk = db.Blob(chunk)).put()
-    for passwordchunk in PasswordChunk.get(old_keys):
-      passwordchunk.delete()
-    # Update last_modified.
-    user.put()
+    password_chunks = Split(passwords, 1 << 20)
+    old_password_chunks = PasswordChunk.get(
+        [passwordchunk.key() for passwordchunk in user.passwordchunk_set])
+    db.run_in_transaction(Save, user, password_chunks, old_password_chunks)
 
 class DeleteAccountHandler(webapp.RequestHandler):
   def post(self):
@@ -157,4 +162,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-
