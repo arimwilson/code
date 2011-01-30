@@ -28,8 +28,8 @@ class User(db.Model):
 # We can only store up to 1 megabyte of passwords per datastore entity. So we
 # split up passwords into multiple chunks.
 class PasswordChunk(db.Model):
-  user = db.ReferenceProperty(User)
-  chunk = db.BlobProperty()
+  user = db.ReferenceProperty(User, required = True)
+  chunk = db.BlobProperty(required = True)
 
 class SaltHandler(webapp.RequestHandler):
   def post(self):
@@ -122,21 +122,28 @@ def Split(string, n):
     split.append(string[i:i + n])
   return split
 
+# Save new password file as one datastore transaction.
+def Save(user, password_chunks, old_password_chunks):
+  for chunk in password_chunks:
+    PasswordChunk(parent = user, user = user, chunk = db.Blob(chunk)).put()
+  db.delete([chunk for chunk in old_password_chunks])
+  # Update last_modified.
+  user.put()
+
 class SaveHandler(webapp.RequestHandler):
   def post(self):
     success, user = AuthorizedUser(self.request.cookies)
     if not success:
       self.error(401)
       return
-    if user.passwordchunk_set:
-      for passwordchunk in user.passwordchunk_set:
-        passwordchunk.delete()
     passwords = Encode(self.request.get("passwords"))
     # Can store exactly 1 << 20 characters in one entity property.
-    for chunk in Split(passwords, 1 << 20):
-      PasswordChunk(user = user, chunk = db.Blob(chunk)).put()
-    # Update last_modified.
-    user.put()
+    password_chunks = Split(passwords, 1 << 20)
+    old_password_chunks = [chunk for chunk in user.passwordchunk_set]
+    db.run_in_transaction(Save, user, password_chunks, old_password_chunks)
+
+def DeleteAccount(password_chunks, user):
+  db.delete([chunk for chunk in password_chunks] + [user])
 
 class DeleteAccountHandler(webapp.RequestHandler):
   def post(self):
@@ -144,7 +151,8 @@ class DeleteAccountHandler(webapp.RequestHandler):
     if not success:
       self.error(401)
       return
-    db.delete([chunk for chunk in user.passwordchunk_set] + [user])
+    password_chunks = [chunk for chunk in user.passwordchunk_set]
+    db.run_in_transaction(DeleteAccount, password_chunks, user)
 
 def main():
   application = webapp.WSGIApplication([
@@ -157,4 +165,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-

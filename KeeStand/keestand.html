@@ -52,17 +52,19 @@ $(document).ready(function() {
         "<textarea rows=1 cols=20>" + input[2] + "</textarea>" +
         "<textarea rows=1 cols=20>" + input[3] + "</textarea>" +
         "<input type='button' value='Delete'></div>");
-    output.find(".org").click(function() {
-      var name = prompt("New name?", $(event.srcElement).html());
+    output.find(".org").click(function(event) {
+      var srcElement = event.srcElement? $(event.srcElement): $(event.target);
+      var name = prompt("New name?", srcElement.html());
       if (name !== null && name !== "")
-        $(event.srcElement).html(name);
+        srcElement.html(name);
       event.stopImmediatePropagation();
     });
-    output.find("input:button").click(function() {
+    output.find("input:button").click(function(event) {
       var sure = confirm("Delete this password?");
       if (sure) {
         $("#data").accordion("destroy");
-        var div = $(event.srcElement.parentNode.parentNode);
+        var srcElement = event.srcElement? event.srcElement: event.target;
+        var div = $(srcElement.parentNode.parentNode);
         div.remove();
         create_accordion(false);
       }
@@ -208,7 +210,8 @@ $(document).ready(function() {
           "Are you really sure you want to delete your account? This action " +
           "cannot be undone!");
       if (really_sure)
-        $.post("script/deleteaccount", {}, function() { location.reload(true); });
+        $.post("script/deleteaccount", {},
+               function() { location.reload(true); });
     }
   });
 });
