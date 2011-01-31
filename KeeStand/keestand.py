@@ -72,9 +72,8 @@ class LoginHandler(webapp.RequestHandler):
       self.error(401)
       return
     elif user:  # Existing user, success.
-      chunks = sorted([chunk for chunk in user.passwordchunk_set],
-                      key = lambda chunk: chunk.index)
-      passwords = "".join(chunks)
+      chunks = sorted(user.passwordchunk_set, key = lambda chunk: chunk.index)
+      passwords = "".join([chunk.chunk for chunk in chunks])
     if passwords:  # Existing data.
       self.response.out.write(Decode(passwords))
     else:  # New user.
