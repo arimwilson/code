@@ -139,8 +139,8 @@ class SaveHandler(webapp.RequestHandler):
       self.error(401)
       return
     passwords = Encode(self.request.get("passwords"))
-    # Can store exactly 1 << 20 characters in one entity property.
-    password_chunks = Split(passwords, 1 << 20)
+    # Can store at least 10 ** 6 bytes in one entity property.
+    password_chunks = Split(passwords, 10 ** 6)
     old_password_chunks = [chunk for chunk in user.passwordchunk_set]
     db.run_in_transaction(Save, user, password_chunks, old_password_chunks)
 
