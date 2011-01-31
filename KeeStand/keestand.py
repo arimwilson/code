@@ -29,6 +29,7 @@ class User(db.Model):
 # split up passwords into multiple chunks.
 class PasswordChunk(db.Model):
   user = db.ReferenceProperty(User, required = True)
+  index = db.IntegerProperty(required = True)
   chunk = db.BlobProperty(required = True)
 
 class SaltHandler(webapp.RequestHandler):
@@ -71,10 +72,11 @@ class LoginHandler(webapp.RequestHandler):
       self.error(401)
       return
     elif user:  # Existing user, success.
-        passwords = "".join(
-            [str(chunk.chunk) for chunk in user.passwordchunk_set])
-        if passwords:  # Existing data.
-          self.response.out.write(Decode(passwords))
+      chunks = sorted([chunk for chunk in user.passwordchunk_set],
+                      key = lambda chunk: chunk.index)
+      passwords = "".join(chunks)
+    if passwords:  # Existing data.
+      self.response.out.write(Decode(passwords))
     else:  # New user.
       salt = self.request.get("salt")
       assert salt
@@ -124,8 +126,9 @@ def Split(string, n):
 
 # Save new password file as one datastore transaction.
 def Save(user, password_chunks, old_password_chunks):
-  for chunk in password_chunks:
-    PasswordChunk(parent = user, user = user, chunk = db.Blob(chunk)).put()
+  for index, chunk in enumerate(password_chunks):
+    PasswordChunk(parent = user, user = user, index = index,
+                  chunk = db.Blob(chunk)).put()
   db.delete([chunk for chunk in old_password_chunks])
   # Update last_modified.
   user.put()
