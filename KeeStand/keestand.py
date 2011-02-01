@@ -72,9 +72,8 @@ class LoginHandler(webapp.RequestHandler):
       self.error(401)
       return
     elif user:  # Existing user, success.
-      chunks = sorted([chunk for chunk in user.passwordchunk_set],
-                      key = lambda chunk: chunk.index)
-      passwords = "".join(chunks)
+      chunks = sorted(user.passwordchunk_set, key = lambda chunk: chunk.index)
+      passwords = "".join([chunk.chunk for chunk in chunks])
     if passwords:  # Existing data.
       self.response.out.write(Decode(passwords))
     else:  # New user.
@@ -140,8 +139,8 @@ class SaveHandler(webapp.RequestHandler):
       self.error(401)
       return
     passwords = Encode(self.request.get("passwords"))
-    # Can store exactly 1 << 20 characters in one entity property.
-    password_chunks = Split(passwords, 1 << 20)
+    # Can store at least 10 ** 6 bytes in one entity property.
+    password_chunks = Split(passwords, 10 ** 6)
     old_password_chunks = [chunk for chunk in user.passwordchunk_set]
     db.run_in_transaction(Save, user, password_chunks, old_password_chunks)
 
