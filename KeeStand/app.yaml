@@ -8,6 +8,8 @@ builtins:
 - datastore_admin: on
 
 handlers:
+- url: /favicon.ico
+  static_files: favicon.ico
 - url: /css
   static_dir: css
   secure: always
