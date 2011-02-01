@@ -10,6 +10,8 @@ builtins:
 handlers:
 - url: /favicon.ico
   static_files: favicon.ico
+  upload: favicon.cio
+  secure: always
 - url: /css
   static_dir: css
   secure: always
