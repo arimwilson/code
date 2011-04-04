@@ -3,12 +3,12 @@
 
 package main
 
-import ("bufio"; "flag"; "fmt"; "os";)
+import ("bufio"; "flag"; "fmt"; "os"; "strings")
 
-var wordList = flag.String("w", "",
-                           "File with space-separated list of legal words.")
-var board = flag.String("b", "", "File with board structure.")
-var tiles = flag.String("t", "", "Comma-separated list of player tiles.")
+var wordListFlag = flag.String("w", "",
+                               "File with space-separated list of legal words.")
+var boardFlag = flag.String("b", "", "File with board structure.")
+var tilesFlag = flag.String("t", "", "Comma-separated list of player tiles.")
 
 func readWordList(wordListFile* os.File) {
   wordListReader := bufio.NewReader(wordListFile)
@@ -17,28 +17,41 @@ func readWordList(wordListFile* os.File) {
     if err != nil {
       return
     }
-    fmt.Printf(word + "\n")
+    // TODO(ariw): Read into trie.
   }
 }
 
-func readBoard(boardFile* os.File) {
-  
+func readBoard(boardFile* os.File) board byte[][] {
+  var board [15][15]byte
+  for i = 0; i < 15; ++i {
+    nr, err := boardFile.Read(board[i])
+    if err != nil {
+      os.Exit(1)
+    }
+    _, err := boardFile.Seek(1, 1)
+    if err != nil {
+      os.Exit(1)
+    }
+  }
+  return board
 }
 
 func main() {
   flag.Parse()
-  wordListFile, err := os.Open(*wordList, os.O_RDONLY, 0);
+  wordListFile, err := os.Open(*wordListFlag, os.O_RDONLY, 0);
   defer wordListFile.Close();
   if err != nil {
     fmt.Printf("need valid file for -w, found %s", *wordList)
     os.Exit(1)
   }
   readWordList(wordListFile)
-  boardFile, err := os.Open(*board, os.O_RDONLY, 0);
+  boardFile, err := os.Open(*boardFlag, os.O_RDONLY, 0);
   defer boardFile.Close();
   if err != nil {
     fmt.Printf("need valid file for -b, found %s", *board)
     os.Exit(1)
   }
-  readBoard(boardFile)
+  board := readBoard(boardFile)
+  tiles := strings.Split(*tilesFlag, ",", -1)
 }
+
