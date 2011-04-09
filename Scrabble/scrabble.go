@@ -10,22 +10,29 @@ var wordListFlag = flag.String("w", "",
 var boardFlag = flag.String("b", "", "File with board structure.")
 var tilesFlag = flag.String("t", "", "Comma-separated list of player tiles.")
 
-/*
 type Trie struct {
   Terminal bool
-  Children Trie[]
+  Character string
+  Children []*Trie
 }
-*/
 
-func readWordList(wordListFile* os.File) {
+func (trie Trie) Insert(Word string) {
+}
+
+func (trie Trie) Find(Word string) (bool) {
+  return false
+}
+
+func readWordList(wordListFile* os.File) (dict Trie) {
   wordListReader := bufio.NewReader(wordListFile)
   for {
-    _, err := wordListReader.ReadString(" "[0])
+    word, err := wordListReader.ReadString(" "[0])
     if err != nil {
       return
     }
-    // TODO(ariw): Read into trie.
+    dict.Insert(word)
   }
+  return
 }
 
 func readBoard(boardFile* os.File) (board [15][15]byte) {
@@ -39,7 +46,7 @@ func readBoard(boardFile* os.File) (board [15][15]byte) {
       os.Exit(1)
     }
   }
-  return board
+  return
 }
 
 func main() {
