@@ -10,10 +10,17 @@ var wordListFlag = flag.String("w", "",
 var boardFlag = flag.String("b", "", "File with board structure.")
 var tilesFlag = flag.String("t", "", "Comma-separated list of player tiles.")
 
+/*
+type Trie struct {
+  Terminal bool
+  Children Trie[]
+}
+*/
+
 func readWordList(wordListFile* os.File) {
   wordListReader := bufio.NewReader(wordListFile)
   for {
-    word, err := wordListReader.ReadString(" "[0])
+    _, err := wordListReader.ReadString(" "[0])
     if err != nil {
       return
     }
@@ -21,14 +28,13 @@ func readWordList(wordListFile* os.File) {
   }
 }
 
-func readBoard(boardFile* os.File) board byte[][] {
-  var board [15][15]byte
-  for i = 0; i < 15; ++i {
-    nr, err := boardFile.Read(board[i])
+func readBoard(boardFile* os.File) (board [15][15]byte) {
+  for i := 0; i < 15; i++ {
+    _, err := boardFile.Read(board[i][:])
     if err != nil {
       os.Exit(1)
     }
-    _, err := boardFile.Seek(1, 1)
+    _, err = boardFile.Seek(1, 1)
     if err != nil {
       os.Exit(1)
     }
@@ -41,17 +47,17 @@ func main() {
   wordListFile, err := os.Open(*wordListFlag, os.O_RDONLY, 0);
   defer wordListFile.Close();
   if err != nil {
-    fmt.Printf("need valid file for -w, found %s", *wordList)
+    fmt.Printf("need valid file for -w, found %s", *wordListFlag)
     os.Exit(1)
   }
   readWordList(wordListFile)
   boardFile, err := os.Open(*boardFlag, os.O_RDONLY, 0);
   defer boardFile.Close();
   if err != nil {
-    fmt.Printf("need valid file for -b, found %s", *board)
+    fmt.Printf("need valid file for -b, found %s", *boardFlag)
     os.Exit(1)
   }
-  board := readBoard(boardFile)
-  tiles := strings.Split(*tilesFlag, ",", -1)
+  readBoard(boardFile)
+  strings.Split(*tilesFlag, ",", -1)
 }
 
