@@ -14,28 +14,28 @@ func New() *Trie {
 	return trie
 }
 
-func (trie* Trie) Insert(word string) {
+func (self* Trie) Insert(word string) {
   if len(word) == 0 {
-    trie.terminal = true
+    self.terminal = true
     return
   }
-  child, ok := trie.children[word[0]]
+  child, ok := self.children[word[0]]
   if !ok {
     child = New()
-    trie.children[word[0]] = child
+    self.children[word[0]] = child
   }
   child.Insert(word[1:])
 }
 
-func (trie* Trie) Find(word string) (bool) {
+func (self* Trie) Find(word string) bool {
   if len(word) == 0 {
-    if trie.terminal {
+    if self.terminal {
       return true
     } else {
       return false
     }
   }
-  child, ok := trie.children[word[0]]
+  child, ok := self.children[word[0]]
   if ok {
     return child.Find(word[1:])
   }

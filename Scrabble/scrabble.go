@@ -3,18 +3,17 @@
 
 package main
 
-import ("bufio"; "flag"; "fmt"; "os"; "strings"; "./trie")
+import ("bufio"; "flag"; "fmt"; "os"; "sort"; "strings"; "./trie")
 
 var wordListFlag = flag.String("w", "",
                                "File with space-separated list of legal words.")
 var boardFlag = flag.String("b", "", "File with board structure.")
 var tilesFlag = flag.String("t", "", "Comma-separated list of player tiles.")
 
-type Direction int
-const {
+type Direction int; const (
   RIGHT = iota
   DOWN
-}
+)
 
 type Location struct {
   x int
@@ -28,7 +27,26 @@ type Move struct {
   direction Direction
 }
 
-func readWordList(wordListFile* os.File) (dict *trie.Trie) {
+type Moves struct {
+  moves []Move
+}
+
+func (self Moves) Len() int {
+  return len(self.moves)
+}
+
+func (self Moves) Less(i, j int) bool {
+  // Want highest-scoring moves sorted first.
+  return self.moves[i].score > self.moves[j].score
+}
+
+func (self Moves) Swap(i, j int) {
+  temp := self.moves[j]
+  self.moves[j] = self.moves[i]
+  self.moves[i] = temp
+}
+
+func readWordList(wordListFile* os.File) (dict* trie.Trie) {
   wordListReader := bufio.NewReader(wordListFile)
   dict = trie.New()
   for {
@@ -41,9 +59,11 @@ func readWordList(wordListFile* os.File) (dict *trie.Trie) {
   return
 }
 
-func readBoard(boardFile* os.File) (board [15][15]byte) {
+func readBoard(boardFile* os.File) (board [][]byte) {
+  board = make([][]byte, 15)
   for i := 0; i < 15; i++ {
-    _, err := boardFile.Read(board[i][:])
+    board[i] = make([]byte, 15)
+    _, err := boardFile.Read(board[i])
     if err != nil {
       os.Exit(1)
     }
@@ -55,7 +75,8 @@ func readBoard(boardFile* os.File) (board [15][15]byte) {
   return
 }
 
-func getMoveList(dict *trie.Trie, board [15[15]byte) (moves []Move) {
+func getMoveList(dict* trie.Trie, board [][]byte,
+                 tiles []string) (moves Moves) {
   return
 }
 
@@ -80,7 +101,13 @@ func main() {
   }
   dict := readWordList(wordListFile)
   board := readBoard(boardFile)
-  getMoveList(dict, board)
-  // TODO(ariw): Sort by score, print out move list.
+  moves := getMoveList(dict, board, tiles)
+  sort.Sort(moves)
+  for i := 0; i < moves.Len(); i++ {
+    move := moves.moves[i]
+    fmt.Printf("%d. %s, worth %d points, starting at %d, %d, going %d.",
+               i, move.word, move.score, move.start.x, move.start.y,
+               move.direction)
+  }
 }
 
