@@ -14,7 +14,7 @@ func New() *Trie {
 	return trie
 }
 
-func (trie *Trie) Insert(word string) {
+func (trie* Trie) Insert(word string) {
   if len(word) == 0 {
     trie.terminal = true
     return
@@ -27,7 +27,7 @@ func (trie *Trie) Insert(word string) {
   child.Insert(word[1:])
 }
 
-func (trie *Trie) Find(word string) (bool) {
+func (trie* Trie) Find(word string) (bool) {
   if len(word) == 0 {
     if trie.terminal {
       return true
