@@ -3,41 +3,41 @@
 package trie
 
 type Trie struct {
-  Terminal bool
-  Children map[byte]*Trie
+  terminal bool
+  children map[byte]*Trie
 }
 
 func New() *Trie {
   trie := new(Trie)
-  trie.Terminal = false
-	trie.Children = make(map[byte]*Trie)
+  trie.terminal = false
+	trie.children = make(map[byte]*Trie)
 	return trie
 }
 
-func (trie *Trie) Insert(Word string) {
-  if len(Word) == 0 {
-    trie.Terminal = true
+func (trie *Trie) Insert(word string) {
+  if len(word) == 0 {
+    trie.terminal = true
     return
   }
-  child, ok := trie.Children[Word[0]]
+  child, ok := trie.children[word[0]]
   if !ok {
     child = New()
-    trie.Children[Word[0]] = child
+    trie.children[word[0]] = child
   }
-  child.Insert(Word[1:])
+  child.Insert(word[1:])
 }
 
-func (trie *Trie) Find(Word string) (bool) {
-  if len(Word) == 0 {
-    if trie.Terminal {
+func (trie *Trie) Find(word string) (bool) {
+  if len(word) == 0 {
+    if trie.terminal {
       return true
     } else {
       return false
     }
   }
-  child, ok := trie.Children[Word[0]]
+  child, ok := trie.children[word[0]]
   if ok {
-    return child.Find(Word[1:])
+    return child.Find(word[1:])
   }
   return false
 }
