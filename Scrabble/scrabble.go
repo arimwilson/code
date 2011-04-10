@@ -35,6 +35,10 @@ func (self Moves) Len() int {
   return len(self.moves)
 }
 
+func (self Moves) Get(i int) Move {
+  return self.moves[i]
+}
+
 func (self Moves) Less(i, j int) bool {
   // Want highest-scoring moves sorted first.
   return self.moves[i].score > self.moves[j].score
@@ -104,7 +108,7 @@ func main() {
   moves := getMoveList(dict, board, tiles)
   sort.Sort(moves)
   for i := 0; i < moves.Len(); i++ {
-    move := moves.moves[i]
+    move := moves.Get(i)
     fmt.Printf("%d. %s, worth %d points, starting at %d, %d, going %d.",
                i, move.word, move.score, move.start.x, move.start.y,
                move.direction)

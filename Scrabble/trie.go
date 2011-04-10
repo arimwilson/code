@@ -9,7 +9,6 @@ type Trie struct {
 
 func New() *Trie {
   trie := new(Trie)
-  trie.terminal = false
 	trie.children = make(map[byte]*Trie)
 	return trie
 }
