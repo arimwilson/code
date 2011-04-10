@@ -3,34 +3,22 @@
 
 package main
 
-import ("bufio"; "flag"; "fmt"; "os"; "strings")
+import ("bufio"; "flag"; "fmt"; "os"; "strings"; "./trie")
 
 var wordListFlag = flag.String("w", "",
                                "File with space-separated list of legal words.")
 var boardFlag = flag.String("b", "", "File with board structure.")
 var tilesFlag = flag.String("t", "", "Comma-separated list of player tiles.")
 
-type Trie struct {
-  Terminal bool
-  Character string
-  Children []*Trie
-}
-
-func (trie Trie) Insert(Word string) {
-}
-
-func (trie Trie) Find(Word string) (bool) {
-  return false
-}
-
-func readWordList(wordListFile* os.File) (dict Trie) {
+func readWordList(wordListFile* os.File) (dict *trie.Trie) {
   wordListReader := bufio.NewReader(wordListFile)
+  dict = trie.New()
   for {
     word, err := wordListReader.ReadString(" "[0])
     if err != nil {
       return
     }
-    dict.Insert(word)
+    dict.Insert(strings.TrimSpace(word))
   }
   return
 }
