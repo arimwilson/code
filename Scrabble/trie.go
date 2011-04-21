@@ -9,8 +9,8 @@ type Trie struct {
 
 func New() *Trie {
   trie := new(Trie)
-	trie.children = make(map[byte]*Trie)
-	return trie
+  trie.children = make(map[byte]*Trie)
+  return trie
 }
 
 func (self* Trie) Insert(word string) {

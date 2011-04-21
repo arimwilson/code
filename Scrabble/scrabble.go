@@ -3,52 +3,12 @@
 
 package main
 
-import ("bufio"; "flag"; "fmt"; "os"; "sort"; "strings"; "./trie")
+import ("bufio"; "flag"; "fmt"; "os"; "sort"; "strings"; "./moves"; "./trie")
 
 var wordListFlag = flag.String("w", "",
                                "File with space-separated list of legal words.")
 var boardFlag = flag.String("b", "", "File with board structure.")
 var tilesFlag = flag.String("t", "", "Comma-separated list of player tiles.")
-
-type Direction int; const (
-  RIGHT = iota
-  DOWN
-)
-
-type Location struct {
-  x int
-  y int
-}
-
-type Move struct {
-  word string
-  score int
-  start Location
-  direction Direction
-}
-
-type Moves struct {
-  moves []Move
-}
-
-func (self Moves) Len() int {
-  return len(self.moves)
-}
-
-func (self Moves) Get(i int) Move {
-  return self.moves[i]
-}
-
-func (self Moves) Less(i, j int) bool {
-  // Want highest-scoring moves sorted first.
-  return self.moves[i].score > self.moves[j].score
-}
-
-func (self Moves) Swap(i, j int) {
-  temp := self.moves[j]
-  self.moves[j] = self.moves[i]
-  self.moves[i] = temp
-}
 
 func readWordList(wordListFile* os.File) (dict* trie.Trie) {
   wordListReader := bufio.NewReader(wordListFile)
@@ -80,7 +40,7 @@ func readBoard(boardFile* os.File) (board [][]byte) {
 }
 
 func getMoveList(dict* trie.Trie, board [][]byte,
-                 tiles []string) (moves Moves) {
+                 tiles []string) (moveList moves.Moves) {
   return
 }
 
@@ -105,13 +65,13 @@ func main() {
   }
   dict := readWordList(wordListFile)
   board := readBoard(boardFile)
-  moves := getMoveList(dict, board, tiles)
-  sort.Sort(moves)
-  for i := 0; i < moves.Len(); i++ {
-    move := moves.Get(i)
+  moveList := getMoveList(dict, board, tiles)
+  sort.Sort(moveList)
+  for i := 0; i < moveList.Len(); i++ {
+    move := moveList[i]
     fmt.Printf("%d. %s, worth %d points, starting at %d, %d, going %d.",
-               i, move.word, move.score, move.start.x, move.start.y,
-               move.direction)
+               i, move.Word, move.Score, move.Start.X, move.Start.Y,
+               move.Direction)
   }
 }
 
