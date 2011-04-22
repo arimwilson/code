@@ -3,7 +3,8 @@
 
 package main
 
-import ("bufio"; "flag"; "fmt"; "os"; "sort"; "strings"; "./moves"; "./trie")
+import ("bufio"; "container/vector"; "flag"; "fmt"; "os"; "strings";
+        "./moves"; "./sortwith"; "./trie")
 
 var wordListFlag = flag.String("w", "",
                                "File with space-separated list of legal words.")
@@ -23,10 +24,12 @@ func readWordList(wordListFile* os.File) (dict* trie.Trie) {
   return
 }
 
+const boardSize = 15
+
 func readBoard(boardFile* os.File) (board [][]byte) {
-  board = make([][]byte, 15)
-  for i := 0; i < 15; i++ {
-    board[i] = make([]byte, 15)
+  board = make([][]byte, boardSize)
+  for i := 0; i < boardSize; i++ {
+    board[i] = make([]byte, boardSize)
     _, err := boardFile.Read(board[i])
     if err != nil {
       os.Exit(1)
@@ -39,8 +42,33 @@ func readBoard(boardFile* os.File) (board [][]byte) {
   return
 }
 
+func printBoard(board [][]byte) {
+  for i := 0; i < boardSize; i++ {
+    for j := 0; j < boardSize; j++ {
+      fmt.Printf("%c", board[i][j])
+    }
+    fmt.Printf("\n")
+  }
+}
+
+func transpose(board [][]byte) (transposedBoard [][]byte) {
+  transposedBoard = make([][]byte, boardSize)
+  for i := 0; i < boardSize; i++ {
+    transposedBoard[i] = make([]byte, boardSize)
+    copy(transposedBoard[i], board[i])
+  }
+  for i := 0; i < boardSize; i++ {
+    for j := 0; j < i; j++ {
+      transposedBoard[i][j], transposedBoard[j][i] =
+          transposedBoard[j][i], transposedBoard[i][j]
+    }
+  }
+  return transposedBoard
+}
+
 func getMoveList(dict* trie.Trie, board [][]byte,
-                 tiles []string) (moveList moves.Moves) {
+                 tiles []string) (moveList vector.Vector) {
+  transposedBoard := transpose(board)
   return
 }
 
@@ -66,9 +94,9 @@ func main() {
   dict := readWordList(wordListFile)
   board := readBoard(boardFile)
   moveList := getMoveList(dict, board, tiles)
-  sort.Sort(moveList)
+  sortwith.SortWith(moveList, moves.Less)
   for i := 0; i < moveList.Len(); i++ {
-    move := moveList[i]
+    move := moveList.At(i).(moves.Move)
     fmt.Printf("%d. %s, worth %d points, starting at %d, %d, going %d.",
                i, move.Word, move.Score, move.Start.X, move.Start.Y,
                move.Direction)

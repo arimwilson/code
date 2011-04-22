@@ -1,5 +1,4 @@
-// Move data structures to keep track of valid moves. Moves data structure is
-// effectively a set.
+// Move data structures to keep track of valid moves.
 
 package moves
 
@@ -20,17 +19,8 @@ type Move struct {
   Direction Direction
 }
 
-type Moves []Move
-
-func (self Moves) Len() int {
-  return len(self)
-}
-
-func (self Moves) Less(i, j int) bool {
-  return self[i].Score < self[j].Score
-}
-
-func (self Moves) Swap(i, j int) {
-  self[i], self[j] = self[j], self[i]
+// Used to sort vectors of Move objects by score.
+func Less(a, b interface{}) bool {
+  return a.(Move).Score < b.(Move).Score
 }
 
