@@ -1,4 +1,4 @@
-// Basic trie data structure.
+// Basic trie data structure with additional Scrabble functionality.
 
 package trie
 
@@ -39,5 +39,23 @@ func (self* Trie) Find(word string) bool {
     return child.Find(word[1:])
   }
   return false
+}
+
+// Return a list of characters that follow the given prefix.
+func (self* Trie) Following(prefix string) (following []byte) {
+  cur := self
+  for i := 0; i < len(prefix); i++ {
+    cur = cur.children[prefix[i]]
+    if cur == nil {
+      return
+    }
+  }
+  following = make([]byte, len(cur.children))
+  i := 0
+  for key, _ := range(cur.children) {
+    following[i] = key
+    i++
+  }
+  return
 }
 
