@@ -11,9 +11,9 @@ var wordListFlag = flag.String(
     "File with space-separated list of legal words, in upper-case.")
 var boardFlag = flag.String(
     "b", "",
-    "File with board structure. Format: * indicates starting point, 1 and 2 "
-    "indicate double and triple word score tiles, 3 and 4 indicate double and "
-    "triple letter score tiles, - indicates blank tiles, and upper-case "
+    "File with board structure. Format: * indicates starting point, 1 and 2 " +
+    "indicate double and triple word score tiles, 3 and 4 indicate double " +
+    "and triple letter score tiles, - indicates blank tiles, and upper-case " +
     "letters indicate existing words.")
 var tilesFlag = flag.String(
     "t", "", "List of all 7 player tiles, in lower-case.")
@@ -70,19 +70,26 @@ func transpose(board [][]byte) (transposedBoard [][]byte) {
           transposedBoard[j][i], transposedBoard[i][j]
     }
   }
-  return transposedBoard
+  return
 }
 
-func getMoveList(dict* trie.Trie, board [][]byte,
-                 tiles string) (moveList vector.Vector) {
+func getMoveList(dict *trie.Trie, board [][]byte,
+                 tiles *string) (moveList vector.Vector) {
   // Look for lowercase characters as well as * on the board.
   for i := 0; i < boardSize; i++ {
     for j := 0; j < boardSize; j++ {
-      if (board[i][j] >= 'a' and board[i][j] <= 'z') or board[i][j] == '*' {
-      
+      tile := board[i][j]
+      if (tile >= 'a' && tile <= 'z') || tile == '*' {
+        moveList.AppendVector(
+            extendLeft(dict, &moves.Location{i, j}, board, *tiles))
       }
     }
   }
+  return
+}
+
+func extendLeft(dict *trie.Trie, location *moves.Location, board [][]byte,
+                tiles string) (moveList *vector.Vector) {
   return
 }
 
@@ -109,13 +116,13 @@ func main() {
     os.Exit(1)
   }
   if len(*tilesFlag) != 7 {
-    fmt.Printf("need 7 tiles in -t, found %d\n", len(tiles))
+    fmt.Printf("need 7 tiles in -t, found %d\n", len(*tilesFlag))
     os.Exit(1)
   }
   dict := readWordList(wordListFile)
   board := readBoard(boardFile)
-  moveList := getMoveList(dict, board, tiles)
-  downMoveList := getMoveList(dict, transpose(board), tiles)
+  moveList := getMoveList(dict, board, tilesFlag)
+  downMoveList := getMoveList(dict, transpose(board), tilesFlag)
   setDirection(moves.RIGHT, &moveList)
   setDirection(moves.DOWN, &downMoveList)
   moveList.AppendVector(&downMoveList)
