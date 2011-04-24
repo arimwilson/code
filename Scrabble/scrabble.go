@@ -6,10 +6,17 @@ package main
 import ("bufio"; "container/vector"; "flag"; "fmt"; "os"; "strings";
         "./moves"; "./sortwith"; "./trie")
 
-var wordListFlag = flag.String("w", "",
-                               "File with space-separated list of legal words.")
-var boardFlag = flag.String("b", "", "File with board structure.")
-var tilesFlag = flag.String("t", "", "Comma-separated list of player tiles.")
+var wordListFlag = flag.String(
+    "w", "",
+    "File with space-separated list of legal words, in upper-case.")
+var boardFlag = flag.String(
+    "b", "",
+    "File with board structure. Format: * indicates starting point, 1 and 2 "
+    "indicate double and triple word score tiles, 3 and 4 indicate double and "
+    "triple letter score tiles, - indicates blank tiles, and upper-case "
+    "letters indicate existing words.")
+var tilesFlag = flag.String(
+    "t", "", "List of all 7 player tiles, in lower-case.")
 
 func readWordList(wordListFile* os.File) (dict* trie.Trie) {
   wordListReader := bufio.NewReader(wordListFile)
@@ -67,9 +74,24 @@ func transpose(board [][]byte) (transposedBoard [][]byte) {
 }
 
 func getMoveList(dict* trie.Trie, board [][]byte,
-                 tiles []string) (moveList vector.Vector) {
-  transposedBoard := transpose(board)
+                 tiles string) (moveList vector.Vector) {
+  // Look for lowercase characters as well as * on the board.
+  for i := 0; i < boardSize; i++ {
+    for j := 0; j < boardSize; j++ {
+      if (board[i][j] >= 'a' and board[i][j] <= 'z') or board[i][j] == '*' {
+      
+      }
+    }
+  }
   return
+}
+
+func setDirection(direction moves.Direction, moveList *vector.Vector) {
+  for i := 0; i < moveList.Len(); i++ {
+    move := moveList.At(i).(moves.Move)
+    move.Direction = direction
+    moveList.Set(i, move)
+  }
 }
 
 func main() {
@@ -86,14 +108,17 @@ func main() {
     fmt.Printf("need valid file for -b, found %s\n", *boardFlag)
     os.Exit(1)
   }
-  tiles := strings.Split(*tilesFlag, ",", -1)
-  if len(tiles) != 7 {
+  if len(*tilesFlag) != 7 {
     fmt.Printf("need 7 tiles in -t, found %d\n", len(tiles))
     os.Exit(1)
   }
   dict := readWordList(wordListFile)
   board := readBoard(boardFile)
   moveList := getMoveList(dict, board, tiles)
+  downMoveList := getMoveList(dict, transpose(board), tiles)
+  setDirection(moves.RIGHT, &moveList)
+  setDirection(moves.DOWN, &downMoveList)
+  moveList.AppendVector(&downMoveList)
   sortwith.SortWith(moveList, moves.Less)
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)
