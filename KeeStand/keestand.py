@@ -74,8 +74,8 @@ class LoginHandler(webapp.RequestHandler):
     elif user:  # Existing user, success.
       chunks = sorted(user.passwordchunk_set, key = lambda chunk: chunk.index)
       passwords = "".join([chunk.chunk for chunk in chunks])
-    if passwords:  # Existing data.
-      self.response.out.write(Decode(passwords))
+      if passwords:  # Existing data.
+        self.response.out.write(Decode(passwords))
     else:  # New user.
       salt = self.request.get("salt")
       assert salt
