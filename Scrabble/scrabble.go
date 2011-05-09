@@ -5,7 +5,7 @@
 
 package main
 
-import ("bufio"; "container/vector"; "flag"; "fmt"; "os"; "strings";
+import ("container/vector"; "flag"; "fmt"; "os";
         "./moves"; "./sortwith"; "./trie"; "./util")
 
 var wordListFlag = flag.String(
@@ -48,40 +48,43 @@ func existing(board [][]byte, location *moves.Location) bool {
 }
 
 func getTilesInFollowing(dict *trie.Trie, prefix string,
-                         tiles []byte) (tilesInFollowing []byte) {
+                         tiles map[byte] bool) (tilesInFollowing []byte) {
   following := dict.Following(prefix)
   tilesInFollowing = make([]byte, 0, len(following))
   k := 0
   for i := 0; i < len(following); i++ {
-    for j := 0; j < len(tiles); j++ {
-      if following[i] == tiles[j] {
-        tilesInFollowing = tilesInFollowing[:k + 1]
-        tilesInFollowing[k] = following[i]
-        k++
-      }
+    _, present := tiles[following[i]]
+    if present {
+      tilesInFollowing = tilesInFollowing[:k + 1]
+      tilesInFollowing[k] = following[i]
+      k++
     }
   }
   return
 }
 
 func placeTile(dict* trie.Trie, location *moves.Location, board [][]byte,
-               tiles map[byte] bool) bool {
+               tile byte, tiles map[byte] bool) bool {
   // Ensure that location for tile is vertically valid.
-  i := location.Y - 1
+  /*i := location.Y - 1
   for ; existing(board, &moves.Location({location.X, i})); i--
-  i++
+  i++*/
+  return false
 }
 
 func extendRight(dict* trie.Trie, start *moves.Location, board [][]byte,
-                 tiles []byte) (moveList *vector.Vector) {
+                 tiles map[byte] bool) (moveList *vector.Vector) {
   if (start.Y > util.BOARD_SIZE) {
     return
   }
 
-  prefix = ""
+  prefix := ""
   i := 0
-  for ; start.X + i < util.BOARD_SIZE && existing(board[start.X][start.Y + i]); i++ {
+  /*
+  for ; start.X + i < util.BOARD_SIZE && existing(board[start.X][start.Y + i]);
+      i++ {
   }
+  */
   prefix = string(board[start.X][start.X : start.X + i])
   following := getTilesInFollowing(dict, prefix, tiles)
   for i := 0; i < len(following); i++ {
@@ -112,12 +115,12 @@ func extendLeft(dict *trie.Trie, start *moves.Location, board [][]byte,
   return
 }
 
-func getMoveList(dict *trie.Trie, board [][]byte,
-                 tiles map[byte] bool) (moveList vector.Vector) {
+func getMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] bool,
+                 letterValues map[byte] int) (moveList vector.Vector) {
   // Look for lowercase characters as well as * on the board.
   for i := 0; i < util.BOARD_SIZE; i++ {
     for j := 0; j < util.BOARD_SIZE; j++ {
-      if existing(board, &moves.Location({i, j})) {
+      if existing(board, &moves.Location{i, j}) {
         moveList.AppendVector(
             extendLeft(dict, &moves.Location{i, j}, board, tiles))
       }
@@ -153,13 +156,13 @@ func main() {
     fmt.Printf("need 7 tiles in -t, found %d\n", len(*tilesFlag))
     os.Exit(1)
   }
-  dict := util.readWordList(wordListFile)
-  board := util.readBoard(boardFile)
-  tiles := util.readTiles(*tilesFlag)
-  letterValues := util.readLetterValues(*letterValuesFlag)
-  moveList := getMoveList(dict, board, tiles)
+  dict := util.ReadWordList(wordListFile)
+  board := util.ReadBoard(boardFile)
+  tiles := util.ReadTiles(*tilesFlag)
+  letterValues := util.ReadLetterValues(*letterValuesFlag)
+  moveList := getMoveList(dict, board, tiles, letterValues)
   setDirection(moves.RIGHT, &moveList)
-  downMoveList := getMoveList(dict, transpose(board), tiles)
+  downMoveList := getMoveList(dict, transpose(board), tiles, letterValues)
   setDirection(moves.DOWN, &downMoveList)
   moveList.AppendVector(&downMoveList)
   sortwith.SortWith(moveList, moves.Less)
