@@ -7,7 +7,7 @@
 package main
 
 import ("container/vector"; "flag"; "fmt"; "os";
-        "./moves"; "./sortwith"; "./trie"; "./util")
+        "./moves"; "./sort_with"; "./trie"; "./util")
 
 var wordListFlag = flag.String(
     "w", "",
@@ -179,7 +179,7 @@ func main() {
   downMoveList := getMoveList(dict, transpose(board), tiles, letterValues)
   setDirection(moves.DOWN, &downMoveList)
   moveList.AppendVector(&downMoveList)
-  sortwith.SortWith(moveList, moves.Less)
+  sort_with.SortWith(moveList, moves.Less)
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)
     fmt.Printf("%d. %s, worth %d points, starting at %d, %d, going %d.",

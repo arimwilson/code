@@ -1,4 +1,4 @@
-package sortwith
+package sort_with
 
 import ("sort")
 
