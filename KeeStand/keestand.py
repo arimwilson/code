@@ -15,6 +15,7 @@ _CACHE_MANIFEST = """CACHE MANIFEST
 NETWORK:
 https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg
 CACHE:
+/favicon.ico
 /css/cupertino/jquery-ui-1.8.9.custom.css
 https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js
 https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js

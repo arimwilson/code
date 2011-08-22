@@ -99,8 +99,8 @@ $(document).ready(function() {
       $.post("script/login",
              { username: username, password_hash: password_hash, salt: salt },
              function(data, status) {
-               // TODO(ariw): Assuming data. If successful and modification date
-               // > local storage modification date, overwrite local storage. If
+               // TODO(ariw): If successful and modification date > local
+               // storage modification date, overwrite local storage. If
                // successful and modification date < local storage modification
                // date, use local storage and issue a save request. If not
                // successful, attempt to load from local storage. If no local
