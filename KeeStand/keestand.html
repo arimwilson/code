@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en">
+<html lang="en" manifest="/cache.manifest">
 <head><title>KeeStand</title>
 <link type="text/css" href="css/cupertino/jquery-ui-1.8.9.custom.css" rel="Stylesheet" />
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
@@ -100,6 +100,12 @@ $(document).ready(function() {
       $.post("script/login",
              { username: username, password_hash: password_hash, salt: salt },
              function(data, status) {
+               // TODO(ariw): If successful and modification date > local
+               // storage modification date, overwrite local storage. If
+               // successful and modification date < local storage modification
+               // date, use local storage and issue a save request. If not
+               // successful, attempt to load from local storage. If no local
+               // storage, alert user that their password is incorrect.
                if (status == "success") {
                  $("#login").hide();
                  $("#edit").show();
@@ -134,7 +140,7 @@ $(document).ready(function() {
 
   $("#save_button").click(function() {
     input = $("#data").find(".org,textarea");
-    // TODO(ariw): Don't silently fail.
+    // TODO(ariw): Save to local storage.
     $.post("script/save", { passwords: encrypt(create_csv(input)) });
   });
 
@@ -210,6 +216,7 @@ $(document).ready(function() {
           "Are you really sure you want to delete your account? This action " +
           "cannot be undone!");
       if (really_sure)
+        // TODO(ariw): Delete local storage.
         $.post("script/deleteaccount", {},
                function() { location.reload(true); });
     }

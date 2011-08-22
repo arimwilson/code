@@ -11,6 +11,23 @@ from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
+_CACHE_MANIFEST = """CACHE MANIFEST
+NETWORK:
+https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg
+CACHE:
+/css/cupertino/jquery-ui-1.8.9.custom.css
+https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js
+https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js
+/sjcl.js
+"""
+
+# Needed to serve our cache manifest dynamically because AppEngine can't serve
+# static pages with custom MIME types.
+class CacheHandler(webapp.RequestHandler):
+  def get(self):
+    self.response.headers["content-type"] = "text/cache-manifest"
+    self.response.out.write(_CACHE_MANIFEST)
+
 class User(db.Model):
   # Used to upgrade legacy user authentication / encryption methods if code
   # changes.
@@ -158,6 +175,7 @@ class DeleteAccountHandler(webapp.RequestHandler):
 
 def main():
   application = webapp.WSGIApplication([
+      ('/cache.manifest', CacheHandler),
       ('/script/salt', SaltHandler),
       ('/script/login', LoginHandler),
       ('/script/save', SaveHandler),

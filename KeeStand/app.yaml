@@ -23,6 +23,9 @@ handlers:
   static_files: keestand.html
   upload: keestand.html
   secure: always
+- url: /cache.manifest
+  script: keestand.py
+  secure: always
 - url: /script/.*
   script: keestand.py
   secure: always
