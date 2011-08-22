@@ -92,7 +92,8 @@ class LoginHandler(webapp.RequestHandler):
       chunks = sorted(user.passwordchunk_set, key = lambda chunk: chunk.index)
       passwords = "".join([chunk.chunk for chunk in chunks])
       if passwords:  # Existing data.
-        self.response.out.write(Decode(passwords))
+          # TODO(ariw): Need to write last modification date as well.
+          self.response.out.write(Decode(passwords))
     else:  # New user.
       salt = self.request.get("salt")
       assert salt

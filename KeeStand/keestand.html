@@ -96,12 +96,11 @@ $(document).ready(function() {
       for (i = 1; i < 1000; ++i)
         password_hash = sjcl.hash.sha256.hash(password_hash);
       password_hash = sjcl.codec.base64.fromBits(password_hash, false);
-      // TODO(ariw): Don't silently fail.
       $.post("script/login",
              { username: username, password_hash: password_hash, salt: salt },
              function(data, status) {
-               // TODO(ariw): If successful and modification date > local
-               // storage modification date, overwrite local storage. If
+               // TODO(ariw): Assuming data. If successful and modification date
+               // > local storage modification date, overwrite local storage. If
                // successful and modification date < local storage modification
                // date, use local storage and issue a save request. If not
                // successful, attempt to load from local storage. If no local
@@ -138,11 +137,13 @@ $(document).ready(function() {
     return sjcl.encrypt(password_, data);
   }
 
-  $("#save_button").click(function() {
+  function save() {
     input = $("#data").find(".org,textarea");
-    // TODO(ariw): Save to local storage.
+    // TODO(ariw): Alert when successful. Save to local storage.
     $.post("script/save", { passwords: encrypt(create_csv(input)) });
-  });
+  }
+
+  $("#save_button").click(save);
 
   $(".options_button").click(function() {
     $("#edit").hide();
