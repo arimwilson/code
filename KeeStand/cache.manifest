@@ -1,10 +1,27 @@
 CACHE MANIFEST
-NETWORK:
-https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg
+# 2011-08-22:1
+
 CACHE:
 /favicon.ico
-/css/*
+/css/cupertino/jquery-ui-1.8.9.custom.css
 https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js
 https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js
 /sjcl.js
+/css/cupertino/images/ui-bg_diagonals-thick_90_eeeeee_40x40.png
+/css/cupertino/images/ui-bg_flat_15_cd0a0a_40x100.png
+/css/cupertino/images/ui-bg_glass_100_e4f1fb_1x400.png
+/css/cupertino/images/ui-bg_glass_50_3baae3_1x400.png
+/css/cupertino/images/ui-bg_glass_80_d7ebf9_1x400.png
+/css/cupertino/images/ui-bg_highlight-hard_100_f2f5f7_1x100.png
+/css/cupertino/images/ui-bg_highlight-hard_70_000000_1x100.png
+/css/cupertino/images/ui-bg_highlight-soft_100_deedf7_1x100.png
+/css/cupertino/images/ui-bg_highlight-soft_25_ffef8f_1x100.png
+/css/cupertino/images/ui-icons_2694e8_256x240.png
+/css/cupertino/images/ui-icons_2e83ff_256x240.png
+/css/cupertino/images/ui-icons_3d80b3_256x240.png
+/css/cupertino/images/ui-icons_72a7cf_256x240.png
+/css/cupertino/images/ui-icons_ffffff_256x240.png
+
+NETWORK:
+https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg
 
