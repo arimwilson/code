@@ -31,6 +31,10 @@ $(document).ready(function() {
   var local_storage_ = false;
   var stop_ = false;
 
+  // Display last used username, as a convenience.
+  if (localStorage.getItem("username"))
+    $("#username").val(localStorage["username"]);
+
   function decrypt(data) {
     assert(password_, "password_ is null.");
     return sjcl.decrypt(password_, data);
