@@ -23,7 +23,11 @@ function assert(exp, message) {
 }
 
 $(document).ready(function() {
+  var username_ = "";
   var password_ = "";
+  var salt_ = "";
+  var password_hash_ = "";
+  var local_storage_ = false;
   var stop_ = false;
 
   function decrypt(data) {
@@ -85,34 +89,66 @@ $(document).ready(function() {
     create_accordion(false);
   }
 
+  function password_hash(password, salt) {
+    hash = sjcl.hash.sha256.hash(password_ + salt_);
+    // TODO(ariw): Is 1000 right here? I wish I could use bcrypt...
+    for (i = 1; i < 1000; ++i)
+      hash = sjcl.hash.sha256.hash(password_hash);
+    return sjcl.codec.base64.fromBits(password_hash_, false);
+  }
+
+  function salt_success(data) {
+    salt_ = data;
+    password_hash_ = password_hash(password_, salt_);
+    $.post("script/login",
+           { username: username_, password_hash: password_hash_, salt: salt_ },
+           function(data) {
+             $("#login").hide();
+             $("#edit").show();
+             if (local_storage) {
+               last_modified_local =
+                   localStorage["last_modified"]);
+             }
+             if (data) {
+               last_modified = new Date();
+               last_modified.setTime(1000 * data["last_modified"]);
+             }
+             if (data &&
+                 (!local_storage_ || last_modified >= last_modified_local)) {
+               editor(decrypt($.parseJSON(data["passwords"])));
+               save_local(data["passwords"]);
+             } else if (local_storage_) {
+               editor(decrypt(localStorage["passwords"]));
+               save(localStorage["passwords"]);
+             }
+           });
+  }
+
+  function salt_error(xhr, text_status, error_thrown) {
+    if (text_status == "timeout" && local_storage_) {
+      salt_ = localStorage["salt"];
+      password_hash_ = localStorage["password_hash"];
+      $("#login").hide();
+      $("#edit").show();
+      editor(decrypt(localStorage["passwords"]));
+    }
+  }
+
   // TODO(ariw): Validation on password length/content.
   $("#login_button").click(function() {
-    username = $("#username").val();
+    username_ = $("#username").val();
     password_ = $("#password").val();
-    $.post("script/salt", { username: username }, function(data) {
-      salt = data;
-      password_hash = sjcl.hash.sha256.hash(password_ + salt);
-      // TODO(ariw): Is 1000 right here? I wish I could use bcrypt...
-      for (i = 1; i < 1000; ++i)
-        password_hash = sjcl.hash.sha256.hash(password_hash);
-      password_hash = sjcl.codec.base64.fromBits(password_hash, false);
-      $.post("script/login",
-             { username: username, password_hash: password_hash, salt: salt },
-             function(data, status) {
-               // TODO(ariw): If successful and modification date > local
-               // storage modification date (or local storage doesn't exist),
-               // overwrite local storage. If successful and modification date
-               // < local storage modification date, use local storage and issue
-               // a save request. If not successful, attempt to load from local
-               // storage. If no local storage, alert user that their password
-               // is incorrect.
-               if (status == "success") {
-                 $("#login").hide();
-                 $("#edit").show();
-                 if (data) editor(decrypt(data));
-               }
-             });
-    });
+    local_storage_ =
+        localStorage.getItem("username") &&
+        localStorage["userName"] === username_ &&
+        localStorage.getItem("salt") &&
+        localStorage.getItem("password_hash") &&
+        localStorage.getItem("last_modified") &&
+        localStorage.getItem("passwords") &&
+        password_hash(password_, localStorage["salt"]) === localStorage[
+            "password_hash"];
+    $.ajax({type: "POST", url: "script/salt", data: { username: username_ },
+            timeout: 3000, success: salt_success, error: salt_error});
     return false;
   });
 
@@ -138,13 +174,26 @@ $(document).ready(function() {
     return sjcl.encrypt(password_, data);
   }
 
-  function save() {
-    input = $("#data").find(".org,textarea");
-    // TODO(ariw): Alert when successful. Save to local storage.
-    $.post("script/save", { passwords: encrypt(create_csv(input)) });
+  function save_local(passwords) {
+    assert(username_ && salt_ && password_hash_,
+           "username_ or salt_ or password_hash_ is null.");
+    localStorage["username"] = username_;
+    localStorage["salt"] = salt_;
+    localStorage["password_hash"] = password_hash_;
+    localStorage["passwords"] = passwords;
+    localStorage["last_modified"] = new Date().toUTCString());
   }
 
-  $("#save_button").click(save);
+  function save(passwords) {
+    // TODO(ariw): Notify when successful.
+    $.post("script/save", { passwords: passwords });
+  }
+
+  $("#save_button").click(function() {
+    passwords = encrypt(create_csv($("#data").find(".org,textarea")));
+    save_local(passwords);
+    save(passwords);
+  });
 
   $(".options_button").click(function() {
     $("#edit").hide();
@@ -218,8 +267,9 @@ $(document).ready(function() {
           "Are you really sure you want to delete your account? This action " +
           "cannot be undone!");
       if (really_sure)
-        // TODO(ariw): Delete local storage.
-        $.post("script/deleteaccount", {},
+        localStorage.clear();
+        // TODO(ariw): Alert if unable to delete for some reason.
+        $.ajax("script/deleteaccount", {},
                function() { location.reload(true); });
     }
   });

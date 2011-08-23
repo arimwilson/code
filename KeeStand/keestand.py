@@ -5,6 +5,7 @@ import pickle
 import os
 import re
 import StringIO
+import time
 
 from django.utils import simplejson as json
 from google.appengine.ext import db
@@ -76,7 +77,9 @@ class LoginHandler(webapp.RequestHandler):
       passwords = "".join([chunk.chunk for chunk in chunks])
       if passwords:  # Existing data.
           # TODO(ariw): Need to write last modification date as well.
-          self.response.out.write(Decode(passwords))
+          self.response.out.write(json.dumps(
+              { "last_modified": time.mktime(user.last_modified.timetuple()),
+                "passwords": Decode(passwords})))
     else:  # New user.
       salt = self.request.get("salt")
       assert salt
