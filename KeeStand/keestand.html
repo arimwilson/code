@@ -1,6 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="en" manifest="/cache.manifest">
-<head><title>KeeStand</title>
+<head>
+<title>KeeStand</title>
 <link type="text/css" href="css/cupertino/jquery-ui-1.8.9.custom.css" rel="Stylesheet" />
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
@@ -90,11 +91,11 @@ $(document).ready(function() {
   }
 
   function password_hash(password, salt) {
-    hash = sjcl.hash.sha256.hash(password_ + salt_);
+    hash = sjcl.hash.sha256.hash(password + salt);
     // TODO(ariw): Is 1000 right here? I wish I could use bcrypt...
     for (i = 1; i < 1000; ++i)
-      hash = sjcl.hash.sha256.hash(password_hash);
-    return sjcl.codec.base64.fromBits(password_hash_, false);
+      hash = sjcl.hash.sha256.hash(hash);
+    return sjcl.codec.base64.fromBits(hash, false);
   }
 
   function salt_success(data) {
@@ -105,27 +106,25 @@ $(document).ready(function() {
            function(data) {
              $("#login").hide();
              $("#edit").show();
-             if (local_storage) {
-               last_modified_local =
-                   localStorage["last_modified"]);
+             if (local_storage_) {
+               last_modified_local = new Date(localStorage["last_modified"]);
              }
              if (data) {
-               last_modified = new Date();
-               last_modified.setTime(1000 * data["last_modified"]);
+               last_modified = new Date(1000 * data["last_modified"]);
              }
              if (data &&
                  (!local_storage_ || last_modified >= last_modified_local)) {
-               editor(decrypt($.parseJSON(data["passwords"])));
-               save_local(data["passwords"]);
+               editor(decrypt(data["passwords"]));
+               save_local(data["passwords"], last_modified);
              } else if (local_storage_) {
                editor(decrypt(localStorage["passwords"]));
                save(localStorage["passwords"]);
              }
-           });
+           }, "json");
   }
 
   function salt_error(xhr, text_status, error_thrown) {
-    if (text_status == "timeout" && local_storage_) {
+    if (local_storage_) {
       salt_ = localStorage["salt"];
       password_hash_ = localStorage["password_hash"];
       $("#login").hide();
@@ -140,7 +139,7 @@ $(document).ready(function() {
     password_ = $("#password").val();
     local_storage_ =
         localStorage.getItem("username") &&
-        localStorage["userName"] === username_ &&
+        localStorage["username"] === username_ &&
         localStorage.getItem("salt") &&
         localStorage.getItem("password_hash") &&
         localStorage.getItem("last_modified") &&
@@ -174,14 +173,14 @@ $(document).ready(function() {
     return sjcl.encrypt(password_, data);
   }
 
-  function save_local(passwords) {
+  function save_local(passwords, last_modified) {
     assert(username_ && salt_ && password_hash_,
            "username_ or salt_ or password_hash_ is null.");
     localStorage["username"] = username_;
     localStorage["salt"] = salt_;
     localStorage["password_hash"] = password_hash_;
     localStorage["passwords"] = passwords;
-    localStorage["last_modified"] = new Date().toUTCString());
+    localStorage["last_modified"] = last_modified.toUTCString();
   }
 
   function save(passwords) {
@@ -191,7 +190,7 @@ $(document).ready(function() {
 
   $("#save_button").click(function() {
     passwords = encrypt(create_csv($("#data").find(".org,textarea")));
-    save_local(passwords);
+    save_local(passwords, new Date());
     save(passwords);
   });
 
@@ -284,8 +283,7 @@ _gaq.push(["_trackPageview"]);
   var ga = document.createElement("script");
   ga.type = "text/javascript";
   ga.async = true;
-  ga.src = ("https:" == document.location.protocol ?
-            "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+  ga.src = "https://ssl.google-analytics.com/ga.js";
   var s = document.getElementsByTagName("script")[0];
   s.parentNode.insertBefore(ga, s);
 })();

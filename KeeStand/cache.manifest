@@ -1,5 +1,5 @@
 CACHE MANIFEST
-# 2011-08-22:2
+# 2011-08-23:2
 
 CACHE:
 /favicon.ico
@@ -23,5 +23,5 @@ https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js
 /css/cupertino/images/ui-icons_ffffff_256x240.png
 
 NETWORK:
-https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg
+*
 

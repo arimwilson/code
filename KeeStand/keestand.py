@@ -79,7 +79,7 @@ class LoginHandler(webapp.RequestHandler):
           # TODO(ariw): Need to write last modification date as well.
           self.response.out.write(json.dumps(
               { "last_modified": time.mktime(user.last_modified.timetuple()),
-                "passwords": Decode(passwords})))
+                "passwords": Decode(passwords) }))
     else:  # New user.
       salt = self.request.get("salt")
       assert salt
