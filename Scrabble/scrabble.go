@@ -1,9 +1,6 @@
 // Scrabble move generator. Given a word list, board, and your current tiles,
 // outputs all legal moves ranked by point value.
 
-// TODO: Blank tiles! Also, scoring + all-tile-used bonus. And concurrency and
-// AppEngine support.
-
 package main
 
 import ("container/vector"; "flag"; "fmt"; "os";
@@ -48,6 +45,7 @@ func existing(board [][]byte, location *moves.Location) bool {
   return (char >= 'a' && char <= 'z') || char == '*'
 }
 
+// Retrieve the tiles that can possibly follow prefix in dict.
 func getTilesInFollowing(dict *trie.Trie, prefix string,
                          tiles map[byte] bool) (tilesInFollowing []byte) {
   following := dict.Following(prefix)
@@ -174,8 +172,13 @@ func main() {
   board := util.ReadBoard(boardFile)
   tiles := util.ReadTiles(*tilesFlag)
   letterValues := util.ReadLetterValues(*letterValuesFlag)
+
+  // Get moves going both right and down.
+  crossCheckSet := getCrossCheckSet(dict, board, tiles)
   moveList := getMoveList(dict, board, tiles, letterValues)
   setDirection(moves.RIGHT, &moveList)
+  transposedBoard := transpose(board)
+  downCrossCheckSet
   downMoveList := getMoveList(dict, transpose(board), tiles, letterValues)
   setDirection(moves.DOWN, &downMoveList)
   moveList.AppendVector(&downMoveList)
