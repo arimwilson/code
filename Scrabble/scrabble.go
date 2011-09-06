@@ -21,6 +21,28 @@ var letterValuesFlag = flag.String(
     "l", "1 3 3 2 1 4 2 4 1 8 5 1 3 1 1 3 10 1 1 1 1 4 4 8 4 10",
     "Space-separated list of letter point values, from A-Z.")
 
+func existing(board [][]byte, location *moves.Location) bool {
+  if location.X < 0 || location.X > util.BOARD_SIZE || location.Y < 0 ||
+     location.Y > util.BOARD_SIZE {
+    return false
+  }
+  char := board[location.X][location.Y]
+  return (char >= 'a' && char <= 'z') || char == '*'
+}
+
+// Entry in cross check set means some tiles are allowable vertically, with
+// given point values. No entry means all tiles are allowable for no points.
+func getCrossCheckSet(dict *trie.Trie, board [][]byte, tiles map[byte] int)
+(crossChecks  map[moves.Location] {
+  for i := 0; i < util.BOARD_SIZE; i++ {
+    for j := 0; j < util.BOARD_SIZE; j++ {
+      if !existing(board, &moves.Location({i, j})) {
+        // Go up and see if there's a word.
+      }
+    }
+  }
+}
+
 func transpose(board [][]byte) (transposedBoard [][]byte) {
   transposedBoard = make([][]byte, util.BOARD_SIZE)
   for i := 0; i < util.BOARD_SIZE; i++ {
@@ -36,25 +58,16 @@ func transpose(board [][]byte) (transposedBoard [][]byte) {
   return
 }
 
-func existing(board [][]byte, location *moves.Location) bool {
-  if location.X < 0 || location.X > util.BOARD_SIZE || location.Y < 0 ||
-     location.Y > util.BOARD_SIZE {
-    return false
-  }
-  char := board[location.X][location.Y]
-  return (char >= 'a' && char <= 'z') || char == '*'
-}
-
 // Retrieve the tiles that can possibly follow prefix in dict.
 func getTilesInFollowing(dict *trie.Trie, prefix string,
-                         tiles map[byte] bool) (tilesInFollowing []byte) {
+                         tiles map[byte] int) (tilesInFollowing []byte) {
   following := dict.Following(prefix)
   tilesInFollowing = make([]byte, 0, len(following))
   k := 0
   for i := 0; i < len(following); i++ {
-    _, present := tiles[following[i]]
-    if present {
-      tilesInFollowing = tilesInFollowing[:k + 1]
+    count, _ := tiles[following[i]]
+    tilesInFollowing = tilesInFollowing[:k + count]
+    for i := 0; i < count; i++ {
       tilesInFollowing[k] = following[i]
       k++
     }
@@ -72,7 +85,7 @@ func placeTile(dict* trie.Trie, location *moves.Location, board [][]byte,
 }
 
 func extendRight(dict* trie.Trie, start moves.Location, board [][]byte,
-                 tiles map[byte] bool) (moveList *vector.Vector) {
+                 tiles map[byte] int) (moveList *vector.Vector) {
   if len(tiles) == 0 || start.Y == util.BOARD_SIZE {
     return
   }
@@ -92,14 +105,17 @@ func extendRight(dict* trie.Trie, start moves.Location, board [][]byte,
       continue
     }
     newTiles := copy(tiles)
-    newTiles[following[j]] = false, false
+    if following[j] == 1:
+      newTiles[j] = 0, false
+    else:
+      newTiles[j] = following[j] - 1, true
     extendRight(dict, start, newBoard, newTiles)
   }
   return
 }
 
 func extendLeft(dict *trie.Trie, start moves.Location, board [][]byte,
-                tiles map[byte] bool) (moveList *vector.Vector) {
+                tiles map[byte] int) (moveList *vector.Vector) {
   if len(tiles) == 0 || start.Y < 0 {
     return
   }
@@ -128,7 +144,7 @@ func extendLeft(dict *trie.Trie, start moves.Location, board [][]byte,
   return
 }
 
-func getMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] bool,
+func getMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] int,
                  letterValues map[byte] int) (moveList vector.Vector) {
   // Look for lowercase characters as well as * on the board.
   for i := 0; i < util.BOARD_SIZE; i++ {
@@ -178,7 +194,7 @@ func main() {
   moveList := getMoveList(dict, board, tiles, letterValues)
   setDirection(moves.RIGHT, &moveList)
   transposedBoard := transpose(board)
-  downCrossCheckSet
+  downCrossCheckSet := getCrossCheckSet(dict, transposedBoard, tiles)
   downMoveList := getMoveList(dict, transpose(board), tiles, letterValues)
   setDirection(moves.DOWN, &downMoveList)
   moveList.AppendVector(&downMoveList)
