@@ -1,10 +1,10 @@
 // Scrabble move generator. Given a word list, board, and your current tiles,
 // outputs all legal moves ranked by point value.
 
-package main
+package scrabble
 
 import ("container/vector"; "flag"; "fmt"; "os";
-        "./moves"; "./sort_with"; "./trie"; "./util")
+        "./cross_check"; "./moves"; "./sort_with"; "./trie"; "./util")
 
 var wordListFlag = flag.String(
     "w", "",
@@ -14,42 +14,20 @@ var boardFlag = flag.String(
     "File with board structure. Format: * indicates starting point, 1 and 2 " +
     "indicate double and triple word score tiles, 3 and 4 indicate double " +
     "and triple letter score tiles, - indicates blank tiles, and upper-case " +
-    "letters indicate existing words.")
+    "letters indicate Existing words.")
 var tilesFlag = flag.String(
     "t", "", "List of all 7 player tiles, in upper-case.")
 var letterValuesFlag = flag.String(
     "l", "1 3 3 2 1 4 2 4 1 8 5 1 3 1 1 3 10 1 1 1 1 4 4 8 4 10",
     "Space-separated list of letter point values, from A-Z.")
 
-func existing(board [][]byte, location *moves.Location) bool {
-  if location.X < 0 || location.X > util.BOARD_SIZE || location.Y < 0 ||
-     location.Y > util.BOARD_SIZE {
-    return false
-  }
-  char := board[location.X][location.Y]
-  return (char >= 'a' && char <= 'z') || char == '*'
-}
-
-// Entry in cross check set means some tiles are allowable vertically, with
-// given point values. No entry means all tiles are allowable for no points.
-func getCrossCheckSet(dict *trie.Trie, board [][]byte, tiles map[byte] int)
-(crossChecks  map[moves.Location] {
-  for i := 0; i < util.BOARD_SIZE; i++ {
-    for j := 0; j < util.BOARD_SIZE; j++ {
-      if !existing(board, &moves.Location({i, j})) {
-        // Go up and see if there's a word.
-      }
-    }
-  }
-}
-
 func transpose(board [][]byte) (transposedBoard [][]byte) {
-  transposedBoard = make([][]byte, util.BOARD_SIZE)
-  for i := 0; i < util.BOARD_SIZE; i++ {
-    transposedBoard[i] = make([]byte, util.BOARD_SIZE)
+  transposedBoard = make([][]byte, BOARD_SIZE)
+  for i := 0; i < BOARD_SIZE; i++ {
+    transposedBoard[i] = make([]byte, BOARD_SIZE)
     copy(transposedBoard[i], board[i])
   }
-  for i := 0; i < util.BOARD_SIZE; i++ {
+  for i := 0; i < BOARD_SIZE; i++ {
     for j := 0; j < i; j++ {
       transposedBoard[i][j], transposedBoard[j][i] =
           transposedBoard[j][i], transposedBoard[i][j]
@@ -79,19 +57,19 @@ func placeTile(dict* trie.Trie, location *moves.Location, board [][]byte,
                tile byte) (newBoard [][]byte, placed bool) {
   // Ensure that location for tile is vertically valid.
   /*i := location.Y - 1
-  for ; existing(board, &moves.Location({location.X, i})); i--
+  for ; Existing(board, &moves.Location({location.X, i})); i--
   i++*/
   return nil, true
 }
 
 func extendRight(dict* trie.Trie, start moves.Location, board [][]byte,
                  tiles map[byte] int) (moveList *vector.Vector) {
-  if len(tiles) == 0 || start.Y == util.BOARD_SIZE {
+  if len(tiles) == 0 || start.Y == BOARD_SIZE {
     return
   }
   // Place a tile (if extensions exist to prefix and is valid), then recurse.
   i := 0
-  for ; existing(board, &moves.Location{start.X, start.Y + i}); i++ {
+  for ; Existing(board, &moves.Location{start.X, start.Y + i}); i++ {
   }
   following := getTilesInFollowing(
       dict, string(board[start.X][start.X : start.X + i]), tiles)
@@ -147,9 +125,9 @@ func extendLeft(dict *trie.Trie, start moves.Location, board [][]byte,
 func getMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] int,
                  letterValues map[byte] int) (moveList vector.Vector) {
   // Look for lowercase characters as well as * on the board.
-  for i := 0; i < util.BOARD_SIZE; i++ {
-    for j := 0; j < util.BOARD_SIZE; j++ {
-      if existing(board, &moves.Location{i, j}) {
+  for i := 0; i < BOARD_SIZE; i++ {
+    for j := 0; j < BOARD_SIZE; j++ {
+      if Existing(board, &moves.Location{i, j}) {
         moveList.AppendVector(
             extendLeft(dict, moves.Location{i - 1, j}, board, tiles))
       }
@@ -184,17 +162,17 @@ func main() {
     fmt.Printf("need 7 tiles in -t, found %d\n", len(*tilesFlag))
     os.Exit(1)
   }
-  dict := util.ReadWordList(wordListFile)
-  board := util.ReadBoard(boardFile)
-  tiles := util.ReadTiles(*tilesFlag)
-  letterValues := util.ReadLetterValues(*letterValuesFlag)
+  dict := ReadWordList(wordListFile)
+  board := ReadBoard(boardFile)
+  tiles := ReadTiles(*tilesFlag)
+  letterValues := ReadLetterValues(*letterValuesFlag)
 
   // Get moves going both right and down.
-  crossCheckSet := getCrossCheckSet(dict, board, tiles)
+  crossCheckSet := cross_check.CrossChecks(dict, board, tiles)
   moveList := getMoveList(dict, board, tiles, letterValues)
   setDirection(moves.RIGHT, &moveList)
   transposedBoard := transpose(board)
-  downCrossCheckSet := getCrossCheckSet(dict, transposedBoard, tiles)
+  downCrossCheckSet := cross_check.CrossChecks(dict, transposedBoard, tiles)
   downMoveList := getMoveList(dict, transpose(board), tiles, letterValues)
   setDirection(moves.DOWN, &downMoveList)
   moveList.AppendVector(&downMoveList)
