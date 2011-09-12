@@ -12,5 +12,5 @@ func TestGetCrossChecks(t *testing.T) {
     []byte{"------"},
     []byte{"------"},
     []byte{"------"}}
-}test
+}
 
