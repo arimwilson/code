@@ -14,7 +14,7 @@ var boardFlag = flag.String(
     "File with board structure. Format: * indicates starting point, 1 and 2 " +
     "indicate double and triple word score tiles, 3 and 4 indicate double " +
     "and triple letter score tiles, - indicates blank tiles, and upper-case " +
-    "letters indicate Existing words.")
+    "letters indicate existing words.")
 var tilesFlag = flag.String(
     "t", "", "List of all 7 player tiles, in upper-case.")
 var letterValuesFlag = flag.String(
@@ -57,7 +57,7 @@ func placeTile(dict* trie.Trie, location *moves.Location, board [][]byte,
                tile byte) (newBoard [][]byte, placed bool) {
   // Ensure that location for tile is vertically valid.
   /*i := location.Y - 1
-  for ; Existing(board, &moves.Location({location.X, i})); i--
+  for ; util.Existing(board, &moves.Location({location.X, i})); i--
   i++*/
   return nil, true
 }
@@ -69,7 +69,7 @@ func extendRight(dict* trie.Trie, start moves.Location, board [][]byte,
   }
   // Place a tile (if extensions exist to prefix and is valid), then recurse.
   i := 0
-  for ; Existing(board, &moves.Location{start.X, start.Y + i}); i++ {
+  for ; util.Existing(board, &moves.Location{start.X, start.Y + i}); i++ {
   }
   following := getTilesInFollowing(
       dict, string(board[start.X][start.X : start.X + i]), tiles)
@@ -127,7 +127,7 @@ func getMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] int,
   // Look for lowercase characters as well as * on the board.
   for i := 0; i < BOARD_SIZE; i++ {
     for j := 0; j < BOARD_SIZE; j++ {
-      if Existing(board, &moves.Location{i, j}) {
+      if util.Existing(board, &moves.Location{i, j}) {
         moveList.AppendVector(
             extendLeft(dict, moves.Location{i - 1, j}, board, tiles))
       }
@@ -162,17 +162,18 @@ func main() {
     fmt.Printf("need 7 tiles in -t, found %d\n", len(*tilesFlag))
     os.Exit(1)
   }
-  dict := ReadWordList(wordListFile)
-  board := ReadBoard(boardFile)
-  tiles := ReadTiles(*tilesFlag)
-  letterValues := ReadLetterValues(*letterValuesFlag)
+  dict := util.ReadWordList(wordListFile)
+  board := util.ReadBoard(boardFile)
+  tiles := util.ReadTiles(*tilesFlag)
+  letterValues := util.ReadLetterValues(*letterValuesFlag)
 
   // Get moves going both right and down.
-  crossCheckSet := cross_check.CrossChecks(dict, board, tiles)
+  crossCheckSet := cross_check.GetCrossChecks(dict, board, tiles, letterValues)
   moveList := getMoveList(dict, board, tiles, letterValues)
   setDirection(moves.RIGHT, &moveList)
   transposedBoard := transpose(board)
-  downCrossCheckSet := cross_check.CrossChecks(dict, transposedBoard, tiles)
+  downCrossCheckSet := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
+                                                  letterValues)
   downMoveList := getMoveList(dict, transpose(board), tiles, letterValues)
   setDirection(moves.DOWN, &downMoveList)
   moveList.AppendVector(&downMoveList)
