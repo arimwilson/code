@@ -1,7 +1,7 @@
 package trie_test
 
 import ("testing";
-        "./trie")
+        "trie")
 
 var strings = []string{
   "abra",

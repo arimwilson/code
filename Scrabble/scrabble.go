@@ -1,10 +1,10 @@
 // Scrabble move generator. Given a word list, board, and your current tiles,
 // outputs all legal moves ranked by point value.
 
-package scrabble
+package main
 
 import ("container/vector"; "flag"; "fmt"; "os";
-        "./crosscheck"; "./moves"; "./sort_with"; "./trie"; "./util")
+        "cross_check"; "moves"; "sort_with"; "trie"; "util")
 
 var wordListFlag = flag.String(
     "w", "",

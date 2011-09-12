@@ -3,7 +3,7 @@
 package util
 
 import ("bufio"; "fmt"; "strconv"; "strings"; "os";
-        "./trie")
+        "moves"; "trie")
 
 func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
   wordListReader := bufio.NewReader(wordListFile)
@@ -21,8 +21,8 @@ func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
 const BOARD_SIZE = 15
 
 func Existing(board [][]byte, location *moves.Location) bool {
-  if location.X < 0 || location.X > util.BOARD_SIZE || location.Y < 0 ||
-     location.Y > util.BOARD_SIZE {
+  if location.X < 0 || location.X > BOARD_SIZE || location.Y < 0 ||
+     location.Y > BOARD_SIZE {
     return false
   }
   char := board[location.X][location.Y]
@@ -55,7 +55,7 @@ func ReadTiles(tilesFlag string) (tiles map[byte] bool) {
 
 func ReadLetterValues(letterValuesFlag string) (letterValues map[byte] int) {
   letterValues = make(map[byte] int)
-  splitLetterValues := strings.Split(letterValuesFlag, " ", -1)
+  splitLetterValues := strings.Split(letterValuesFlag, " ")
   for i := byte('A'); i <= byte('Z'); i++ {
     letterValues[i], _ = strconv.Atoi(splitLetterValues[i - 'A'])
   }

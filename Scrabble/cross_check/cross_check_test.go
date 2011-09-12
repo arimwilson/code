@@ -1,7 +1,7 @@
-package crosscheck_test
+package cross_check_test
 
-import ("testing",
-        "./crosscheck")
+import ("testing";
+        "cross_check")
 
 func TestGetCrossChecks(t *testing.T) {
   util.BOARD_SIZE = 6
@@ -12,5 +12,5 @@ func TestGetCrossChecks(t *testing.T) {
     []byte{"------"},
     []byte{"------"},
     []byte{"------"}}
-}
+}test
 
