@@ -1,4 +1,4 @@
-package cross_check
+package crosscheck
 
 import ("./util")
 

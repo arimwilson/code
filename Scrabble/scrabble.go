@@ -4,7 +4,7 @@
 package scrabble
 
 import ("container/vector"; "flag"; "fmt"; "os";
-        "./cross_check"; "./moves"; "./sort_with"; "./trie"; "./util")
+        "./crosscheck"; "./moves"; "./sort_with"; "./trie"; "./util")
 
 var wordListFlag = flag.String(
     "w", "",

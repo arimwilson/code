@@ -1,16 +1,16 @@
-package scrabble
+package trie_test
 
-import ("testing")
+import ("testing";
+        "./trie")
 
 var strings = []string{
-  "abra"
-  "existing"
-  "textual"
-  "later"
-}
+  "abra",
+  "existing",
+  "textual",
+  "later"}
 
 func TestInsertAndRetrieve(t *testing.T) {
-  dict := New()
+  dict := trie.New()
   for i := 0; i < len(strings); i++ {
     dict.Insert(strings[i])
   }

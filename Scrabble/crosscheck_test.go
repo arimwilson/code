@@ -1,6 +1,7 @@
-package scrabble
+package crosscheck_test
 
-import ("testing")
+import ("testing",
+        "./crosscheck")
 
 func TestGetCrossChecks(t *testing.T) {
   util.BOARD_SIZE = 6

@@ -1,6 +1,6 @@
 // Basic trie data structure with additional prefix-checking functionality.
 
-package scrabble
+package trie
 
 type Trie struct {
   terminal bool
