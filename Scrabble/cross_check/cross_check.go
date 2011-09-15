@@ -3,7 +3,8 @@ package cross_check
 import ("util")
 
 type CrossCheck struct {
-  
+  letter byte
+  score int
 }
 
 // Entry in cross check set means some tiles are allowable vertically, with

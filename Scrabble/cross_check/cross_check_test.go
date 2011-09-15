@@ -1,7 +1,7 @@
 package cross_check_test
 
 import ("testing";
-        "cross_check")
+        "cross_check"; "util")
 
 func TestGetCrossChecks(t *testing.T) {
   util.BOARD_SIZE = 6
