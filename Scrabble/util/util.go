@@ -45,10 +45,15 @@ func ReadBoard(boardFile* os.File) (board [][]byte) {
   return
 }
 
-func ReadTiles(tilesFlag string) (tiles map[byte] bool) {
-  tiles = make(map[byte] bool)
+func ReadTiles(tilesFlag string) (tiles map[byte] int) {
+  tiles = make(map[byte] int)
   for i := 0; i < len(tilesFlag); i++ {
-    tiles[tilesFlag[i]] = true
+    tile, ok := tiles[tilesFlag[i]]
+    if !ok {
+      tile = 0
+    } else {
+      tile++
+    }
   }
   return
 }
