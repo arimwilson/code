@@ -22,12 +22,12 @@ var letterValuesFlag = flag.String(
     "Space-separated list of letter point values, from A-Z.")
 
 func transpose(board [][]byte) (transposedBoard [][]byte) {
-  transposedBoard = make([][]byte, BOARD_SIZE)
-  for i := 0; i < BOARD_SIZE; i++ {
-    transposedBoard[i] = make([]byte, BOARD_SIZE)
+  transposedBoard = make([][]byte, util.BOARD_SIZE)
+  for i := 0; i < util.BOARD_SIZE; i++ {
+    transposedBoard[i] = make([]byte, util.BOARD_SIZE)
     copy(transposedBoard[i], board[i])
   }
-  for i := 0; i < BOARD_SIZE; i++ {
+  for i := 0; i < util.BOARD_SIZE; i++ {
     for j := 0; j < i; j++ {
       transposedBoard[i][j], transposedBoard[j][i] =
           transposedBoard[j][i], transposedBoard[i][j]
@@ -64,7 +64,7 @@ func placeTile(dict* trie.Trie, location *moves.Location, board [][]byte,
 
 func extendRight(dict* trie.Trie, start moves.Location, board [][]byte,
                  tiles map[byte] int) (moveList *vector.Vector) {
-  if len(tiles) == 0 || start.Y == BOARD_SIZE {
+  if len(tiles) == 0 || start.Y == util.BOARD_SIZE {
     return
   }
   // Place a tile (if extensions exist to prefix and is valid), then recurse.
@@ -83,10 +83,11 @@ func extendRight(dict* trie.Trie, start moves.Location, board [][]byte,
       continue
     }
     newTiles := copy(tiles)
-    if following[j] == 1:
+    if following[j] == 1 {
       newTiles[j] = 0, false
-    else:
+    } else {
       newTiles[j] = following[j] - 1, true
+    }
     extendRight(dict, start, newBoard, newTiles)
   }
   return
@@ -125,8 +126,8 @@ func extendLeft(dict *trie.Trie, start moves.Location, board [][]byte,
 func getMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] int,
                  letterValues map[byte] int) (moveList vector.Vector) {
   // Look for lowercase characters as well as * on the board.
-  for i := 0; i < BOARD_SIZE; i++ {
-    for j := 0; j < BOARD_SIZE; j++ {
+  for i := 0; i < util.BOARD_SIZE; i++ {
+    for j := 0; j < util.BOARD_SIZE; j++ {
       if util.Existing(board, &moves.Location{i, j}) {
         moveList.AppendVector(
             extendLeft(dict, moves.Location{i - 1, j}, board, tiles))
@@ -166,13 +167,14 @@ func main() {
   board := util.ReadBoard(boardFile)
   tiles := util.ReadTiles(*tilesFlag)
   letterValues := util.ReadLetterValues(*letterValuesFlag)
+  transposedBoard := transpose(board)
 
   // Get moves going both right and down.
-  crossCheckSet := cross_check.GetCrossChecks(dict, board, tiles, letterValues)
+  crossCheckSet := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
+                                              letterValues)
   moveList := getMoveList(dict, board, tiles, letterValues)
   setDirection(moves.RIGHT, &moveList)
-  transposedBoard := transpose(board)
-  downCrossCheckSet := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
+  downCrossCheckSet := cross_check.GetCrossChecks(dict, board, tiles,
                                                   letterValues)
   downMoveList := getMoveList(dict, transpose(board), tiles, letterValues)
   setDirection(moves.DOWN, &downMoveList)

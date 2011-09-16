@@ -1,6 +1,6 @@
 package cross_check_test
 
-import ("testing";
+import ("container/vector"; "testing";
         "cross_check"; "util")
 
 func TestGetCrossChecks(t *testing.T) {

@@ -12,6 +12,11 @@ type Location struct {
   Y int
 }
 
+// Hash function for Locations.
+func (self* Location) Hash() int {
+  return self.X ^ self.Y
+}
+
 type Move struct {
   Word string
   Score int
