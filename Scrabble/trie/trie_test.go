@@ -30,25 +30,15 @@ func TestInsertAndRetrieve(t *testing.T) {
 
 func TestNonExistent(t *testing.T) {
   dict := InsertIntoDictionary()
-  if (dict.Find("ari")) {
-    t.Errorf("Found ari in the dictionary.")
-  }
-  if (dict.Find("xylophone")) {
-    t.Errorf("Found xylophone in the dictionary.")
-  }
+  if (dict.Find("ari")) { t.Fail() }
+  if (dict.Find("xylophone")) { t.Fail() }
 }
 
 func TestFollowing(t *testing.T) {
   dict := InsertIntoDictionary()
   following := dict.Following("ab")
-  if len(following) != 2 {
-    t.Errorf("2 following characters after ab.")
-  }
-  if following[0] != 'b' {
-    t.Errorf("b should've followed ab.")
-  }
-  if following[1] != 'r' {
-    t.Errorf("r should've followed ab.")
-  }
+  if len(following) != 2 { t.Fail() }
+  if following[0] != 'b' { t.Fail() }
+  if following[1] != 'r' { t.Fail() }
 }
 

@@ -26,7 +26,7 @@ func Existing(board [][]byte, location *moves.Location) bool {
     return false
   }
   char := board[location.X][location.Y]
-  return (char >= 'a' && char <= 'z') || char == '*'
+  return (char >= 'A' && char <= 'Z') || char == '*'
 }
 
 func ReadBoard(boardFile* os.File) (board [][]byte) {

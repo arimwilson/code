@@ -1,47 +1,28 @@
 package cross_check_test
 
-import ("container/vector"; "fmt"; "testing";
+import ("testing";
         "cross_check"; "moves"; "trie"; "util")
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func printCrossChecks(message string, crossChecks map[int] *vector.Vector) {
-  for i := 0; i < util.BOARD_SIZE; i++ {
-    for j := 0; j < util.BOARD_SIZE; j++ {
-      location := moves.Location{i, j}
-      positionCrossChecks, existing := crossChecks[location.Hash()]
-      if existing {
-        fmt.Printf("%s at %d, %d: ", message, i, j)
-        for k := 0; k < positionCrossChecks.Len(); k++ {
-          positionCrossCheck :=
-              positionCrossChecks.At(k).(*cross_check.PositionCrossCheck)
-          fmt.Printf("%c ", positionCrossCheck.Letter)
-          // TODO(ariw): Assert about this.
-        }
-        fmt.Printf("\n")
-      }
-    }
-  }
-}
-
 func TestGetCrossChecks(t *testing.T) {
   util.BOARD_SIZE = 5
   dict := trie.New()
-  dict.Insert("abra")
-  dict.Insert("boo")
-  dict.Insert("chit")
-  dict.Insert("ab")
+  dict.Insert("ABRA")
+  dict.Insert("BOO")
+  dict.Insert("CHIT")
+  dict.Insert("AB")
 
   board := [][]byte{
       []byte("-----"),
       []byte("-----"),
-      []byte("abra-"),
+      []byte("ABRA-"),
       []byte("-----"),
       []byte("-----")}
 
   tiles := make(map[byte] int)
-  tiles['b'] = 1
-  tiles['o'] = 2
+  tiles['B'] = 1
+  tiles['O'] = 2
 
   letterValues := make(map[byte] int)
   for i := 0; i < len(ALPHABET); i++ {
@@ -50,9 +31,37 @@ func TestGetCrossChecks(t *testing.T) {
 
   crossChecks := cross_check.GetCrossChecks(
       dict, util.Transpose(board), tiles, letterValues)
+
+  if (len(crossChecks) != 8) { t.Fatal() }
+  for i := 0; i <= 3; i++ {
+    location := moves.Location{1, i}
+    positionCrossChecks, existing := crossChecks[location.Hash()]
+    if !existing || positionCrossChecks.Len() != 0 { t.Fail() }
+  }
+  location := moves.Location{3, 0}
+  positionCrossChecks, existing := crossChecks[location.Hash()]
+  if !existing || positionCrossChecks.Len() != 1 ||
+     positionCrossChecks.At(0).(*cross_check.PositionCrossCheck).Letter != 'B' {
+    t.Fail()
+  }
+  for i := 1; i <= 2; i++ {
+    location = moves.Location{3, i}
+    positionCrossChecks, existing = crossChecks[location.Hash()]
+    if !existing || positionCrossChecks.Len() != 0 { t.Fail() }
+  }
+  location = moves.Location{3, 3}
+  positionCrossChecks, existing = crossChecks[location.Hash()]
+  if !existing || positionCrossChecks.Len() != 1 ||
+     positionCrossChecks.At(0).(*cross_check.PositionCrossCheck).Letter != 'B' {
+    t.Fail()
+  }
+
   downCrossChecks := cross_check.GetCrossChecks(
       dict, board, tiles, letterValues)
-  printCrossChecks("CrossCheck", crossChecks)
-  printCrossChecks("DownCrossCheck", downCrossChecks)
+
+  if (len(downCrossChecks) != 1) { t.Fatal() }
+  location = moves.Location{4, 2}
+  positionCrossChecks, existing = downCrossChecks[location.Hash()]
+  if !existing || positionCrossChecks.Len() != 0 { t.Fail() }
 }
 
