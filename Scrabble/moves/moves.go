@@ -27,6 +27,12 @@ type Move struct {
   Direction Direction
 }
 
+func (self* Move) Copy() Move {
+  newMove := new(Move)
+  *newMove = *self
+  return *newMove
+}
+
 // Used to sort vectors of Move objects by score.
 func Greater(a, b interface{}) bool {
   return a.(Move).Score > b.(Move).Score

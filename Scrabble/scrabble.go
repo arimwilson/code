@@ -71,31 +71,29 @@ func extend(
   for tile, count := range(tiles) {
     score, tileExisting := positionCrossChecks[tile]
     if count > 0 && (!existing || tileExisting) {
-      word := possibleMove.Word
+      placedMove := possibleMove.Copy()
       if left {
-        possibleMove.Word = string(tile) + possibleMove.Word
+        placedMove.Word = string(tile) + placedMove.Word
       } else {
-        possibleMove.Word += string(tile)
+        placedMove.Word += string(tile)
       }
-      if tileExisting { possibleMove.Score += score }
-      if dict.Find(possibleMove.Word) {
-        score := possibleMove.Score
-        util.Score(board, letterValues, &possibleMove)
-        moveList.Push(possibleMove)
-        possibleMove.Score = score
+      if tileExisting { placedMove.Score += score }
+      if dict.Find(placedMove.Word) {
+        score := placedMove.Score
+        util.Score(board, letterValues, &placedMove)
+        moveList.Push(placedMove)
+        placedMove.Score = score
       }
       tiles[tile]--
       moveList.AppendVector(
-        moveRight(dict, board, tiles, letterValues, crossChecks, possibleMove))
+        moveRight(dict, board, tiles, letterValues, crossChecks, placedMove))
       if (left) {
-        possibleMove.Start.Y--
+        placedMove.Start.Y--
         moveList.AppendVector(
-          extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
+          extend(dict, board, tiles, letterValues, crossChecks, placedMove,
                  true))
-        possibleMove.Start.Y++
       }
       tiles[tile]++
-      possibleMove.Word = word
     }
   }
   return
@@ -121,9 +119,8 @@ func getMoveList(
             dict, board, tiles, letterValues, crossChecks,
             possibleMove, true))
         possibleMove.Start.X += 2
-        moveList.AppendVector(extend(
-            dict, board, tiles, letterValues, crossChecks, possibleMove,
-            true))
+        moveList.AppendVector(moveRight(
+            dict, board, tiles, letterValues, crossChecks, possibleMove))
         possibleMove.Start.X--; possibleMove.Start.Y--
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove,
