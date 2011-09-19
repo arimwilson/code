@@ -40,6 +40,7 @@ func GetCrossChecks(
         }
         for tile, _ := range tiles {
           sides[1] = string(tile)
+          possibleMove.Score = 0
           possibleMove.Word = strings.Join(sides, "")
           if (dict.Find(possibleMove.Word)) {
             util.Score(transposedBoard, letterValues, &possibleMove)
@@ -58,9 +59,9 @@ func PrintCrossChecks(crossChecks map[int] map[byte] int) {
       location := moves.Location{i, j}
       positionCrossChecks, existing := crossChecks[location.Hash()]
       if existing {
-        fmt.Printf("%d, %d: ", i, j)
+        fmt.Printf("%d, %c: ", i + 1, j + 'A')
         for letter, score := range(positionCrossChecks) {
-          fmt.Printf("%c %d", letter, score)
+          fmt.Printf("%c %d ", letter, score)
         }
         fmt.Printf("\n")
       }

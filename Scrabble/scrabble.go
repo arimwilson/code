@@ -21,7 +21,7 @@ var letterValuesFlag = flag.String(
     "l", "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10",
     "Space-separated list of letter point values, from A-Z.")
 var numResultsFlag = flag.Int(
-  "n", 50, "Maximum number of results to output.")
+  "n", 25, "Maximum number of results to output.")
 
 // Retrieve whether or not we have tiles that can possibly follow prefix in
 // dict.
@@ -39,7 +39,8 @@ func moveRight(
     letterValues map[byte] int, crossChecks map[int] map[byte] int,
     possibleMove moves.Move) (moveList *vector.Vector) {
   moveList = new(vector.Vector)
-  prefixEnd := moves.Location{possibleMove.Start.X, possibleMove.Start.Y + 1}
+  prefixEnd := moves.Location{possibleMove.Start.X,
+                              possibleMove.Start.Y + len(possibleMove.Word)}
   for ; prefixEnd.Y < util.BOARD_SIZE && !util.Available(board, &prefixEnd);
       prefixEnd.Y++ {
     possibleMove.Word += string(board[prefixEnd.X][prefixEnd.Y])
@@ -59,13 +60,13 @@ func extend(
   moveList = new(vector.Vector)
   var positionCrossChecks map[byte] int
   var existing bool
-  if (left) {
-    if (!util.Available(board, &possibleMove.Start)) { return }
+  if left {
+    if !util.Available(board, &possibleMove.Start) { return }
     positionCrossChecks, existing = crossChecks[possibleMove.Start.Hash()]
   } else {
     endLocation := moves.Location{possibleMove.Start.X,
                                   possibleMove.Start.Y + len(possibleMove.Word)}
-    if (!util.Available(board, &endLocation)) { return }
+    if !util.Available(board, &endLocation) { return }
     positionCrossChecks, existing = crossChecks[endLocation.Hash()]
   }
   for tile, count := range(tiles) {
@@ -87,7 +88,7 @@ func extend(
       tiles[tile]--
       moveList.AppendVector(
         moveRight(dict, board, tiles, letterValues, crossChecks, placedMove))
-      if (left) {
+      if left {
         placedMove.Start.Y--
         moveList.AppendVector(
           extend(dict, board, tiles, letterValues, crossChecks, placedMove,
@@ -113,19 +114,21 @@ func getMoveList(
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove,
             true))
-      } else if board[i][j] >= 'A' && board[i][j] < 'Z' {
-        possibleMove.Start.X--
+      } else if board[i][j] >= 'A' && board[i][j] <= 'Z' {
+        possibleMove.Start.Y--
+        possibleMove.Word = string(board[i][j])
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks,
             possibleMove, true))
-        possibleMove.Start.X += 2
+        possibleMove.Start.Y++
         moveList.AppendVector(moveRight(
             dict, board, tiles, letterValues, crossChecks, possibleMove))
-        possibleMove.Start.X--; possibleMove.Start.Y--
+        possibleMove.Word = ""
+        possibleMove.Start.X--
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove,
             true))
-        possibleMove.Start.Y += 2
+        possibleMove.Start.X += 2
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove,
             true))
@@ -138,7 +141,9 @@ func getMoveList(
 func setDirection(direction moves.Direction, moveList *vector.Vector) {
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)
-    move.Start.X, move.Start.Y = move.Start.Y, move.Start.X
+    if (move.Direction != direction) {
+      move.Start.X, move.Start.Y = move.Start.Y, move.Start.X
+    }
     move.Direction = direction
     moveList.Set(i, move)
   }
@@ -186,6 +191,7 @@ func main() {
     fmt.Printf("%d. ", i + 1)
     move := moveList.At(i).(moves.Move)
     moves.PrintMove(&move)
+    util.PrintMoveOnBoard(board, &move)
   }
 }
 

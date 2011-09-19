@@ -26,8 +26,8 @@ func Available(board [][]byte, location *moves.Location) bool {
      location.Y >= BOARD_SIZE {
     return false
   }
-  letter := board[location.X][location.Y]
-  return (letter < 'A' || letter > 'Z')
+  tile := board[location.X][location.Y]
+  return tile < 'A' || tile > 'Z'
 }
 
 func ReadBoard(boardFile* os.File) (board [][]byte) {
@@ -100,6 +100,23 @@ func PrintBoard(board [][]byte) {
   for i := 0; i < BOARD_SIZE; i++ {
     for j := 0; j < BOARD_SIZE; j++ {
       fmt.Printf("%c", board[i][j])
+    }
+    fmt.Printf("\n")
+  }
+}
+
+func PrintMoveOnBoard(board [][]byte, move *moves.Move) {
+  for i := 0; i < BOARD_SIZE; i++ {
+    for j := 0; j < BOARD_SIZE; j++ {
+      if move.Direction == moves.ACROSS && i == move.Start.X &&
+         j >= move.Start.Y && j < move.Start.Y + len(move.Word) {
+        fmt.Printf("%c", move.Word[j - move.Start.Y] - 'A' + 'a')
+      } else if move.Direction == moves.DOWN && j == move.Start.Y &&
+                i >= move.Start.X && i < move.Start.X + len(move.Word) {
+        fmt.Printf("%c", move.Word[i - move.Start.X] - 'A' + 'a')
+      } else {
+        fmt.Printf("%c", board[i][j])
+      }
     }
     fmt.Printf("\n")
   }
