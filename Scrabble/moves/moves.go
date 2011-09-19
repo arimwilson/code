@@ -6,10 +6,8 @@ import ("fmt";
         "hash/crc32")
 
 type Direction int; const (
-  UP = iota
+  RIGHT = iota
   DOWN
-  LEFT
-  RIGHT
 )
 
 type Location struct {

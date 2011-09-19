@@ -42,17 +42,16 @@ func moveRight(
   }
   if canFollow(dict, possibleMove.Word, tiles) {
     extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
-           moves.RIGHT)
+           false)
   }
 }
 
 func extend(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, crossChecks map[int] map[byte] int,
-    possibleMove moves.Move,
-    direction moves.Direction) (moveList *vector.Vector) {
+    possibleMove moves.Move, left bool) (moveList *vector.Vector) {
   moveList = new(vector.Vector)
-  if (direction == moves.LEFT) {
+  if (left) {
     if (!util.Available(board, &possibleMove.Start)) {
       return
     }
@@ -70,12 +69,12 @@ func extend(
         moveRight(dict, board, tiles, letterValues, crossChecks, possibleMove)
         possibleMove.Start.Y--
         extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
-               moves.LEFT)
+               true)
         possibleMove.Start.Y++
         tiles[tile]++
       }
     }
-  } else if (direction == moves.RIGHT) {
+  } else {
     // TODO(ariw): Reduce duplication with extending left?
     endLocation := moves.Location{possibleMove.Start.X,
                                   possibleMove.Start.Y + len(possibleMove.Word)}
@@ -113,24 +112,24 @@ func getMoveList(
       if board[i][j] == '*' {
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove,
-            moves.LEFT))
+            true))
       } else if board[i][j] >= 'A' && board[i][j] < 'Z' {
         possibleMove.Start.X--
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks,
-            possibleMove, moves.LEFT))
+            possibleMove, true))
         possibleMove.Start.X += 2
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove,
-            moves.LEFT))
+            true))
         possibleMove.Start.X--; possibleMove.Start.Y--
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove,
-            moves.LEFT))
+            true))
         possibleMove.Start.Y += 2
         moveList.AppendVector(extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove,
-            moves.LEFT))
+            true))
       }
     }
   }
