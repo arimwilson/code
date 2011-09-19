@@ -34,27 +34,25 @@ func TestGetCrossChecks(t *testing.T) {
   for i := 0; i <= 3; i++ {
     location := moves.Location{1, i}
     positionCrossChecks, existing := crossChecks[location.Hash()]
-    if !existing || positionCrossChecks.Len() != 0 { t.Fail() }
+    if !existing || len(positionCrossChecks) != 0 { t.Fail() }
   }
   location := moves.Location{3, 0}
   positionCrossChecks, existing := crossChecks[location.Hash()]
-  positionCrossCheck := positionCrossChecks.At(0).
-      (*cross_check.PositionCrossCheck)
-  if !existing || positionCrossChecks.Len() != 1 ||
-     positionCrossCheck.Letter != 'B'|| positionCrossCheck.Score != 2 {
+  score, letterExisting := positionCrossChecks['B']
+  if !existing || len(positionCrossChecks) != 1 || !letterExisting ||
+     score != 2 {
     t.Fail()
   }
   for i := 1; i <= 2; i++ {
     location = moves.Location{3, i}
     positionCrossChecks, existing = crossChecks[location.Hash()]
-    if !existing || positionCrossChecks.Len() != 0 { t.Fail() }
+    if !existing || len(positionCrossChecks) != 0 { t.Fail() }
   }
   location = moves.Location{3, 3}
   positionCrossChecks, existing = crossChecks[location.Hash()]
-  positionCrossCheck = positionCrossChecks.At(0).
-      (*cross_check.PositionCrossCheck)
-  if !existing || positionCrossChecks.Len() != 1 ||
-     positionCrossCheck.Letter != 'B'|| positionCrossCheck.Score != 2 {
+  score, letterExisting = positionCrossChecks['B']
+  if !existing || len(positionCrossChecks) != 1 || !letterExisting ||
+     score != 2 {
     t.Fail()
   }
 
@@ -64,6 +62,6 @@ func TestGetCrossChecks(t *testing.T) {
   if (len(downCrossChecks) != 1) { t.Fatal() }
   location = moves.Location{4, 2}
   positionCrossChecks, existing = downCrossChecks[location.Hash()]
-  if !existing || positionCrossChecks.Len() != 0 { t.Fail() }
+  if !existing || len(positionCrossChecks) != 0 { t.Fail() }
 }
 

@@ -5,8 +5,10 @@ package moves
 import ("hash/crc32")
 
 type Direction int; const (
-  RIGHT = iota
+  UP = iota
   DOWN
+  LEFT
+  RIGHT
 )
 
 type Location struct {

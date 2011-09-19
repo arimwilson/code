@@ -20,13 +20,13 @@ func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
 
 var BOARD_SIZE = 15
 
-func Existing(board [][]byte, location *moves.Location) bool {
+func Available(board [][]byte, location *moves.Location) bool {
   if location.X < 0 || location.X > BOARD_SIZE || location.Y < 0 ||
      location.Y > BOARD_SIZE {
     return false
   }
-  char := board[location.X][location.Y]
-  return (char >= 'A' && char <= 'Z') || char == '*'
+  letter := board[location.X][location.Y]
+  return (letter < 'A' || letter > 'Z') && letter != '*'
 }
 
 func ReadBoard(boardFile* os.File) (board [][]byte) {

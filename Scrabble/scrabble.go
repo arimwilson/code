@@ -38,88 +38,44 @@ func getTilesInFollowing(dict *trie.Trie, prefix string,
   return
 }
 
-func placeTile(dict* trie.Trie, location *moves.Location, board [][]byte,
-               tile byte) (newBoard [][]byte, placed bool) {
-  // Ensure that location for tile is vertically valid.
-  /*i := location.Y - 1
-  for ; util.Existing(board, &moves.Location({location.X, i})); i--
-  i++*/
-  return nil, true
-}
-
-func extendRight(dict* trie.Trie, start moves.Location, board [][]byte,
-                 tiles map[byte] int) (moveList *vector.Vector) {
-  /*if len(tiles) == 0 || start.Y == util.BOARD_SIZE {
+func extend(
+    dict *trie.Trie, board [][]byte, tiles map[byte] int,
+    letterValues map[byte] int, crossChecks map[int] map[byte] int,
+    start moves.Location, direction moves.Direction) (moveList *vector.Vector) {
+  moveList = new(vector.Vector)
+  if (!util.Available(board, &start)) {
     return
   }
-  // Place a tile (if extensions exist to prefix and is valid), then recurse.
-  i := 0
-  for ; util.Existing(board, &moves.Location{start.X, start.Y + i}); i++ {
-  }
-  following := getTilesInFollowing(
-      dict, string(board[start.X][start.X : start.X + i]), tiles)
-  moveList = new(vector.Vector)
-  for j := 0; j < len(following); j++ {
-    // TODO: Also check to see if after placeTile completes we have a valid
-    // move. Then save it to moveList.
-    newBoard, placed := placeTile(dict, &moves.Location{start.X, start.Y + 1},
-                                  board, following[j])
-    if !placed {
-      continue
-    }
-    newTiles := copy(tiles)
-    if following[j] == 1 {
-      newTiles[j] = 0, false
-    } else {
-      newTiles[j] = following[j] - 1, true
-    }
-    extendRight(dict, start, newBoard, newTiles)
+  /* positionCrossChecks, existing := crossChecks[start.Hash()]
+  if existing {
+  } else {
   }*/
-  return
-}
-
-func extendLeft(dict *trie.Trie, start moves.Location, board [][]byte,
-                tiles map[byte] int) (moveList *vector.Vector) {
-  /*
-  if len(tiles) == 0 || start.Y < 0 {
-    return
-  }
-
-  moveList = new(vector.Vector)
-
-  // If there are possible right extensions, extend right.
-  rightMoveList := extendRight(dict, start, board, tiles)
-  moveList.AppendVector(rightMoveList)
-
-
-  // If it is valid, place a tile at current location and extend left.
-  for tile, _ := range tiles {
-    // TODO: Also check to see if after placeTile completes we have a valid
-    // move. Then save it to moveList.
-    newBoard, placed := placeTile(dict, &moves.Location{start.X, start.Y - 1},
-                                  board, tile)
-    if !placed {
-      continue
-    }
-    newTiles := copy(tiles)
-    newTiles[tile] = false, false
-    // Extend left from current location.
-    extendLeft(dict, moves.Location{start.X, start.Y - 1}, newBoard, newTiles)
-  }
-  */
   return
 }
 
 func getMoveList(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int,
-    crossChecks map[int] *vector.Vector) (moveList vector.Vector) {
-  // Look for lowercase characters as well as * on the board.
+    crossChecks map[int] map[byte] int) (moveList vector.Vector) {
   for i := 0; i < util.BOARD_SIZE; i++ {
     for j := 0; j < util.BOARD_SIZE; j++ {
-      if util.Existing(board, &moves.Location{i, j}) {
-        moveList.AppendVector(
-            extendLeft(dict, moves.Location{i - 1, j}, board, tiles))
+      if board[i][j] == '*' {
+        moveList.AppendVector(extend(
+            dict, board, tiles, letterValues, crossChecks, moves.Location{i, j},
+            moves.LEFT))
+      } else if board[i][j] >= 'A' && board[i][j] < 'Z' {
+        moveList.AppendVector(extend(
+            dict, board, tiles, letterValues, crossChecks,
+            moves.Location{i - 1, j}, moves.LEFT))
+        moveList.AppendVector(extend(
+            dict, board, tiles, letterValues, crossChecks,
+            moves.Location{i + 1, j}, moves.LEFT))
+        moveList.AppendVector(extend(
+            dict, board, tiles, letterValues, crossChecks,
+            moves.Location{i, j - 1}, moves.LEFT))
+        moveList.AppendVector(extend(
+            dict, board, tiles, letterValues, crossChecks,
+            moves.Location{i, j + 1}, moves.LEFT))
       }
     }
   }
@@ -160,7 +116,7 @@ func main() {
 
   // Get moves going both right and down.
   crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
-                                              letterValues)
+                                            letterValues)
   moveList := getMoveList(dict, board, tiles, letterValues, crossChecks)
   setDirection(moves.RIGHT, &moveList)
   downCrossChecks := cross_check.GetCrossChecks(dict, board, tiles,
