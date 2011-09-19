@@ -26,15 +26,18 @@ func GetCrossChecks(
         for ; r < util.BOARD_SIZE &&
               util.Existing(transposedBoard, &moves.Location{i, r}); r++ {}
         if l == j - 1 && r == j + 1 { continue }
-        transposedLocation := moves.Location{j, i}
-        if _, existing := crossChecks[transposedLocation.Hash()]; existing {
+        possibleMove := moves.Move{Start: moves.Location{i, j},
+                                   Direction: moves.RIGHT }
+        location := moves.Location{j, i}
+        if _, existing := crossChecks[location.Hash()]; existing {
           // Bad hash, panic!
           panic(fmt.Sprintf("Existing cross-check for position %d, %d!", j, i))
         }
-        crossChecks[transposedLocation.Hash()] = new(vector.Vector)
-        positionCrossChecks := crossChecks[transposedLocation.Hash()]
+        crossChecks[location.Hash()] = new(vector.Vector)
+        positionCrossChecks := crossChecks[location.Hash()]
         sides := []string{"", "", ""}
         if l < j -1 {
+          possibleMove.Start.X = l + 1
           sides[0] = string(transposedBoard[i][l + 1:j])
         }
         if r > j + 1 {
@@ -42,11 +45,12 @@ func GetCrossChecks(
         }
         for k, _ := range tiles {
           sides[1] = string(k)
-          if (dict.Find(strings.Join(sides, ""))) {
+          possibleMove.Word = strings.Join(sides, "")
+          if (dict.Find(possibleMove.Word)) {
             positionCrossCheck := new(PositionCrossCheck)
             positionCrossCheck.Letter = k
-            // TODO(ariw): Fix.
-            positionCrossCheck.Score = 1
+            util.Score(transposedBoard, letterValues, &possibleMove)
+            positionCrossCheck.Score = possibleMove.Score
             positionCrossChecks.Push(positionCrossCheck)
           }
         }
@@ -65,7 +69,8 @@ func PrintCrossChecks(crossChecks map[int] *vector.Vector) {
         fmt.Printf("%d, %d: ", i, j)
         for k := 0; k < positionCrossChecks.Len(); k++ {
           positionCrossCheck := positionCrossChecks.At(k).(*PositionCrossCheck)
-          fmt.Printf("%c ", positionCrossCheck.Letter)
+          fmt.Printf("%c %d", positionCrossCheck.Letter,
+                     positionCrossCheck.Score)
         }
         fmt.Printf("\n")
       }

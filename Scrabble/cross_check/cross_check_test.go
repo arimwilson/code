@@ -3,8 +3,6 @@ package cross_check_test
 import ("testing";
         "cross_check"; "moves"; "trie"; "util")
 
-const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
 func TestGetCrossChecks(t *testing.T) {
   util.BOARD_SIZE = 5
   dict := trie.New()
@@ -25,8 +23,8 @@ func TestGetCrossChecks(t *testing.T) {
   tiles['O'] = 2
 
   letterValues := make(map[byte] int)
-  for i := 0; i < len(ALPHABET); i++ {
-    letterValues[ALPHABET[i]] = 1
+  for i := byte(0); i < byte(26); i++ {
+    letterValues['A' + i] = 1
   }
 
   crossChecks := cross_check.GetCrossChecks(
@@ -40,8 +38,10 @@ func TestGetCrossChecks(t *testing.T) {
   }
   location := moves.Location{3, 0}
   positionCrossChecks, existing := crossChecks[location.Hash()]
+  positionCrossCheck := positionCrossChecks.At(0).
+      (*cross_check.PositionCrossCheck)
   if !existing || positionCrossChecks.Len() != 1 ||
-     positionCrossChecks.At(0).(*cross_check.PositionCrossCheck).Letter != 'B' {
+     positionCrossCheck.Letter != 'B'|| positionCrossCheck.Score != 2 {
     t.Fail()
   }
   for i := 1; i <= 2; i++ {
@@ -51,8 +51,10 @@ func TestGetCrossChecks(t *testing.T) {
   }
   location = moves.Location{3, 3}
   positionCrossChecks, existing = crossChecks[location.Hash()]
+  positionCrossCheck = positionCrossChecks.At(0).
+      (*cross_check.PositionCrossCheck)
   if !existing || positionCrossChecks.Len() != 1 ||
-     positionCrossChecks.At(0).(*cross_check.PositionCrossCheck).Letter != 'B' {
+     positionCrossCheck.Letter != 'B'|| positionCrossCheck.Score != 2 {
     t.Fail()
   }
 

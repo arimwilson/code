@@ -82,6 +82,24 @@ func Transpose(board [][]byte) (transposedBoard [][]byte) {
   return
 }
 
+func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
+  // We ensure that the move is going right, for cache friendliness.
+  if (move.Direction != moves.RIGHT) { panic("Can't score down moves!") }
+  wordMultiplier := 1
+  move.Score = 0
+  for i := 0; i < len(move.Word); i++ {
+    multiplier := board[move.Start.X][move.Start.Y + i]
+    letterMultiplier := 1
+    if multiplier == '1' || multiplier == '2' {
+      wordMultiplier *= int(multiplier) - '0' + 1
+    } else if multiplier == '3' || multiplier == '4' {
+      letterMultiplier = int(multiplier) - '1'
+    }
+    move.Score += letterMultiplier * letterValues[move.Word[i]]
+  }
+  move.Score *= wordMultiplier
+}
+
 func PrintBoard(board [][]byte) {
   for i := 0; i < BOARD_SIZE; i++ {
     for j := 0; j < BOARD_SIZE; j++ {
