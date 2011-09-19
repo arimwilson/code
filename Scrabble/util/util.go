@@ -18,7 +18,7 @@ func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
   return
 }
 
-const BOARD_SIZE = 15
+var BOARD_SIZE = 15
 
 func Existing(board [][]byte, location *moves.Location) bool {
   if location.X < 0 || location.X > BOARD_SIZE || location.Y < 0 ||
@@ -63,6 +63,21 @@ func ReadLetterValues(letterValuesFlag string) (letterValues map[byte] int) {
   splitLetterValues := strings.Split(letterValuesFlag, " ")
   for i := byte('A'); i <= byte('Z'); i++ {
     letterValues[i], _ = strconv.Atoi(splitLetterValues[i - 'A'])
+  }
+  return
+}
+
+func Transpose(board [][]byte) (transposedBoard [][]byte) {
+  transposedBoard = make([][]byte, BOARD_SIZE)
+  for i := 0; i < BOARD_SIZE; i++ {
+    transposedBoard[i] = make([]byte, BOARD_SIZE)
+    copy(transposedBoard[i], board[i])
+  }
+  for i := 0; i < BOARD_SIZE; i++ {
+    for j := 0; j < i; j++ {
+      transposedBoard[i][j], transposedBoard[j][i] =
+          transposedBoard[j][i], transposedBoard[i][j]
+    }
   }
   return
 }

@@ -2,6 +2,8 @@
 
 package moves
 
+import ("hash/crc32")
+
 type Direction int; const (
   RIGHT = iota
   DOWN
@@ -14,7 +16,7 @@ type Location struct {
 
 // Hash function for Locations.
 func (self* Location) Hash() int {
-  return self.X ^ self.Y
+  return int(crc32.ChecksumIEEE([]byte(string([]int{self.X, self.Y}))))
 }
 
 type Move struct {

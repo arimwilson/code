@@ -21,21 +21,6 @@ var letterValuesFlag = flag.String(
     "l", "1 3 3 2 1 4 2 4 1 8 5 1 3 1 1 3 10 1 1 1 1 4 4 8 4 10",
     "Space-separated list of letter point values, from A-Z.")
 
-func transpose(board [][]byte) (transposedBoard [][]byte) {
-  transposedBoard = make([][]byte, util.BOARD_SIZE)
-  for i := 0; i < util.BOARD_SIZE; i++ {
-    transposedBoard[i] = make([]byte, util.BOARD_SIZE)
-    copy(transposedBoard[i], board[i])
-  }
-  for i := 0; i < util.BOARD_SIZE; i++ {
-    for j := 0; j < i; j++ {
-      transposedBoard[i][j], transposedBoard[j][i] =
-          transposedBoard[j][i], transposedBoard[i][j]
-    }
-  }
-  return
-}
-
 // Retrieve the tiles that can possibly follow prefix in dict.
 func getTilesInFollowing(dict *trie.Trie, prefix string,
                          tiles map[byte] int) (tilesInFollowing []byte) {
@@ -64,7 +49,7 @@ func placeTile(dict* trie.Trie, location *moves.Location, board [][]byte,
 
 func extendRight(dict* trie.Trie, start moves.Location, board [][]byte,
                  tiles map[byte] int) (moveList *vector.Vector) {
-  if len(tiles) == 0 || start.Y == util.BOARD_SIZE {
+  /*if len(tiles) == 0 || start.Y == util.BOARD_SIZE {
     return
   }
   // Place a tile (if extensions exist to prefix and is valid), then recurse.
@@ -89,12 +74,13 @@ func extendRight(dict* trie.Trie, start moves.Location, board [][]byte,
       newTiles[j] = following[j] - 1, true
     }
     extendRight(dict, start, newBoard, newTiles)
-  }
+  }*/
   return
 }
 
 func extendLeft(dict *trie.Trie, start moves.Location, board [][]byte,
                 tiles map[byte] int) (moveList *vector.Vector) {
+  /*
   if len(tiles) == 0 || start.Y < 0 {
     return
   }
@@ -120,11 +106,14 @@ func extendLeft(dict *trie.Trie, start moves.Location, board [][]byte,
     // Extend left from current location.
     extendLeft(dict, moves.Location{start.X, start.Y - 1}, newBoard, newTiles)
   }
+  */
   return
 }
 
-func getMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] int,
-                 letterValues map[byte] int) (moveList vector.Vector) {
+func getMoveList(
+    dict *trie.Trie, board [][]byte, tiles map[byte] int,
+    letterValues map[byte] int,
+    crossChecks map[int] *vector.Vector) (moveList vector.Vector) {
   // Look for lowercase characters as well as * on the board.
   for i := 0; i < util.BOARD_SIZE; i++ {
     for j := 0; j < util.BOARD_SIZE; j++ {
@@ -147,13 +136,13 @@ func setDirection(direction moves.Direction, moveList *vector.Vector) {
 
 func main() {
   flag.Parse()
-  wordListFile, err := os.Open(*wordListFlag, os.O_RDONLY, 0);
+  wordListFile, err := os.Open(*wordListFlag);
   defer wordListFile.Close();
   if err != nil {
     fmt.Printf("need valid file for -w, found %s\n", *wordListFlag)
     os.Exit(1)
   }
-  boardFile, err := os.Open(*boardFlag, os.O_RDONLY, 0);
+  boardFile, err := os.Open(*boardFlag);
   defer boardFile.Close();
   if err != nil {
     fmt.Printf("need valid file for -b, found %s\n", *boardFlag)
@@ -167,16 +156,17 @@ func main() {
   board := util.ReadBoard(boardFile)
   tiles := util.ReadTiles(*tilesFlag)
   letterValues := util.ReadLetterValues(*letterValuesFlag)
-  transposedBoard := transpose(board)
+  transposedBoard := util.Transpose(board)
 
   // Get moves going both right and down.
-  crossCheckSet := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
+  crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
                                               letterValues)
-  moveList := getMoveList(dict, board, tiles, letterValues)
+  moveList := getMoveList(dict, board, tiles, letterValues, crossChecks)
   setDirection(moves.RIGHT, &moveList)
-  downCrossCheckSet := cross_check.GetCrossChecks(dict, board, tiles,
-                                                  letterValues)
-  downMoveList := getMoveList(dict, transpose(board), tiles, letterValues)
+  downCrossChecks := cross_check.GetCrossChecks(dict, board, tiles,
+                                                letterValues)
+  downMoveList := getMoveList(dict, transposedBoard, tiles, letterValues,
+                              downCrossChecks)
   setDirection(moves.DOWN, &downMoveList)
   moveList.AppendVector(&downMoveList)
   sort_with.SortWith(moveList, moves.Less)
