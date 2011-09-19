@@ -45,7 +45,8 @@ func PrintMove(move *Move) {
   } else {
     direction = "down"
   }
-  fmt.Printf("%s, worth %d points, starting at %d, %d, going %s.\n",
-             move.Word, move.Score, move.Start.X, move.Start.Y, direction)
+  fmt.Printf("%s, worth %d points, starting at %d, %s, going %s.\n",
+             move.Word, move.Score, move.Start.X + 1,
+             string(move.Start.Y + 'A'), direction)
 }
 

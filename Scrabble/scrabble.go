@@ -138,6 +138,7 @@ func getMoveList(
 func setDirection(direction moves.Direction, moveList *vector.Vector) {
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)
+    move.Start.X, move.Start.Y = move.Start.Y, move.Start.X
     move.Direction = direction
     moveList.Set(i, move)
   }
