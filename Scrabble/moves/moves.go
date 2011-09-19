@@ -2,7 +2,8 @@
 
 package moves
 
-import ("hash/crc32")
+import ("fmt";
+        "hash/crc32")
 
 type Direction int; const (
   UP = iota
@@ -31,5 +32,10 @@ type Move struct {
 // Used to sort vectors of Move objects by score.
 func Less(a, b interface{}) bool {
   return a.(Move).Score < b.(Move).Score
+}
+
+func PrintMove(move *Move) {
+  fmt.Printf("%s, worth %d points, starting at %d, %d, going %d.\n",
+             move.Word, move.Score, move.Start.X, move.Start.Y, move.Direction)
 }
 

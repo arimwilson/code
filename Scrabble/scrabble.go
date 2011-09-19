@@ -182,10 +182,9 @@ func main() {
   moveList.AppendVector(&downMoveList)
   sort_with.SortWith(moveList, moves.Less)
   for i := 0; i < moveList.Len(); i++ {
+    fmt.Printf("%d. ", i)
     move := moveList.At(i).(moves.Move)
-    fmt.Printf("%d. %s, worth %d points, starting at %d, %d, going %d.",
-               i, move.Word, move.Score, move.Start.X, move.Start.Y,
-               move.Direction)
+    moves.PrintMove(&move)
   }
 }
 

@@ -21,8 +21,8 @@ func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
 var BOARD_SIZE = 15
 
 func Available(board [][]byte, location *moves.Location) bool {
-  if location.X < 0 || location.X > BOARD_SIZE || location.Y < 0 ||
-     location.Y > BOARD_SIZE {
+  if location.X < 0 || location.X >= BOARD_SIZE || location.Y < 0 ||
+     location.Y >= BOARD_SIZE {
     return false
   }
   letter := board[location.X][location.Y]
@@ -48,12 +48,7 @@ func ReadBoard(boardFile* os.File) (board [][]byte) {
 func ReadTiles(tilesFlag string) (tiles map[byte] int) {
   tiles = make(map[byte] int)
   for i := 0; i < len(tilesFlag); i++ {
-    tile, ok := tiles[tilesFlag[i]]
-    if !ok {
-      tile = 0
-    } else {
-      tile++
-    }
+    tiles[tilesFlag[i]]++
   }
   return
 }
@@ -87,6 +82,7 @@ func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
   if (move.Direction != moves.RIGHT) { panic("Can't score down moves!") }
   wordMultiplier := 1
   score := 0
+  moves.PrintMove(move)
   for i := 0; i < len(move.Word); i++ {
     multiplier := board[move.Start.X][move.Start.Y + i]
     letterMultiplier := 1
