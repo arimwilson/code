@@ -32,7 +32,7 @@ func GetCrossChecks(
         positionCrossChecks := crossChecks[location.Hash()]
         sides := []string{"", "", ""}
         if l < j -1 {
-          possibleMove.Start.X = l + 1
+          possibleMove.Start.Y = l + 1
           sides[0] = string(transposedBoard[i][l + 1:j])
         }
         if r > j + 1 {
