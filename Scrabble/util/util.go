@@ -2,7 +2,8 @@
 
 package util
 
-import ("bufio"; "fmt"; "strconv"; "strings"; "os";
+import ("bufio"; "container/vector"; "fmt"; "hash/crc32"; "strconv"; "strings";
+        "os";
         "moves"; "trie")
 
 func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
@@ -79,10 +80,9 @@ func Transpose(board [][]byte) (transposedBoard [][]byte) {
 
 func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
   // We ensure that the move is going right, for cache friendliness.
-  if (move.Direction != moves.RIGHT) { panic("Can't score down moves!") }
+  if (move.Direction != moves.ACROSS) { panic("Can't score down moves!") }
   wordMultiplier := 1
   score := 0
-  moves.PrintMove(move)
   for i := 0; i < len(move.Word); i++ {
     multiplier := board[move.Start.X][move.Start.Y + i]
     letterMultiplier := 1
@@ -102,6 +102,23 @@ func PrintBoard(board [][]byte) {
       fmt.Printf("%c", board[i][j])
     }
     fmt.Printf("\n")
+  }
+}
+
+func RemoveDuplicates(moveList *vector.Vector) {
+  existingMoves := make(map[uint32] bool)
+  for i := 0; i < moveList.Len(); i++ {
+    move := moveList.At(i).(moves.Move)
+    cksum := crc32.ChecksumIEEE(
+      []byte(string([]int{move.Start.X, move.Start.Y, int(move.Direction)}) +
+             move.Word))
+    _, existing := existingMoves[cksum]
+    if !existing {
+      existingMoves[cksum] = true
+    } else {
+      moveList.Delete(i)
+      i--
+    }
   }
 }
 

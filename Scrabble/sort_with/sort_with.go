@@ -15,6 +15,7 @@ func (self sortWrap) Swap(i, j int) {
   s := self.sl
   s[i], s[j] = s[j], s[i]
 }
+
 func (self sortWrap) Less(i, j int) bool {
   return self.fn(self.sl[i], self.sl[j])
 }

@@ -6,7 +6,7 @@ import ("fmt";
         "hash/crc32")
 
 type Direction int; const (
-  RIGHT = iota
+  ACROSS = iota
   DOWN
 )
 
@@ -28,12 +28,18 @@ type Move struct {
 }
 
 // Used to sort vectors of Move objects by score.
-func Less(a, b interface{}) bool {
-  return a.(Move).Score < b.(Move).Score
+func Greater(a, b interface{}) bool {
+  return a.(Move).Score > b.(Move).Score
 }
 
 func PrintMove(move *Move) {
-  fmt.Printf("%s, worth %d points, starting at %d, %d, going %d.\n",
-             move.Word, move.Score, move.Start.X, move.Start.Y, move.Direction)
+  var direction string
+  if (move.Direction == ACROSS) {
+    direction = "across"
+  } else {
+    direction = "down"
+  }
+  fmt.Printf("%s, worth %d points, starting at %d, %d, going %s.\n",
+             move.Word, move.Score, move.Start.X, move.Start.Y, direction)
 }
 

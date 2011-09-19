@@ -21,8 +21,8 @@ func GetCrossChecks(
         for ; r < util.BOARD_SIZE &&
               !util.Available(transposedBoard, &moves.Location{i, r}); r++ {}
         if l == j - 1 && r == j + 1 { continue }
-        possibleMove := moves.Move{Start: moves.Location{i, j},
-                                   Score: 0, Direction: moves.RIGHT }
+        possibleMove := moves.Move{Score: 0, Start: moves.Location{i, j},
+                                   Direction: moves.ACROSS }
         location := moves.Location{j, i}
         if _, existing := crossChecks[location.Hash()]; existing {
           // Bad hash, panic!
