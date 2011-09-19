@@ -38,8 +38,8 @@ func TestGetCrossChecks(t *testing.T) {
   }
   location := moves.Location{3, 0}
   positionCrossChecks, existing := crossChecks[location.Hash()]
-  score, letterExisting := positionCrossChecks['B']
-  if !existing || len(positionCrossChecks) != 1 || !letterExisting ||
+  score, tileExisting := positionCrossChecks['B']
+  if !existing || len(positionCrossChecks) != 1 || !tileExisting ||
      score != 2 {
     t.Fail()
   }
@@ -50,8 +50,8 @@ func TestGetCrossChecks(t *testing.T) {
   }
   location = moves.Location{3, 3}
   positionCrossChecks, existing = crossChecks[location.Hash()]
-  score, letterExisting = positionCrossChecks['B']
-  if !existing || len(positionCrossChecks) != 1 || !letterExisting ||
+  score, tileExisting = positionCrossChecks['B']
+  if !existing || len(positionCrossChecks) != 1 || !tileExisting ||
      score != 2 {
     t.Fail()
   }

@@ -26,7 +26,7 @@ func Available(board [][]byte, location *moves.Location) bool {
     return false
   }
   letter := board[location.X][location.Y]
-  return (letter < 'A' || letter > 'Z') && letter != '*'
+  return (letter < 'A' || letter > 'Z')
 }
 
 func ReadBoard(boardFile* os.File) (board [][]byte) {
@@ -86,7 +86,7 @@ func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
   // We ensure that the move is going right, for cache friendliness.
   if (move.Direction != moves.RIGHT) { panic("Can't score down moves!") }
   wordMultiplier := 1
-  move.Score = 0
+  score := 0
   for i := 0; i < len(move.Word); i++ {
     multiplier := board[move.Start.X][move.Start.Y + i]
     letterMultiplier := 1
@@ -95,9 +95,9 @@ func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
     } else if multiplier == '3' || multiplier == '4' {
       letterMultiplier = int(multiplier) - '1'
     }
-    move.Score += letterMultiplier * letterValues[move.Word[i]]
+    score += letterMultiplier * letterValues[move.Word[i]]
   }
-  move.Score *= wordMultiplier
+  move.Score += wordMultiplier * score
 }
 
 func PrintBoard(board [][]byte) {

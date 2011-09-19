@@ -9,7 +9,7 @@ type Trie struct {
 
 func New() *Trie {
   trie := new(Trie)
-  trie.children = make(map[byte]*Trie)
+  trie.children = make(map[byte] *Trie)
   return trie
 }
 
@@ -18,8 +18,8 @@ func (self* Trie) Insert(word string) {
     self.terminal = true
     return
   }
-  child, ok := self.children[word[0]]
-  if !ok {
+  child, existing := self.children[word[0]]
+  if !existing {
     child = New()
     self.children[word[0]] = child
   }
@@ -34,8 +34,8 @@ func (self* Trie) Find(word string) bool {
       return false
     }
   }
-  child, ok := self.children[word[0]]
-  if ok {
+  child, existing := self.children[word[0]]
+  if existing {
     return child.Find(word[1:])
   }
   return false

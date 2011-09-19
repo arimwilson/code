@@ -22,7 +22,7 @@ func GetCrossChecks(
               !util.Available(transposedBoard, &moves.Location{i, r}); r++ {}
         if l == j - 1 && r == j + 1 { continue }
         possibleMove := moves.Move{Start: moves.Location{i, j},
-                                   Direction: moves.RIGHT }
+                                   Score: 0, Direction: moves.RIGHT }
         location := moves.Location{j, i}
         if _, existing := crossChecks[location.Hash()]; existing {
           // Bad hash, panic!
@@ -38,12 +38,12 @@ func GetCrossChecks(
         if r > j + 1 {
           sides[2] = string(transposedBoard[i][j + 1:r])
         }
-        for k, _ := range tiles {
-          sides[1] = string(k)
+        for tile, _ := range tiles {
+          sides[1] = string(tile)
           possibleMove.Word = strings.Join(sides, "")
           if (dict.Find(possibleMove.Word)) {
             util.Score(transposedBoard, letterValues, &possibleMove)
-            positionCrossChecks[k] = possibleMove.Score
+            positionCrossChecks[tile] = possibleMove.Score
           }
         }
       }
