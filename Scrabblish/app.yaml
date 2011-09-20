@@ -4,5 +4,11 @@ runtime: go
 api_version: 2
 
 handlers:
-- url: /.*
+- url: /twl
+  static_files: twl.txt
+  upload: scrabble/twl.txt
+- url: /
+  static_files: scrabblish.html
+  upload: scrabblish.html
+- url: /solve
   script: _go_app
