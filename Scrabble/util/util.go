@@ -78,19 +78,25 @@ func Transpose(board [][]byte) (transposedBoard [][]byte) {
   return
 }
 
+func TileMultipliers(tile byte) (letterMultiplier int, wordMultiplier int) {
+  wordMultiplier = 1
+  letterMultiplier = 1
+  if tile == '1' || tile == '2' {
+    wordMultiplier *= int(tile) - '0' + 1
+  } else if tile == '3' || tile == '4' {
+    letterMultiplier = int(tile) - '1'
+  }
+}
+
 func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
   // We ensure that the move is going right, for cache friendliness.
   if (move.Direction != moves.ACROSS) { panic("Can't score down moves!") }
   wordMultiplier := 1
   score := 0
   for i := 0; i < len(move.Word); i++ {
-    multiplier := board[move.Start.X][move.Start.Y + i]
-    letterMultiplier := 1
-    if multiplier == '1' || multiplier == '2' {
-      wordMultiplier *= int(multiplier) - '0' + 1
-    } else if multiplier == '3' || multiplier == '4' {
-      letterMultiplier = int(multiplier) - '1'
-    }
+    tileWordMultiplier, letterMultiplier := TileMultipliers(
+        board[move.Start.X][move.Start.Y + i])
+    wordMultiplier *= tileWordMultiplier
     score += letterMultiplier * letterValues[move.Word[i]]
   }
   move.Score += wordMultiplier * score

@@ -10,25 +10,32 @@ var wordListFlag = flag.String(
     "w", "twl.txt",
     "File with space-separated list of legal words, in upper-case.")
 var boardFlag = flag.String(
-    "b", "sample.txt",
+    "b", "",
     "File with board structure. Format: * indicates starting point, 1 and 2 " +
     "indicate double and triple word score tiles, 3 and 4 indicate double " +
     "and triple letter score tiles, - indicates blank tiles, and upper-case " +
     "letters indicate existing words.")
 var tilesFlag = flag.String(
-    "t", "SAEDBQH", "List of all 7 player tiles, in upper-case.")
+    "t", "", "List of all 7 player tiles, in upper-case.")
 var letterValuesFlag = flag.String(
     "l", "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10",
     "Space-separated list of letter point values, from A-Z.")
 var numResultsFlag = flag.Int(
   "n", 25, "Maximum number of results to output.")
 
+func blankScore(score int, letterValue int, tile byte) int {
+  wordMultiplier, letterMultiplier := util.TileMultipliers(tile)
+  return (score - letterMultiplier * letterValue) / wordMultiplier
+}
+
 // Retrieve whether or not we have tiles that can possibly follow prefix in
 // dict.
 func canFollow(dict *trie.Trie, prefix string, tiles map[byte] int) bool {
   following := dict.Following(prefix)
+  count, existing := tiles[byte(' ')]
+  if len(following) > 0 && existing && count > 0 { return true }
   for i := 0; i < len(following); i++ {
-    count, existing := tiles[following[i]]
+    count, existing = tiles[following[i]]
     if existing && count > 0 { return true }
   }
   return false
@@ -70,22 +77,47 @@ func extend(
     positionCrossChecks, existing = crossChecks[endLocation.Hash()]
   }
   for tile, count := range(tiles) {
-    score, tileExisting := positionCrossChecks[tile]
-    if count > 0 && (!existing || tileExisting) {
-      placedMove := possibleMove.Copy()
+    if count == 0 { continue }
+    blank := tiles == bytes(' ')
+    verticallyScoredTiles := make(map[byte] int)
+    if !blank {
+      score, tileExisting := positionCrossChecks[tile]
+      if !existing { verticallyScoredTiles[tile] = 0 }
+      if tileExisting { verticallyScoredTiles[tile] = score }
+    } else if existing {
+      verticallyScoredTiles = copy(positionCrossChecks)
+    } else {
+      for i := byte('A'); i <= byte('Z'); i++ { verticallyScoredTiles[i] = 0 }
+    }
+    for letter, score := range(verticallyScoredTiles) {
+      placedMove := copy(possibleMove)
       if left {
-        placedMove.Word = string(tile) + placedMove.Word
+        placedMove.Word = string(letter) + placedMove.Word
       } else {
-        placedMove.Word += string(tile)
+        placedMove.Word += string(letter)
       }
-      if tileExisting { placedMove.Score += score }
+      if !blank {
+        placedMove.Score += score
+      } else if score > 0 {
+        if left {
+          placedMove.Score += blankScore(
+            score, letterValues[letter],
+            board[placedMove.Start.X][placedMove.Start.Y])
+        } else {
+          placedMove.Score += blankScore(
+            score, letterValues[letter]
+            board[placedMove.Start.X]
+                 [placedMove.Start.Y + len(placedMove.Word) - 1])
+        }
+      }
       if dict.Find(placedMove.Word) {
-        score := placedMove.Score
+        score = placedMove.Score
+        // TODO(ariw): How to remove blank tiles from scoring here?
         util.Score(board, letterValues, &placedMove)
         moveList.Push(placedMove)
         placedMove.Score = score
       }
-      tiles[tile]--
+      tiles[letter]--
       moveList.AppendVector(
         moveRight(dict, board, tiles, letterValues, crossChecks, placedMove))
       if left {
@@ -94,7 +126,7 @@ func extend(
           extend(dict, board, tiles, letterValues, crossChecks, placedMove,
                  true))
       }
-      tiles[tile]++
+      tiles[letter]++
     }
   }
   return
