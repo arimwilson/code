@@ -34,7 +34,12 @@ func (self* Trie) Find(word string) bool {
       return false
     }
   }
-  child, existing := self.children[word[0]]
+  letter := word[0]
+  // TODO(ariw): Remove hack.
+  if (letter < 'A') {
+    letter += 26
+  }
+  child, existing := self.children[letter]
   if existing {
     return child.Find(word[1:])
   }

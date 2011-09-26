@@ -38,6 +38,18 @@ func Greater(a, b interface{}) bool {
   return a.(Move).Score > b.(Move).Score
 }
 
+func MoveWord(move *Move) (string) {
+  word := make([]byte, len(move.Word))
+  for i := 0; i < len(move.Word); i++ {
+    if move.Word[i] >= 'A' {
+      word[i] = move.Word[i]
+    } else {
+      word[i] = byte(' ')
+    }
+  }
+  return string(word)
+}
+
 func PrintMove(move *Move) {
   var direction string
   if (move.Direction == ACROSS) {
@@ -45,8 +57,9 @@ func PrintMove(move *Move) {
   } else {
     direction = "down"
   }
+
   fmt.Printf("%s, worth %d points, starting at %d, %s, going %s.\n",
-             move.Word, move.Score, move.Start.X + 1,
+             MoveWord(move), move.Score, move.Start.X + 1,
              string(move.Start.Y + 'A'), direction)
 }
 

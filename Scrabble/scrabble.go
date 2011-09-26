@@ -21,12 +21,13 @@ var letterValuesFlag = flag.String(
     "l", "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10",
     "Space-separated list of letter point values, from A-Z.")
 var numResultsFlag = flag.Int(
-  "n", 25, "Maximum number of results to output.")
+    "n", 25, "Maximum number of results to output.")
 
 func blankScore(score int, letterValue int, tile byte) int {
   wordMultiplier, letterMultiplier := util.TileMultipliers(tile)
   return (score - letterMultiplier * letterValue) / wordMultiplier
 }
+
 
 // Retrieve whether or not we have tiles that can possibly follow prefix in
 // dict.
@@ -78,41 +79,40 @@ func extend(
   }
   for tile, count := range(tiles) {
     if count == 0 { continue }
-    blank := tiles == bytes(' ')
-    verticallyScoredTiles := make(map[byte] int)
-    if !blank {
-      score, tileExisting := positionCrossChecks[tile]
-      if !existing { verticallyScoredTiles[tile] = 0 }
-      if tileExisting { verticallyScoredTiles[tile] = score }
+    verticallyScoredLetters := make(map[byte] int)
+    if tile != byte(' ') {
+      if existing {
+        score, tileExisting := positionCrossChecks[tile]
+        if tileExisting { verticallyScoredLetters[tile] = score }
+      } else {
+        verticallyScoredLetters[tile] = 0
+      }
     } else if existing {
-      verticallyScoredTiles = copy(positionCrossChecks)
+      for i, score := range(positionCrossChecks) {
+        var placedCol int
+        if left {
+          placedCol = possibleMove.Start.Y
+        } else {
+          placedCol = possibleMove.Start.Y + len(possibleMove.Word)
+        }
+        verticallyScoredLetters[i - 26] = blankScore(
+            score, letterValues[i], board[possibleMove.Start.X][placedCol])
+      }
     } else {
-      for i := byte('A'); i <= byte('Z'); i++ { verticallyScoredTiles[i] = 0 }
+      for i := byte('A'); i <= byte('Z'); i++ {
+        verticallyScoredLetters[i - 26] = 0
+      }
     }
-    for letter, score := range(verticallyScoredTiles) {
-      placedMove := copy(possibleMove)
+    for letter, score := range(verticallyScoredLetters) {
+      placedMove := possibleMove.Copy()
       if left {
         placedMove.Word = string(letter) + placedMove.Word
       } else {
         placedMove.Word += string(letter)
       }
-      if !blank {
-        placedMove.Score += score
-      } else if score > 0 {
-        if left {
-          placedMove.Score += blankScore(
-            score, letterValues[letter],
-            board[placedMove.Start.X][placedMove.Start.Y])
-        } else {
-          placedMove.Score += blankScore(
-            score, letterValues[letter]
-            board[placedMove.Start.X]
-                 [placedMove.Start.Y + len(placedMove.Word) - 1])
-        }
-      }
+      placedMove.Score += score
       if dict.Find(placedMove.Word) {
         score = placedMove.Score
-        // TODO(ariw): How to remove blank tiles from scoring here?
         util.Score(board, letterValues, &placedMove)
         moveList.Push(placedMove)
         placedMove.Score = score

@@ -86,6 +86,7 @@ func TileMultipliers(tile byte) (letterMultiplier int, wordMultiplier int) {
   } else if tile == '3' || tile == '4' {
     letterMultiplier = int(tile) - '1'
   }
+  return
 }
 
 func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
@@ -97,7 +98,10 @@ func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
     tileWordMultiplier, letterMultiplier := TileMultipliers(
         board[move.Start.X][move.Start.Y + i])
     wordMultiplier *= tileWordMultiplier
-    score += letterMultiplier * letterValues[move.Word[i]]
+    // TODO(ariw): Remove hack.
+    if move.Word[i] >= 'A' {
+      score += letterMultiplier * letterValues[move.Word[i]]
+    }
   }
   move.Score += wordMultiplier * score
 }
@@ -112,14 +116,15 @@ func PrintBoard(board [][]byte) {
 }
 
 func PrintMoveOnBoard(board [][]byte, move *moves.Move) {
+  word := moves.MoveWord(move)
   for i := 0; i < BOARD_SIZE; i++ {
     for j := 0; j < BOARD_SIZE; j++ {
       if move.Direction == moves.ACROSS && i == move.Start.X &&
-         j >= move.Start.Y && j < move.Start.Y + len(move.Word) {
-        fmt.Printf("%c", move.Word[j - move.Start.Y] - 'A' + 'a')
+         j >= move.Start.Y && j < move.Start.Y + len(word) {
+        fmt.Printf("%c", word[j - move.Start.Y] - 'A' + 'a')
       } else if move.Direction == moves.DOWN && j == move.Start.Y &&
-                i >= move.Start.X && i < move.Start.X + len(move.Word) {
-        fmt.Printf("%c", move.Word[i - move.Start.X] - 'A' + 'a')
+                i >= move.Start.X && i < move.Start.X + len(word) {
+        fmt.Printf("%c", word[i - move.Start.X] - 'A' + 'a')
       } else {
         fmt.Printf("%c", board[i][j])
       }
