@@ -1,41 +1,22 @@
 package trie_test
 
 import ("testing";
-        "trie")
-
-var strings = []string{
-  "abba",
-  "abra",
-  "existing",
-  "textual",
-  "later"}
-
-func InsertIntoDictionary() (dict* trie.Trie) {
-  dict = trie.New()
-  for i := 0; i < len(strings); i++ {
-    dict.Insert(strings[i])
-  }
-  return
-}
+        "util")
 
 func TestInsertAndRetrieve(t *testing.T) {
-  dict := InsertIntoDictionary()
-  for i := 0; i < len(strings); i++ {
-    if !dict.Find(strings[i]) {
-      t.Errorf("Could not find %s in dict.", strings[i])
-    }
-  }
-  return
+  dict := util.InsertIntoDictionary()
+  if !dict.Find("abba") { t.Fail() }
+  if !dict.Find("textual") { t.Fail() }
 }
 
 func TestNonExistent(t *testing.T) {
-  dict := InsertIntoDictionary()
+  dict := util.InsertIntoDictionary()
   if (dict.Find("ari")) { t.Fail() }
   if (dict.Find("xylophone")) { t.Fail() }
 }
 
 func TestFollowing(t *testing.T) {
-  dict := InsertIntoDictionary()
+  dict := util.InsertIntoDictionary()
   following := dict.Following("ab")
   if len(following) != 2 { t.Fail() }
   if following[0] != 'b' { t.Fail() }

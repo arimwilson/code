@@ -6,6 +6,21 @@ import ("bufio"; "container/vector"; "fmt"; "hash/crc32"; "strconv"; "strings";
         "os";
         "moves"; "trie")
 
+
+func InsertIntoDictionary() (dict* trie.Trie) {
+  dict = trie.New()
+  var strings = []string{
+      "abba",
+      "abra",
+      "existing",
+      "textual",
+      "later"}
+  for i := 0; i < len(strings); i++ {
+    dict.Insert(strings[i])
+  }
+  return
+}
+
 func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
   wordListReader := bufio.NewReader(wordListFile)
   dict = trie.New()
