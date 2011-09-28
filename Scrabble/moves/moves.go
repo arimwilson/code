@@ -33,6 +33,19 @@ func (self* Move) Copy() Move {
   return *newMove
 }
 
+// Hash function for Moves.
+func (self *Move) Hash() uint32 {
+   return crc32.ChecksumIEEE(
+       []byte(string([]int{self.Start.X, self.Start.Y, int(self.Direction)}) +
+              self.Word))
+}
+
+// Equality function for Moves.
+func (self *Move) Equals(other *Move) bool {
+  return self.Start.X == other.Start.X && self.Start.Y == other.Start.Y &&
+         self.Direction == other.Direction && self.Word == other.Word
+}
+
 // Used to sort vectors of Move objects by score.
 func Greater(a, b interface{}) bool {
   return a.(Move).Score > b.(Move).Score

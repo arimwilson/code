@@ -2,7 +2,7 @@
 
 package util
 
-import ("bufio"; "container/vector"; "fmt"; "hash/crc32"; "strconv"; "strings";
+import ("bufio"; "container/vector"; "fmt"; "strconv"; "strings";
         "os";
         "moves"; "trie")
 
@@ -110,12 +110,10 @@ func RemoveDuplicates(moveList *vector.Vector) {
   existingMoves := make(map[uint32] bool)
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)
-    cksum := crc32.ChecksumIEEE(
-      []byte(string([]int{move.Start.X, move.Start.Y, int(move.Direction)}) +
-             move.Word))
-    _, existing := existingMoves[cksum]
+    hash := move.Hash()
+    _, existing := existingMoves[hash]
     if !existing {
-      existingMoves[cksum] = true
+      existingMoves[hash] = true
     } else {
       moveList.Delete(i)
       i--
@@ -150,14 +148,14 @@ func PrintMoveOnBoard(board [][]byte, move *moves.Move) {
   }
 }
 
-func TestInsertIntoDictionary() (dict* trie.Trie) {
+func TestInsertIntoDictionary() (dict *trie.Trie) {
   dict = trie.New()
   var strings = []string{
-      "abba",
-      "abra",
-      "existing",
-      "textual",
-      "later"}
+      "ABBA",
+      "ABRA",
+      "EXISTING",
+      "TEXTUAL",
+      "LATER"}
   for i := 0; i < len(strings); i++ {
     dict.Insert(strings[i])
   }
