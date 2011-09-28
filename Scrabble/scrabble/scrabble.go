@@ -3,11 +3,12 @@ package scrabble
 import ("container/vector";
         "moves"; "trie"; "util")
 
+// Your score without the points from the blank letter given from the value
+// retrieved from letterValue.
 func BlankScore(score int, letterValue int, tile byte) int {
   wordMultiplier, letterMultiplier := util.TileMultipliers(tile)
   return score / wordMultiplier - letterMultiplier * letterValue
 }
-
 
 // Retrieve whether or not we have tiles that can possibly follow prefix in
 // dict.
@@ -22,6 +23,7 @@ func CanFollow(dict *trie.Trie, prefix string, tiles map[byte] int) bool {
   return false
 }
 
+// Skip over existing tiles and continue looking for words to the right.
 func MoveRight(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, crossChecks map[int] map[byte] int,
@@ -41,6 +43,8 @@ func MoveRight(
   return
 }
 
+// Add one letter to a possible move, checking if we've got a word, going either
+// left or right.
 func Extend(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, crossChecks map[int] map[byte] int,
@@ -112,6 +116,7 @@ func Extend(
   return
 }
 
+// Look for new across moves connected to any existing tile.
 func GetMoveList(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int,
@@ -150,6 +155,7 @@ func GetMoveList(
   return
 }
 
+// Set Direction for all moves in moveList to direction.
 func SetDirection(direction moves.Direction, moveList *vector.Vector) {
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)

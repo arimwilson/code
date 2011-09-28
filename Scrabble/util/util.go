@@ -6,21 +6,6 @@ import ("bufio"; "container/vector"; "fmt"; "hash/crc32"; "strconv"; "strings";
         "os";
         "moves"; "trie")
 
-
-func InsertIntoDictionary() (dict* trie.Trie) {
-  dict = trie.New()
-  var strings = []string{
-      "abba",
-      "abra",
-      "existing",
-      "textual",
-      "later"}
-  for i := 0; i < len(strings); i++ {
-    dict.Insert(strings[i])
-  }
-  return
-}
-
 func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
   wordListReader := bufio.NewReader(wordListFile)
   dict = trie.New()
@@ -121,6 +106,23 @@ func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
   move.Score += wordMultiplier * score
 }
 
+func RemoveDuplicates(moveList *vector.Vector) {
+  existingMoves := make(map[uint32] bool)
+  for i := 0; i < moveList.Len(); i++ {
+    move := moveList.At(i).(moves.Move)
+    cksum := crc32.ChecksumIEEE(
+      []byte(string([]int{move.Start.X, move.Start.Y, int(move.Direction)}) +
+             move.Word))
+    _, existing := existingMoves[cksum]
+    if !existing {
+      existingMoves[cksum] = true
+    } else {
+      moveList.Delete(i)
+      i--
+    }
+  }
+}
+
 func PrintBoard(board [][]byte) {
   for i := 0; i < BOARD_SIZE; i++ {
     for j := 0; j < BOARD_SIZE; j++ {
@@ -148,20 +150,17 @@ func PrintMoveOnBoard(board [][]byte, move *moves.Move) {
   }
 }
 
-func RemoveDuplicates(moveList *vector.Vector) {
-  existingMoves := make(map[uint32] bool)
-  for i := 0; i < moveList.Len(); i++ {
-    move := moveList.At(i).(moves.Move)
-    cksum := crc32.ChecksumIEEE(
-      []byte(string([]int{move.Start.X, move.Start.Y, int(move.Direction)}) +
-             move.Word))
-    _, existing := existingMoves[cksum]
-    if !existing {
-      existingMoves[cksum] = true
-    } else {
-      moveList.Delete(i)
-      i--
-    }
+func TestInsertIntoDictionary() (dict* trie.Trie) {
+  dict = trie.New()
+  var strings = []string{
+      "abba",
+      "abra",
+      "existing",
+      "textual",
+      "later"}
+  for i := 0; i < len(strings); i++ {
+    dict.Insert(strings[i])
   }
+  return
 }
 

@@ -16,7 +16,7 @@ func TestBlankScore(t *testing.T) {
 }
 
 func TestCanFollow(t *testing.T) {
-  dict := util.InsertIntoDictionary()
+  dict := util.TestInsertIntoDictionary()
   if !scrabble.CanFollow(dict, "ab", map[byte] int {byte('r'): 1}) {
     t.Fail()
   } else if scrabble.CanFollow(dict, "ab", map[byte] int {byte('c'): 1}) {
