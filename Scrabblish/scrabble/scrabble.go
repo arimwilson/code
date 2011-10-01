@@ -3,7 +3,7 @@
 
 package main
 
-import ("container/vector"; "flag"; "fmt"; "http"; "os";
+import ("container/vector"; "flag"; "fmt"; "os";
         "cross_check"; "moves"; "sort_with"; "trie"; "util")
 
 var wordListFlag = flag.String(
@@ -149,15 +149,8 @@ func setDirection(direction moves.Direction, moveList *vector.Vector) {
   }
 }
 
-func init() {
-  flag.Parse()
-  http.HandleFunc("/solve", solveHandler)
-}
-
-func solveHandler(w http.ResponseWriter, r *http.Request) {
-}
-
 func main() {
+  flag.Parse()
   wordListFile, err := os.Open(*wordListFlag);
   defer wordListFile.Close();
   if err != nil {

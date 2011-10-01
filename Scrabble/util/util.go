@@ -57,8 +57,8 @@ func ReadTiles(tilesFlag string) (tiles map[byte] int) {
 func ReadLetterValues(letterValuesFlag string) (letterValues map[byte] int) {
   letterValues = make(map[byte] int)
   splitLetterValues := strings.Split(letterValuesFlag, " ")
-  for i := byte('A'); i <= byte('Z'); i++ {
-    letterValues[i], _ = strconv.Atoi(splitLetterValues[i - 'A'])
+  for i := 'A'; i <= 'Z'; i++ {
+    letterValues[byte(i)], _ = strconv.Atoi(splitLetterValues[i - 'A'])
   }
   return
 }
@@ -78,13 +78,13 @@ func Transpose(board [][]byte) (transposedBoard [][]byte) {
   return
 }
 
-func TileMultipliers(tile byte) (letterMultiplier int, wordMultiplier int) {
+func TileMultipliers(tile *byte) (wordMultiplier int, letterMultiplier int) {
   wordMultiplier = 1
   letterMultiplier = 1
-  if tile == '1' || tile == '2' {
-    wordMultiplier *= int(tile) - '0' + 1
-  } else if tile == '3' || tile == '4' {
-    letterMultiplier = int(tile) - '1'
+  if *tile == '1' || *tile == '2' {
+    wordMultiplier *= int(*tile - '0' + 1)
+  } else if *tile == '3' || *tile == '4' {
+    letterMultiplier = int(*tile - '1')
   }
   return
 }
@@ -94,9 +94,11 @@ func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
   if (move.Direction != moves.ACROSS) { panic("Can't score down moves!") }
   wordMultiplier := 1
   score := 0
+  boardTilesUsed := 0
   for i := 0; i < len(move.Word); i++ {
-    tileWordMultiplier, letterMultiplier := TileMultipliers(
-        board[move.Start.X][move.Start.Y + i])
+    tile := board[move.Start.X][move.Start.Y + i]
+    if tile >= 'A' && tile <= 'Z' { boardTilesUsed++ }
+    tileWordMultiplier, letterMultiplier := TileMultipliers(&tile)
     wordMultiplier *= tileWordMultiplier
     // TODO(ariw): Remove hack.
     if move.Word[i] >= 'A' {
@@ -104,6 +106,10 @@ func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
     }
   }
   move.Score += wordMultiplier * score
+  // Scrabble!
+  if len(move.Word) - boardTilesUsed == 7 {
+    move.Score += 40
+  }
 }
 
 func RemoveDuplicates(moveList *vector.Vector) {
@@ -136,10 +142,10 @@ func PrintMoveOnBoard(board [][]byte, move *moves.Move) {
     for j := 0; j < BOARD_SIZE; j++ {
       if move.Direction == moves.ACROSS && i == move.Start.X &&
          j >= move.Start.Y && j < move.Start.Y + len(word) {
-        fmt.Printf("%c", word[j - move.Start.Y] - 'A' + 'a')
+        fmt.Printf("%c", word[j - move.Start.Y])
       } else if move.Direction == moves.DOWN && j == move.Start.Y &&
                 i >= move.Start.X && i < move.Start.X + len(word) {
-        fmt.Printf("%c", word[i - move.Start.X] - 'A' + 'a')
+        fmt.Printf("%c", word[i - move.Start.X])
       } else {
         fmt.Printf("%c", board[i][j])
       }

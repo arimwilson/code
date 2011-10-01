@@ -3,7 +3,7 @@
 
 package main
 
-import ("flag"; "fmt"; "os";
+import ("flag"; "fmt"; "log"; "runtime/pprof"; "os";
         "cross_check"; "moves"; "scrabble"; "sort_with"; "util")
 
 var wordListFlag = flag.String(
@@ -22,9 +22,19 @@ var letterValuesFlag = flag.String(
     "Space-separated list of letter point values, from A-Z.")
 var numResultsFlag = flag.Int(
     "n", 25, "Maximum number of results to output.")
+var cpuProfileFlag = flag.String("c", "", "Write CPU profile to file.")
 
 func main() {
   flag.Parse()
+  if *cpuProfileFlag != "" {
+    f, err := os.Create(*cpuProfileFlag)
+    if err != nil {
+      log.Fatal(err)
+    }
+    pprof.StartCPUProfile(f)
+    defer pprof.StopCPUProfile()
+  }
+
   wordListFile, err := os.Open(*wordListFlag);
   defer wordListFile.Close();
   if err != nil {
@@ -45,9 +55,9 @@ func main() {
   board := util.ReadBoard(boardFile)
   tiles := util.ReadTiles(*tilesFlag)
   letterValues := util.ReadLetterValues(*letterValuesFlag)
-  transposedBoard := util.Transpose(board)
 
   // Get moves going both right and down.
+  transposedBoard := util.Transpose(board)
   crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
                                             letterValues)
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues,

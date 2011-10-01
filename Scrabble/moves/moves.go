@@ -57,7 +57,7 @@ func MoveWord(move *Move) (string) {
     if move.Word[i] >= 'A' {
       word[i] = move.Word[i]
     } else {
-      word[i] = byte(' ')
+      word[i] = move.Word[i] + 26 - 'A' + 'a'
     }
   }
   return string(word)

@@ -6,7 +6,7 @@ import ("container/vector";
 // Your score without the points from the blank letter given from the value
 // retrieved from letterValue.
 func BlankScore(score int, letterValue int, tile byte) int {
-  wordMultiplier, letterMultiplier := util.TileMultipliers(tile)
+  letterMultiplier, wordMultiplier := util.TileMultipliers(&tile)
   return score / wordMultiplier - letterMultiplier * letterValue
 }
 
@@ -14,7 +14,7 @@ func BlankScore(score int, letterValue int, tile byte) int {
 // dict.
 func CanFollow(dict *trie.Trie, prefix string, tiles map[byte] int) bool {
   following := dict.Following(prefix)
-  count, existing := tiles[byte(' ')]
+  count, existing := tiles[' ']
   if len(following) > 0 && existing && count > 0 { return true }
   for i := 0; i < len(following); i++ {
     count, existing = tiles[following[i]]
@@ -64,7 +64,7 @@ func Extend(
   for tile, count := range(tiles) {
     if count == 0 { continue }
     verticallyScoredLetters := make(map[byte] int)
-    if tile != byte(' ') {
+    if tile != ' ' {
       if existing {
         score, tileExisting := positionCrossChecks[tile]
         if tileExisting { verticallyScoredLetters[tile] = score }
@@ -83,8 +83,8 @@ func Extend(
             score, letterValues[i], board[possibleMove.Start.X][placedCol])
       }
     } else {
-      for i := byte('A'); i <= byte('Z'); i++ {
-        verticallyScoredLetters[i - 26] = 0
+      for i := 'A'; i <= 'Z'; i++ {
+        verticallyScoredLetters[byte(i - 26)] = 0
       }
     }
     for letter, score := range(verticallyScoredLetters) {
@@ -101,7 +101,7 @@ func Extend(
         moveList.Push(placedMove)
         placedMove.Score = score
       }
-      tiles[letter]--
+      tiles[tile]--
       moveList.AppendVector(
         MoveRight(dict, board, tiles, letterValues, crossChecks, placedMove))
       if left {
@@ -110,7 +110,7 @@ func Extend(
           Extend(dict, board, tiles, letterValues, crossChecks, placedMove,
                  true))
       }
-      tiles[letter]++
+      tiles[tile]++
     }
   }
   return
