@@ -1,4 +1,4 @@
-// Basic trie data structure with additional prefix-checking functionality.
+// Basic trie data structure with additional following functionality.
 
 package trie
 
@@ -7,12 +7,14 @@ type Trie struct {
   children map[byte]*Trie
 }
 
+// Make a new trie.
 func New() *Trie {
   trie := new(Trie)
   trie.children = make(map[byte] *Trie)
   return trie
 }
 
+// Insert a word into the trie.
 func (self *Trie) Insert(word string) {
   if len(word) == 0 {
     self.terminal = true
@@ -26,10 +28,12 @@ func (self *Trie) Insert(word string) {
   child.Insert(word[1:])
 }
 
-func (self *Trie) following(word string) (cur *Trie, existing bool) {
+// Return the children data structure (if it exists) from following the trie
+// through prefix.
+func (self *Trie) following(prefix string) (cur *Trie, existing bool) {
   cur = self
-  for i := 0; i < len(word); i++ {
-    letter := word[i]
+  for i := 0; i < len(prefix); i++ {
+    letter := prefix[i]
     // TODO(ariw): Remove hack.
     if letter < 'A' { letter += 26 }
     cur, existing = cur.children[letter]
@@ -38,6 +42,7 @@ func (self *Trie) following(word string) (cur *Trie, existing bool) {
   return
 }
 
+// Whether or not a word exists in the trie.
 func (self *Trie) Find(word string) bool {
   cur, existing := self.following(word)
   return existing && cur.terminal
