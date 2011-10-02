@@ -4,7 +4,7 @@
 package main
 
 import ("flag"; "fmt"; "log"; "runtime/pprof"; "os";
-        "cross_check"; "moves"; "scrabble"; "sort_with"; "util")
+        "moves"; "scrabble"; "util")
 
 var wordListFlag = flag.String(
     "w", "twl.txt",
@@ -56,21 +56,8 @@ func main() {
   tiles := util.ReadTiles(*tilesFlag)
   letterValues := util.ReadLetterValues(*letterValuesFlag)
 
-  // Get moves going both right and down.
-  transposedBoard := util.Transpose(board)
-  crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
-                                            letterValues)
-  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues,
-                                   crossChecks)
-  scrabble.SetDirection(moves.ACROSS, moveList)
-  downCrossChecks := cross_check.GetCrossChecks(dict, board, tiles,
-                                                letterValues)
-  downMoveList := scrabble.GetMoveList(dict, transposedBoard, tiles,
-                                       letterValues, downCrossChecks)
-  scrabble.SetDirection(moves.DOWN, downMoveList)
-  moveList.AppendVector(downMoveList)
-  sort_with.SortWith(*moveList, moves.Greater)
-  util.RemoveDuplicates(moveList)
+  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
+
   for i := 0;
       (*numResultsFlag <= 0 || i < *numResultsFlag) && i < moveList.Len(); i++ {
     fmt.Printf("%d. ", i + 1)

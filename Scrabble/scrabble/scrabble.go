@@ -1,7 +1,7 @@
 package scrabble
 
 import ("container/vector";
-        "moves"; "trie"; "util")
+        "cross_check"; "moves"; "trie"; "sort_with"; "util")
 
 // Your score without the points from the blank letter given from the value
 // retrieved from letterValue.
@@ -116,8 +116,9 @@ func Extend(
   return
 }
 
-// Look for new across moves connected to any existing tile.
-func GetMoveList(
+// Look for new across moves connected to any existing tile. Duplicates are
+// possible.
+func GetMoveListAcross(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int,
     crossChecks map[int] map[byte] int) (moveList *vector.Vector) {
@@ -165,5 +166,24 @@ func SetDirection(direction moves.Direction, moveList *vector.Vector) {
     move.Direction = direction
     moveList.Set(i, move)
   }
+}
+
+// Get all possible moves on board, ordered by score, given params.
+func GetMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] int,
+                 letterValues map[byte] int) (moveList *vector.Vector) {
+  transposedBoard := util.Transpose(board)
+  crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
+                                            letterValues)
+  moveList = GetMoveListAcross(dict, board, tiles, letterValues, crossChecks)
+  SetDirection(moves.ACROSS, moveList)
+  downCrossChecks := cross_check.GetCrossChecks(dict, board, tiles,
+                                                letterValues)
+  downMoveList := GetMoveListAcross(
+      dict, transposedBoard, tiles, letterValues, downCrossChecks)
+  SetDirection(moves.DOWN, downMoveList)
+  moveList.AppendVector(downMoveList)
+  sort_with.SortWith(*moveList, moves.Greater)
+  util.RemoveDuplicates(moveList)
+  return
 }
 
