@@ -1,6 +1,6 @@
 package scrabble_test
 
-import ("os"; "testing";
+import ("os"; "path/filepath"; "testing";
         "moves"; "scrabble"; "sort_with"; "util")
 
 func TestBlankScore(t *testing.T) {
@@ -70,7 +70,7 @@ func TestGetMoveList(t *testing.T) {
 func numTotalTopMoves(
     t *testing.T, board [][]byte, tilesFlag string, num int, score int,
     numTop int) {
-  wordListFile, err := os.Open("twl.txt");
+  wordListFile, err := os.Open(filepath.Join(os.Getenv("SRCROOT"), "twl.txt"));
   defer wordListFile.Close();
   if err != nil {
     t.Fatal("Could not open twl.txt successfully.")
@@ -83,6 +83,7 @@ func numTotalTopMoves(
   if moveList.Len() != num {
     t.Errorf("moveList.Len(): %d, should have been: %d", moveList.Len(), num)
   }
+  topMove := moveList.At(0).(moves.Move)
   scoreForTopMove := moveList.At(0).(moves.Move).Score
   numTopScoreMoves := 1
   for i := 1; i < moveList.Len(); i++ {
@@ -93,7 +94,7 @@ func numTotalTopMoves(
     }
   }
   if scoreForTopMove != score {
-    t.Fatalf("scoreForTopMove: %d, should have been: %d", scoreForTopMove,
+    t.Errorf("scoreForTopMove: %d, should have been: %d", scoreForTopMove,
              score)
   } else if numTopScoreMoves != numTop {
     t.Errorf("numTopScoreMoves: %d, should have been: %d", numTopScoreMoves,
@@ -118,6 +119,10 @@ func TestNumTotalTopMoves(t *testing.T) {
     []byte("--1---3-3---1--"),
     []byte("-3---4---4---3-"),
     []byte("4---2--3--2---4")}
+  numTotalTopMoves(t, board, "ABCDEFG", 346, 24, 8)
   numTotalTopMoves(t, board, "ABCDEF ", 4816, 28, 8)
+  // TODO(ariw): Re-add this once I figure out the other one.
+  // board[7] = []byte("3--1-FACED-1--3")
+  // numTotalTopMoves(t, board, "ABCDEFG", 337, 34, 1)
 }
 
