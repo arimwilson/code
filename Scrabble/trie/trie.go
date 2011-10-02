@@ -13,7 +13,7 @@ func New() *Trie {
   return trie
 }
 
-func (self* Trie) Insert(word string) {
+func (self *Trie) Insert(word string) {
   if len(word) == 0 {
     self.terminal = true
     return
@@ -26,34 +26,27 @@ func (self* Trie) Insert(word string) {
   child.Insert(word[1:])
 }
 
-func (self* Trie) Find(word string) bool {
-  cur := self
-  existing := false
+func (self *Trie) following(word string) (cur *Trie, existing bool) {
+  cur = self
   for i := 0; i < len(word); i++ {
     letter := word[i]
     // TODO(ariw): Remove hack.
     if letter < 'A' { letter += 26 }
     cur, existing = cur.children[letter]
-    if !existing {
-      return false
-    }
+    if !existing { return }
   }
-  return cur.terminal
+  return
+}
+
+func (self *Trie) Find(word string) bool {
+  cur, existing := self.following(word)
+  return existing && cur.terminal
 }
 
 // Return a list of characters that follow the given prefix.
-func (self* Trie) Following(prefix string) (following []byte) {
-  cur := self
-  existing := false
-  for i := 0; i < len(prefix); i++ {
-    letter := prefix[i]
-    // TODO(ariw): Remove hack.
-    if letter < 'A' { letter += 26 }
-    cur, existing = cur.children[letter]
-    if !existing {
-      return
-    }
-  }
+func (self *Trie) Following(prefix string) (following []byte) {
+  cur, existing := self.following(prefix)
+  if !existing { return }
   following = make([]byte, len(cur.children))
   i := 0
   for key, _ := range(cur.children) {
