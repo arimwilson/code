@@ -83,7 +83,6 @@ func numTotalTopMoves(
   if moveList.Len() != num {
     t.Errorf("moveList.Len(): %d, should have been: %d", moveList.Len(), num)
   }
-  topMove := moveList.At(0).(moves.Move)
   scoreForTopMove := moveList.At(0).(moves.Move).Score
   numTopScoreMoves := 1
   for i := 1; i < moveList.Len(); i++ {
@@ -121,8 +120,7 @@ func TestNumTotalTopMoves(t *testing.T) {
     []byte("4---2--3--2---4")}
   numTotalTopMoves(t, board, "ABCDEFG", 346, 24, 8)
   numTotalTopMoves(t, board, "ABCDEF ", 4816, 28, 8)
-  // TODO(ariw): Re-add this once I figure out the other one.
-  // board[7] = []byte("3--1-FACED-1--3")
-  // numTotalTopMoves(t, board, "ABCDEFG", 337, 34, 1)
+  board[7] = []byte("3--1-FACED-1--3")
+  numTotalTopMoves(t, board, "ABCDEFG", 337, 34, 1)
 }
 

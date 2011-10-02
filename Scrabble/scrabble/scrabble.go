@@ -1,6 +1,6 @@
 package scrabble
 
-import ("container/vector"; "fmt";
+import ("container/vector";
         "cross_check"; "moves"; "trie"; "sort_with"; "util")
 
 // Your score without the points from the blank letter given from the value
@@ -37,8 +37,8 @@ func MoveRight(
   }
   if CanFollow(dict, possibleMove.Word, tiles) {
     moveList.AppendVector(
-      Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
-             false))
+        Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
+               false))
   }
   return
 }

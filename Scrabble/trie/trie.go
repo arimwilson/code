@@ -27,31 +27,30 @@ func (self* Trie) Insert(word string) {
 }
 
 func (self* Trie) Find(word string) bool {
-  if len(word) == 0 {
-    if self.terminal {
-      return true
-    } else {
+  cur := self
+  existing := false
+  for i := 0; i < len(word); i++ {
+    letter := word[i]
+    // TODO(ariw): Remove hack.
+    if letter < 'A' { letter += 26 }
+    cur, existing = cur.children[letter]
+    if !existing {
       return false
     }
   }
-  letter := word[0]
-  // TODO(ariw): Remove hack.
-  if (letter < 'A') {
-    letter += 26
-  }
-  child, existing := self.children[letter]
-  if existing {
-    return child.Find(word[1:])
-  }
-  return false
+  return cur.terminal
 }
 
 // Return a list of characters that follow the given prefix.
 func (self* Trie) Following(prefix string) (following []byte) {
   cur := self
+  existing := false
   for i := 0; i < len(prefix); i++ {
-    cur = cur.children[prefix[i]]
-    if cur == nil {
+    letter := prefix[i]
+    // TODO(ariw): Remove hack.
+    if letter < 'A' { letter += 26 }
+    cur, existing = cur.children[letter]
+    if !existing {
       return
     }
   }
