@@ -1,6 +1,6 @@
 package scrabble
 
-import ("container/vector";
+import ("container/vector"; "fmt";
         "cross_check"; "moves"; "trie"; "sort_with"; "util")
 
 // Your score without the points from the blank letter given from the value
@@ -160,7 +160,7 @@ func GetMoveListAcross(
 func SetDirection(direction moves.Direction, moveList *vector.Vector) {
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)
-    if (move.Direction != direction) {
+    if move.Direction != direction {
       move.Start.X, move.Start.Y = move.Start.Y, move.Start.X
     }
     move.Direction = direction
