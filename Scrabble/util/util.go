@@ -21,6 +21,15 @@ func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
 
 var BOARD_SIZE = 15
 
+func Existing(board [][]byte, location *moves.Location) bool {
+  if location.X < 0 || location.X >= BOARD_SIZE || location.Y < 0 ||
+     location.Y >= BOARD_SIZE {
+    return false
+  }
+  tile := board[location.X][location.Y]
+  return tile >= 'A' && tile <= 'Z'
+}
+
 func Available(board [][]byte, location *moves.Location) bool {
   if location.X < 0 || location.X >= BOARD_SIZE || location.Y < 0 ||
      location.Y >= BOARD_SIZE {

@@ -1,7 +1,7 @@
 package scrabble_test
 
 import ("os"; "path/filepath"; "testing";
-        "moves"; "scrabble"; "sort_with"; "util")
+        "cross_check"; "moves"; "scrabble"; "sort_with"; "util")
 
 func TestBlankScore(t *testing.T) {
   if scrabble.BlankScore(10, 5, '-') != 5 {
@@ -44,13 +44,18 @@ func TestGetMoveListAcross(t *testing.T) {
       []byte("4---2--3--2---4")}
   tiles := map[byte] int{'A': 1, 'B': 2, 'R': 1}
   letterValues := map[byte] int{'A': 1, 'B': 1, 'R': 2}
-  crossChecks := make(map[int] map[byte] int)
+  crossChecks := cross_check.GetCrossChecks(
+    dict, util.Transpose(board), tiles, letterValues)
 
   comparedMoves := []moves.Move {
-    moves.Move{"ABRA", 5, moves.Location{7, 4}, moves.ACROSS},
-    moves.Move{"ABRA", 5, moves.Location{7, 7}, moves.ACROSS},
-    moves.Move{"ABBA", 4, moves.Location{7, 4}, moves.ACROSS},
-    moves.Move{"ABBA", 4, moves.Location{7, 7}, moves.ACROSS}}
+    moves.Move{Word: "ABRA", Score: 5, Start: moves.Location{7, 4},
+               Direction: moves.ACROSS},
+    moves.Move{Word: "ABRA", Score: 5, Start: moves.Location{7, 7},
+               Direction: moves.ACROSS},
+    moves.Move{Word: "ABBA", Score: 5, Start: moves.Location{7, 4},
+               Direction: moves.ACROSS},
+    moves.Move{Word: "ABBA", Score: 5, Start: moves.Location{7, 7},
+               Direction: moves.ACROSS}}
 
   moveList := scrabble.GetMoveListAcross(
     dict, board, tiles, letterValues, crossChecks)
@@ -65,7 +70,7 @@ func TestGetMoveListAcross(t *testing.T) {
     if !move.Equals(&comparedMoves[i]) {
       moves.PrintMove(&move)
       moves.PrintMove(&comparedMoves[i])
-      t.Fatalf("!move.Equals(&comparedMoves[i])")
+      t.Fatalf("move does not equal compared move")
     }
   }
 }
@@ -76,7 +81,7 @@ func numTotalTopMoves(
   wordListFile, err := os.Open(filepath.Join(os.Getenv("SRCROOT"), "twl.txt"));
   defer wordListFile.Close();
   if err != nil {
-    t.Fatal("Could not open twl.txt successfully.")
+    t.Fatal("could not open twl.txt successfully.")
   }
   dict := util.ReadWordList(wordListFile)
   tiles := util.ReadTiles(tilesFlag)
@@ -85,7 +90,7 @@ func numTotalTopMoves(
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
   if moveList.Len() != num {
     util.PrintMoveList(moveList, board, 25)
-    t.Errorf("length of moveList: %d, should have been: %d", moveList.Len(),
+    t.Errorf("length of move list: %d, should have been: %d", moveList.Len(),
              num)
   }
   topMove := moveList.At(0).(moves.Move)
@@ -109,27 +114,28 @@ func numTotalTopMoves(
 
 func TestNumTotalTopMoves(t *testing.T) {
   board := [][]byte{
-    []byte("4---2--3--2---4"),
-    []byte("-3---4---4---3-"),
-    []byte("--1---3-3---1--"),
-    []byte("---4---1---4---"),
-    []byte("2---1-3-3-1---2"),
-    []byte("-4---4---4---4-"),
-    []byte("--3-3-----3-3--"),
-    []byte("3--1---*---1--3"),
-    []byte("--3-3-----3-3--"),
-    []byte("-4---4---4---4-"),
-    []byte("2---1-3-3-1---2"),
-    []byte("---4---1---4---"),
-    []byte("--1---3-3---1--"),
-    []byte("-3---4---4---3-"),
-    []byte("4---2--3--2---4")}
+      []byte("4---2--3--2---4"),
+      []byte("-3---4---4---3-"),
+      []byte("--1---3-3---1--"),
+      []byte("---4---1---4---"),
+      []byte("2---1-3-3-1---2"),
+      []byte("-4---4---4---4-"),
+      []byte("--3-3-----3-3--"),
+      []byte("3--1---*---1--3"),
+      []byte("--3-3-----3-3--"),
+      []byte("-4---4---4---4-"),
+      []byte("2---1-3-3-1---2"),
+      []byte("---4---1---4---"),
+      []byte("--1---3-3---1--"),
+      []byte("-3---4---4---3-"),
+      []byte("4---2--3--2---4")}
   numTotalTopMoves(t, board, "ABCDEFG", 346, 24, 8)
   numTotalTopMoves(t, board, "ABCDEF ", 4816, 28, 8)
   board[7] = []byte("3--1-FACED-1--3")
   numTotalTopMoves(t, board, "ABCDEFG", 337, 34, 1)
   board[8][7] = byte('A')
   board[9][7] = byte('R')
+  numTotalTopMoves(t, board, "ABCDEFR", 777, 45, 3)
   numTotalTopMoves(t, board, "ABCDEF ", 5355, 45, 1)
 }
 

@@ -1,6 +1,6 @@
 package scrabble
 
-import ("container/vector"; "fmt";
+import ("container/vector";
         "cross_check"; "moves"; "trie"; "sort_with"; "util")
 
 // Your score without the points from the blank letter given from the value
@@ -29,8 +29,7 @@ func GetExistingLeftTiles(board [][]byte, location *moves.Location) string {
   end := location.Y
   if end < 0 { return "" }
   startLocation := moves.Location{location.X, location.Y - 1}
-  for ; startLocation.Y >= 0 && !util.Available(board, &startLocation);
-      startLocation.Y-- {}
+  for ; util.Existing(board, &startLocation); startLocation.Y-- {}
   location.Y = startLocation.Y + 1
   return string(board[location.X][location.Y:end])
 }
@@ -41,11 +40,7 @@ func GetExistingRightTiles(board [][]byte, location moves.Location) string {
   location.Y++
   start := location.Y
   if start >= util.BOARD_SIZE { return "" }
-  for ; location.Y < util.BOARD_SIZE && !util.Available(board, &location);
-      location.Y++ {}
-  if location.Y == 6 {
-    fmt.Printf("MOO: %s", string(board[location.X][start:location.Y]))
-  }
+  for ; util.Existing(board, &location); location.Y++ {}
   return string(board[location.X][start:location.Y])
 }
 
@@ -94,7 +89,7 @@ func Extend(
     for letter, score := range(verticallyScoredLetters) {
       placedMove := possibleMove.Copy()
       if left {
-        placedMove.Word = GetExistingLeftTiles(board, placedLocation) +
+        placedMove.Word = GetExistingLeftTiles(board, &placedMove.Start) +
                           string(letter) + placedMove.Word
       } else {
         placedMove.Word += string(letter) +
@@ -151,16 +146,25 @@ func GetMoveListAcross(
         possibleMove.Word = GetExistingLeftTiles(board, &possibleMove.Start)
         moveList.AppendVector(Extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove, false))
-        possibleMove.Start.X = i - 1
         possibleMove.Start.Y = j
         possibleMove.Word = ""
-        moveList.AppendVector(Extend(
-            dict, board, tiles, letterValues, crossChecks, possibleMove,
-            true))
-        possibleMove.Start.X = i + 1
-        moveList.AppendVector(Extend(
-            dict, board, tiles, letterValues, crossChecks, possibleMove,
-            true))
+        leftUp := moves.Location{i - 1, j - 1}
+        rightUp := moves.Location{i - 1, j + 1}
+        if !util.Existing(board, &leftUp) && !util.Existing(board, &rightUp) {
+          possibleMove.Start.X = i - 1
+          moveList.AppendVector(Extend(
+              dict, board, tiles, letterValues, crossChecks, possibleMove,
+              true))
+        }
+        leftDown := moves.Location{i + 1, j - 1}
+        rightDown := moves.Location{i + 1, j + 1}
+        if !util.Existing(board, &leftDown) &&
+           !util.Existing(board, &rightDown) {
+          possibleMove.Start.X = i + 1
+          moveList.AppendVector(Extend(
+              dict, board, tiles, letterValues, crossChecks, possibleMove,
+              true))
+        }
       }
     }
   }
