@@ -48,7 +48,20 @@ func (self *Move) Equals(other *Move) bool {
 
 // Used to sort vectors of Move objects by score.
 func Greater(a, b interface{}) bool {
-  return a.(Move).Score > b.(Move).Score
+  c := a.(Move)
+  d := b.(Move)
+  if c.Score > d.Score {
+    return true
+  } else if c.Score < d.Score {
+    return false
+  } else if len(c.Word) < len(d.Word) {
+    return true
+  } else if len(c.Word) > len(d.Word) {
+    return false
+  } else if c.Word < d.Word {
+    return true
+  }
+  return false
 }
 
 func MoveWord(move *Move) (string) {

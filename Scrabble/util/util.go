@@ -10,7 +10,7 @@ func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
   wordListReader := bufio.NewReader(wordListFile)
   dict = trie.New()
   for {
-    word, err := wordListReader.ReadString(" "[0])
+    word, err := wordListReader.ReadString(' ')
     if err != nil {
       return
     }
@@ -151,6 +151,16 @@ func PrintMoveOnBoard(board [][]byte, move *moves.Move) {
       }
     }
     fmt.Printf("\n")
+  }
+}
+
+func PrintMoveList(moveList *vector.Vector, board [][]byte, numResults int) {
+  for i := 0;
+      (numResults <= 0 || i < numResults) && i < moveList.Len(); i++ {
+    fmt.Printf("%d. ", i + 1)
+    move := moveList.At(i).(moves.Move)
+    moves.PrintMove(&move)
+    PrintMoveOnBoard(board, &move)
   }
 }
 

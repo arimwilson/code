@@ -24,7 +24,7 @@ func TestCanFollow(t *testing.T) {
   }
 }
 
-func TestGetMoveList(t *testing.T) {
+func TestGetMoveListAcross(t *testing.T) {
   dict := util.TestInsertIntoDictionary()
   board := [][]byte{
       []byte("4---2--3--2---4"),
@@ -57,12 +57,15 @@ func TestGetMoveList(t *testing.T) {
   sort_with.SortWith(*moveList, moves.Greater)
   util.RemoveDuplicates(moveList)
   if moveList.Len() != 4 {
-    t.FailNow()
+    util.PrintMoveList(moveList, board, 25)
+    t.Fatalf("length of move list: %d, should have been: 4", moveList.Len())
   }
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)
     if !move.Equals(&comparedMoves[i]) {
-      t.FailNow()
+      moves.PrintMove(&move)
+      moves.PrintMove(&comparedMoves[i])
+      t.Fatalf("!move.Equals(&comparedMoves[i])")
     }
   }
 }
@@ -81,22 +84,25 @@ func numTotalTopMoves(
       "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10")
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
   if moveList.Len() != num {
-    t.Errorf("moveList.Len(): %d, should have been: %d", moveList.Len(), num)
+    util.PrintMoveList(moveList, board, 25)
+    t.Errorf("length of moveList: %d, should have been: %d", moveList.Len(),
+             num)
   }
-  scoreForTopMove := moveList.At(0).(moves.Move).Score
-  numTopScoreMoves := 1
+  topMove := moveList.At(0).(moves.Move)
+  topMoveScore := topMove.Score
+  numTopMoves := 1
   for i := 1; i < moveList.Len(); i++ {
-    if moveList.At(i).(moves.Move).Score == scoreForTopMove {
-      numTopScoreMoves++
+    if moveList.At(i).(moves.Move).Score == topMoveScore {
+      numTopMoves++
     } else {
       break
     }
   }
-  if scoreForTopMove != score {
-    t.Errorf("scoreForTopMove: %d, should have been: %d", scoreForTopMove,
-             score)
-  } else if numTopScoreMoves != numTop {
-    t.Errorf("numTopScoreMoves: %d, should have been: %d", numTopScoreMoves,
+  if topMoveScore != score {
+    moves.PrintMove(&topMove)
+    t.Errorf("top move score: %d, should have been: %d", topMoveScore, score)
+  } else if numTopMoves != numTop {
+    t.Errorf("number of top moves: %d, should have been: %d", numTopMoves,
              numTop)
   }
 }
@@ -122,5 +128,8 @@ func TestNumTotalTopMoves(t *testing.T) {
   numTotalTopMoves(t, board, "ABCDEF ", 4816, 28, 8)
   board[7] = []byte("3--1-FACED-1--3")
   numTotalTopMoves(t, board, "ABCDEFG", 337, 34, 1)
+  board[8][7] = byte('A')
+  board[9][7] = byte('R')
+  numTotalTopMoves(t, board, "ABCDEF ", 5355, 45, 1)
 }
 

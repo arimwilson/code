@@ -4,7 +4,7 @@
 package main
 
 import ("flag"; "fmt"; "log"; "runtime/pprof"; "os";
-        "moves"; "scrabble"; "util")
+        "scrabble"; "util")
 
 var wordListFlag = flag.String(
     "w", "twl.txt",
@@ -58,12 +58,6 @@ func main() {
 
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
 
-  for i := 0;
-      (*numResultsFlag <= 0 || i < *numResultsFlag) && i < moveList.Len(); i++ {
-    fmt.Printf("%d. ", i + 1)
-    move := moveList.At(i).(moves.Move)
-    moves.PrintMove(&move)
-    util.PrintMoveOnBoard(board, &move)
-  }
+  util.PrintMoveList(moveList, board, *numResultsFlag)
 }
 
