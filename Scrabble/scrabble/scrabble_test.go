@@ -131,6 +131,22 @@ func TestNumTotalTopMoves(t *testing.T) {
   board[8][7] = byte('A')
   board[9][7] = byte('R')
   numTotalTopMoves(t, board, "ABCDEFR", 777, 45, 3)
-  numTotalTopMoves(t, board, "ABCDEF ", 5355, 45, 1)
+  board = [][]byte{
+      []byte("4---2--3--2---4"),
+      []byte("-3---4---4---3-"),
+      []byte("--1---3-3---1--"),
+      []byte("---4---1---4---"),
+      []byte("2---1-3-LIKE--2"),
+      []byte("-4--LOTTO4---4-"),
+      []byte("--3-3---V-3-3--"),
+      []byte("3--1-FACED-1--3"),
+      []byte("--3-3-R---3-3--"),
+      []byte("-4---4ERA4---4-"),
+      []byte("2---1-3-R-1---2"),
+      []byte("---4---1K--4---"),
+      []byte("--1---3-3---1--"),
+      []byte("-3---4---4---3-"),
+      []byte("4---2--3--2---4")}
+  numTotalTopMoves(t, board, "ABCDEF ", 4903, 90, 1)
 }
 
