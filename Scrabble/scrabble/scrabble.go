@@ -53,17 +53,16 @@ func Extend(
   moveList = new(vector.Vector)
   var positionCrossChecks map[byte] int
   var existing bool
-  var placedLocation *moves.Location
+  var placedLocation moves.Location
   if left {
-    placedLocation = &possibleMove.Start
-    if !util.Available(board, placedLocation) { return }
+    placedLocation = moves.Location{
+        possibleMove.Start.X, possibleMove.Start.Y}
+    if !util.Available(board, &placedLocation) { return }
     positionCrossChecks, existing = crossChecks[placedLocation.Hash()]
   } else {
-    placedLocation = new(moves.Location)
-    placedLocation.X, placedLocation.Y =
-        possibleMove.Start.X,
-        possibleMove.Start.Y + len(possibleMove.Word)
-    if !util.Available(board, placedLocation) { return }
+    placedLocation = moves.Location{
+        possibleMove.Start.X, possibleMove.Start.Y + len(possibleMove.Word)}
+    if !util.Available(board, &placedLocation) { return }
     positionCrossChecks, existing = crossChecks[placedLocation.Hash()]
   }
   for tile, count := range(tiles) {
@@ -93,7 +92,7 @@ func Extend(
                           string(letter) + placedMove.Word
       } else {
         placedMove.Word += string(letter) +
-                           GetExistingRightTiles(board, *placedLocation)
+                           GetExistingRightTiles(board, placedLocation)
       }
       placedMove.Score += score
       if dict.Find(placedMove.Word) {
@@ -187,12 +186,10 @@ func SetDirection(direction moves.Direction, moveList *vector.Vector) {
 func GetMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] int,
                  letterValues map[byte] int) (moveList *vector.Vector) {
   transposedBoard := util.Transpose(board)
-  crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, tiles,
-                                            letterValues)
+  crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, letterValues)
   moveList = GetMoveListAcross(dict, board, tiles, letterValues, crossChecks)
   SetDirection(moves.ACROSS, moveList)
-  downCrossChecks := cross_check.GetCrossChecks(dict, board, tiles,
-                                                letterValues)
+  downCrossChecks := cross_check.GetCrossChecks(dict, board, letterValues)
   downMoveList := GetMoveListAcross(
       dict, transposedBoard, tiles, letterValues, downCrossChecks)
   SetDirection(moves.DOWN, downMoveList)

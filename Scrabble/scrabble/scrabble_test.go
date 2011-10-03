@@ -45,24 +45,24 @@ func TestGetMoveListAcross(t *testing.T) {
   tiles := map[byte] int{'A': 1, 'B': 2, 'R': 1}
   letterValues := map[byte] int{'A': 1, 'B': 1, 'R': 2}
   crossChecks := cross_check.GetCrossChecks(
-    dict, util.Transpose(board), tiles, letterValues)
+      dict, util.Transpose(board), letterValues)
 
   comparedMoves := []moves.Move {
-    moves.Move{Word: "ABRA", Score: 5, Start: moves.Location{7, 4},
-               Direction: moves.ACROSS},
-    moves.Move{Word: "ABRA", Score: 5, Start: moves.Location{7, 7},
-               Direction: moves.ACROSS},
-    moves.Move{Word: "ABBA", Score: 5, Start: moves.Location{7, 4},
-               Direction: moves.ACROSS},
-    moves.Move{Word: "ABBA", Score: 5, Start: moves.Location{7, 7},
-               Direction: moves.ACROSS}}
+      moves.Move{Word: "ABRA", Score: 5, Start: moves.Location{7, 4},
+                 Direction: moves.ACROSS},
+      moves.Move{Word: "ABRA", Score: 5, Start: moves.Location{7, 7},
+                 Direction: moves.ACROSS},
+      moves.Move{Word: "ABBA", Score: 5, Start: moves.Location{7, 4},
+                 Direction: moves.ACROSS},
+      moves.Move{Word: "ABBA", Score: 5, Start: moves.Location{7, 7},
+                 Direction: moves.ACROSS}}
 
   moveList := scrabble.GetMoveListAcross(
     dict, board, tiles, letterValues, crossChecks)
   sort_with.SortWith(*moveList, moves.Greater)
   util.RemoveDuplicates(moveList)
   if moveList.Len() != 4 {
-    util.PrintMoveList(moveList, board, 25)
+    util.PrintMoveList(moveList, board, 100)
     t.Fatalf("length of move list: %d, should have been: 4", moveList.Len())
   }
   for i := 0; i < moveList.Len(); i++ {
@@ -89,25 +89,20 @@ func numTotalTopMoves(
       "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10")
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
   if moveList.Len() != num {
-    util.PrintMoveList(moveList, board, 25)
+    util.PrintMoveList(moveList, board, 100)
     t.Errorf("length of move list: %d, should have been: %d", moveList.Len(),
              num)
   }
   topMove := moveList.At(0).(moves.Move)
   topMoveScore := topMove.Score
-  numTopMoves := 1
-  for i := 1; i < moveList.Len(); i++ {
-    if moveList.At(i).(moves.Move).Score == topMoveScore {
-      numTopMoves++
-    } else {
-      break
-    }
-  }
+  i := 1
+  for ; i < moveList.Len() && moveList.At(i).(moves.Move).Score == topMoveScore;
+      i++ {}
   if topMoveScore != score {
     moves.PrintMove(&topMove)
     t.Errorf("top move score: %d, should have been: %d", topMoveScore, score)
-  } else if numTopMoves != numTop {
-    t.Errorf("number of top moves: %d, should have been: %d", numTopMoves,
+  } else if i != numTop {
+    t.Errorf("number of top moves: %d, should have been: %d", i,
              numTop)
   }
 }
