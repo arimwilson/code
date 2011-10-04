@@ -1,9 +1,9 @@
 // Scrabble move generator. Given a word list, board, and your current tiles,
 // outputs all legal moves ranked by point value.
 
-package main
+package scrabblish
 
-import ("flag"; "fmt"; "log"; "runtime/pprof"; "os";
+import ("flag"; "fmt"; "http"; "log"; "runtime/pprof"; "os";
         "scrabble"; "util")
 
 var wordListFlag = flag.String(
@@ -23,6 +23,13 @@ var letterValuesFlag = flag.String(
 var numResultsFlag = flag.Int(
     "n", 25, "Maximum number of results to output.")
 var cpuProfileFlag = flag.String("c", "", "Write CPU profile to file.")
+
+func init() {
+  http.HandleFunc("/solve", solve)
+}
+
+func solve(w http.ResposeWriter, r *http.Request) {
+}
 
 func main() {
   flag.Parse()
