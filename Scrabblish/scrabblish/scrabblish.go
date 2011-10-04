@@ -6,6 +6,8 @@ package scrabblish
 import ("appengine"; "appengine/urlfetch"; "flag"; "fmt"; "http"; "io"; "log";
         "scrabble"; "util")
 
+// TODO(ariw): Remove flags/main as they are replaced by equivalent
+// functionality in solve.
 var wordListFlag = flag.String(
     "w", "twl.txt",
     "File with space-separated list of legal words, in upper-case.")
