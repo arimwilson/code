@@ -1,7 +1,7 @@
 package trie_test
 
 import ("testing";
-        "util")
+        "scrabblish/util")
 
 func TestInsertAndRetrieve(t *testing.T) {
   dict := util.TestInsertIntoDictionary()

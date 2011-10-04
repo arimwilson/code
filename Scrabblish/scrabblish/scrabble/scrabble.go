@@ -1,7 +1,8 @@
 package scrabble
 
 import ("container/vector";
-        "cross_check"; "moves"; "trie"; "sort_with"; "util")
+        "scrabblish/cross_check"; "scrabblish/moves"; "scrabblish/trie";
+        "scrabblish/sort_with"; "scrabblish/util")
 
 // Your score without the points from the blank letter given from the value
 // retrieved from letterValue.

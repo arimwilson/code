@@ -1,7 +1,8 @@
 package cross_check_test
 
 import ("testing";
-        "cross_check"; "moves"; "trie"; "util")
+        "scrabblish/cross_check"; "scrabblish/moves"; "scrabblish/trie";
+        "scrabblish/util")
 
 func TestGetCrossChecks(t *testing.T) {
   util.BOARD_SIZE = 5

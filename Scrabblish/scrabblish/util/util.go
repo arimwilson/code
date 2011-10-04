@@ -2,21 +2,8 @@
 
 package util
 
-import ("bufio"; "container/vector"; "fmt"; "io"; "strconv"; "strings"; "os";
-        "moves"; "trie")
-
-func ReadWordList(wordList* io.Reader) (dict* trie.Trie) {
-  wordListReader := bufio.NewReader(wordList)
-  dict = trie.New()
-  for {
-    word, err := wordListReader.ReadString(' ')
-    if err != nil {
-      return
-    }
-    dict.Insert(strings.TrimSpace(word))
-  }
-  return
-}
+import ("bufio"; "container/vector"; "fmt"; "io"; "strconv"; "strings";
+        "scrabblish/moves"; "scrabblish/trie")
 
 var BOARD_SIZE = 15
 
@@ -38,18 +25,15 @@ func Available(board [][]byte, location *moves.Location) bool {
   return tile < 'A' || tile > 'Z'
 }
 
-func ReadBoard(boardFile* os.File) (board [][]byte) {
-  board = make([][]byte, BOARD_SIZE)
-  for i := 0; i < BOARD_SIZE; i++ {
-    board[i] = make([]byte, BOARD_SIZE)
-    _, err := boardFile.Read(board[i])
+func ReadWordList(wordList io.Reader) (dict* trie.Trie) {
+  wordListReader := bufio.NewReader(wordList)
+  dict = trie.New()
+  for {
+    word, err := wordListReader.ReadString(' ')
     if err != nil {
-      os.Exit(1)
+      return
     }
-    _, err = boardFile.Seek(1, 1)
-    if err != nil {
-      os.Exit(1)
-    }
+    dict.Insert(strings.TrimSpace(word))
   }
   return
 }
@@ -64,7 +48,7 @@ func ReadTiles(tilesFlag string) (tiles map[byte] int) {
 
 func ReadLetterValues(letterValuesFlag string) (letterValues map[byte] int) {
   letterValues = make(map[byte] int)
-  splitLetterValues := strings.Split(letterValuesFlag, " ")
+  splitLetterValues := strings.Split(letterValuesFlag, " ", -1)
   for i := 'A'; i <= 'Z'; i++ {
     letterValues[byte(i)], _ = strconv.Atoi(splitLetterValues[i - 'A'])
   }
@@ -165,14 +149,14 @@ func PrintMoveOnBoard(board [][]byte, move *moves.Move) {
 func PrintMoveList(moveList *vector.Vector, numResults int) string {
   numMoves := numResults
   if numResults <= 0 || moveList.Len() < numResults {
-    numMoves := moveList.Len()
+    numMoves = moveList.Len()
   }
-  moves := make([]string, numMoves)
+  eachMove := make([]string, numMoves)
   for i := 0; i < numMoves; i++ {
     move := moveList.At(i).(moves.Move)
-    moves[i] = fmt.Sprintf("%d. %s", i + 1, moves.PrintMove(&move))
+    eachMove[i] = fmt.Sprintf("%d. %s", i + 1, moves.PrintMove(&move))
   }
-  return strings.Join(moves, "\n")
+  return strings.Join(eachMove, "\n")
 }
 
 func TestInsertIntoDictionary() (dict *trie.Trie) {

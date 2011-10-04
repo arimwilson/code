@@ -5,7 +5,7 @@ api_version: 2
 
 handlers:
 - url: /twl
-  static_files: twl.txt
+  static_files: scrabblish/twl.txt
   upload: scrabblish/twl.txt
 - url: /
   static_files: scrabblish.html

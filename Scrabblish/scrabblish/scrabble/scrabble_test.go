@@ -1,7 +1,8 @@
 package scrabble_test
 
 import ("fmt"; "os"; "path/filepath"; "testing";
-        "cross_check"; "moves"; "scrabble"; "sort_with"; "util")
+        "scrabblish/cross_check"; "scrabblish/moves"; "scrabblish/scrabble";
+        "scrabblish/sort_with"; "scrabblish/util")
 
 func TestBlankScore(t *testing.T) {
   if scrabble.BlankScore(10, 5, '-') != 5 {
