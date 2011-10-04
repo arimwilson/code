@@ -3,10 +3,28 @@
 <head>
 <title>Scrabblish</title>
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript">
-
+function solve() {
+  var input = $("form input:text");
+  var board = new Array();
+  var tiles = new String();
+  input.each(function(index) {
+    if (index < 15 * 15) {
+      if (index % 15 == 0) board.push(new String())
+      if ($(this).val() == "") board[board.length-1] += "-";
+      else board[board.length-1] += $(this).val();
+    } else {
+      tiles += $(this).val();
+    }
+  });
+  $.post("solve", { board: board, tiles: tiles }, function(data) {
+    $("#entry").hide()
+    var solution = $("#solution");
+    solution.html(data)
+  })
+}
 </script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 </head>
 <body>
 <span id="entry">
@@ -301,9 +319,22 @@
     <td><input type="text" maxlength=1 value="4" size=1></td>
   </tr>
 </table>
+<br>
+Tiles:
+<table><tr>
+<input type="text" maxlength=1 size=1>
+<input type="text" maxlength=1 size=1>
+<input type="text" maxlength=1 size=1>
+<input type="text" maxlength=1 size=1>
+<input type="text" maxlength=1 size=1>
+<input type="text" maxlength=1 size=1>
+<input type="text" maxlength=1 size=1>
+</tr></table>
+<br>
 <input type="submit" value="Solve">
 </form>
-<span id="solution" style="display:none">
+<br>
+<span id="solution">
 </span>
 </body>
 </html>

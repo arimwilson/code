@@ -3,7 +3,7 @@
 
 package scrabblish
 
-import ("flag"; "fmt"; "http"; "log"; "runtime/pprof"; "os";
+import ("appengine"; "appengine/urlfetch"; "flag"; "fmt"; "http"; "io"; "log";
         "scrabble"; "util")
 
 var wordListFlag = flag.String(
@@ -22,25 +22,23 @@ var letterValuesFlag = flag.String(
     "Space-separated list of letter point values, from A-Z.")
 var numResultsFlag = flag.Int(
     "n", 25, "Maximum number of results to output.")
-var cpuProfileFlag = flag.String("c", "", "Write CPU profile to file.")
 
 func init() {
   http.HandleFunc("/solve", solve)
 }
 
-func solve(w http.ResposeWriter, r *http.Request) {
+func solve(w http.ResponseWriter, r *http.Request) {
+  c := appengine.NewContext(r)
+  client := urlfetch.Client(c)
+  resp, err := client.Get("twl")
+  if err != nil {
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  }
 }
 
 func main() {
   flag.Parse()
-  if *cpuProfileFlag != "" {
-    f, err := os.Create(*cpuProfileFlag)
-    if err != nil {
-      log.Fatal(err)
-    }
-    pprof.StartCPUProfile(f)
-    defer pprof.StopCPUProfile()
-  }
 
   wordListFile, err := os.Open(*wordListFlag);
   defer wordListFile.Close();
