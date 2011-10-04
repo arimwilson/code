@@ -3,13 +3,8 @@
 
 package scrabblish
 
-import ("appengine"; "appengine/urlfetch"; "http"; "json";
+import ("appengine"; "appengine/urlfetch"; "fmt"; "http";
         "scrabblish/scrabble"; "scrabblish/util")
-
-type SolveRequest struct {
-  Board [][]byte
-  Tiles string
-}
 
 func init() {
   http.HandleFunc("/solve", solve)
@@ -29,20 +24,20 @@ func solve(w http.ResponseWriter, r *http.Request) {
   dict := util.ReadWordList(resp.Body)
 
   // Get params from request.
-  var solveRequest SolveRequest
-  err = json.NewDecoder(r.Body).Decode(&solveRequest)
+  err = r.ParseForm()
   if err != nil {
-    c.Errorf("Could not decode request with error: %s", err.String())
+    c.Errorf("Could not parse form with error: %s", err.String())
     http.Error(w, err.String(), http.StatusInternalServerError)
     return
   }
-  tiles := util.ReadTiles(solveRequest.Tiles)
+  board := util.ReadBoard(r.FormValue("board"))
+  tiles := util.ReadTiles(r.FormValue("tiles"))
   letterValues := util.ReadLetterValues(
       "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10")
 
-  moveList := scrabble.GetMoveList(dict, solveRequest.Board, tiles,
+  moveList := scrabble.GetMoveList(dict, board, tiles,
                                    letterValues)
 
-  w.Write([]byte(util.PrintMoveList(moveList, 25)))
+  fmt.Fprint(w, util.PrintMoveList(moveList, 25))
 }
 

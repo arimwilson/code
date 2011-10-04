@@ -7,19 +7,17 @@
 <script type="text/javascript">
 function solve() {
   var input = $("form input:text");
-  var board = new Array();
+  var board = new String();
   var tiles = new String();
   input.each(function(index) {
     if (index < 15 * 15) {
-      if (index % 15 == 0) board.push(new String())
-      if ($(this).val() == "") board[board.length-1] += "-";
-      else board[board.length-1] += $(this).val();
+      if ($(this).val() == "") board += "-";
+      else board += $(this).val();
     } else {
       tiles += $(this).val();
     }
   });
   $.post("solve", { board: board, tiles: tiles }, function(data) {
-    $("#entry").hide()
     $("#solution").html(data)
   })
 }

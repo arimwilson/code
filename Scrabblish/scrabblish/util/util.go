@@ -38,6 +38,15 @@ func ReadWordList(wordList io.Reader) (dict* trie.Trie) {
   return
 }
 
+func ReadBoard(boardFlat string) (board [][]byte) {
+  board = make([][]byte, BOARD_SIZE)
+  for i := 0; i < BOARD_SIZE; i++ {
+    board[i] = make([]byte, BOARD_SIZE)
+    board[i] = []byte(boardFlat[BOARD_SIZE * i:BOARD_SIZE * (i + 1)])
+  }
+  return
+}
+
 func ReadTiles(tilesFlag string) (tiles map[byte] int) {
   tiles = make(map[byte] int)
   for i := 0; i < len(tilesFlag); i++ {
@@ -156,7 +165,7 @@ func PrintMoveList(moveList *vector.Vector, numResults int) string {
     move := moveList.At(i).(moves.Move)
     eachMove[i] = fmt.Sprintf("%d. %s", i + 1, moves.PrintMove(&move))
   }
-  return strings.Join(eachMove, "\n")
+  return strings.Join(eachMove, "<br>")
 }
 
 func TestInsertIntoDictionary() (dict *trie.Trie) {
