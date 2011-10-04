@@ -20,8 +20,7 @@ function solve() {
   });
   $.post("solve", { board: board, tiles: tiles }, function(data) {
     $("#entry").hide()
-    var solution = $("#solution");
-    solution.html(data)
+    $("#solution").html(data)
   })
 }
 </script>
