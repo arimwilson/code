@@ -1,6 +1,6 @@
 package scrabble_test
 
-import ("os"; "path/filepath"; "testing";
+import ("fmt"; "os"; "path/filepath"; "testing";
         "cross_check"; "moves"; "scrabble"; "sort_with"; "util")
 
 func TestBlankScore(t *testing.T) {
@@ -62,14 +62,14 @@ func TestGetMoveListAcross(t *testing.T) {
   sort_with.SortWith(*moveList, moves.Greater)
   util.RemoveDuplicates(moveList)
   if moveList.Len() != 4 {
-    util.PrintMoveList(moveList, board, 100)
+    fmt.Printf(util.PrintMoveList(moveList, board, 100))
     t.Fatalf("length of move list: %d, should have been: 4", moveList.Len())
   }
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)
     if !move.Equals(&comparedMoves[i]) {
-      moves.PrintMove(&move)
-      moves.PrintMove(&comparedMoves[i])
+      fmt.Printf(moves.PrintMove(&move))
+      fmt.Printf(moves.PrintMove(&comparedMoves[i]))
       t.Fatalf("move does not equal compared move")
     }
   }
@@ -89,7 +89,7 @@ func numTotalTopMoves(
       "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10")
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
   if moveList.Len() != num {
-    util.PrintMoveList(moveList, board, 100)
+    fmt.Printf(util.PrintMoveList(moveList, board, 100))
     t.Errorf("length of move list: %d, should have been: %d", moveList.Len(),
              num)
   }
@@ -99,7 +99,7 @@ func numTotalTopMoves(
   for ; i < moveList.Len() && moveList.At(i).(moves.Move).Score == topMoveScore;
       i++ {}
   if topMoveScore != score {
-    moves.PrintMove(&topMove)
+    fmt.Printf(moves.PrintMove(&topMove))
     t.Errorf("top move score: %d, should have been: %d", topMoveScore, score)
   } else if i != numTop {
     t.Errorf("number of top moves: %d, should have been: %d", i,

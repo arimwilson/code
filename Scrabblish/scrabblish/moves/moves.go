@@ -72,7 +72,7 @@ func MoveWord(move *Move) (string) {
   return string(word)
 }
 
-func PrintMove(move *Move) {
+func PrintMove(move *Move) string {
   var direction string
   if (move.Direction == ACROSS) {
     direction = "across"
@@ -80,8 +80,8 @@ func PrintMove(move *Move) {
     direction = "down"
   }
 
-  fmt.Printf("%s, worth %d points, starting at %d, %s, going %s.\n",
-             MoveWord(move), move.Score, move.Start.X + 1,
-             string(move.Start.Y + 'A'), direction)
+  return fmt.Sprintf(
+    "%s, worth %d points, starting at %d, %s, going %s.\n", MoveWord(move),
+    move.Score, move.Start.X + 1, string(move.Start.Y + 'A'), direction)
 }
 

@@ -3,33 +3,20 @@
 
 package scrabblish
 
-import ("appengine"; "appengine/urlfetch"; "flag"; "fmt"; "http"; "io"; "log";
+import ("appengine"; "appengine/urlfetch"; "http"; "json";
         "scrabble"; "util")
 
-// TODO(ariw): Remove flags/main as they are replaced by equivalent
-// functionality in solve.
-var wordListFlag = flag.String(
-    "w", "twl.txt",
-    "File with space-separated list of legal words, in upper-case.")
-var boardFlag = flag.String(
-    "b", "",
-    "File with board structure. Format: * indicates starting point, 1 and 2 " +
-    "indicate double and triple word score tiles, 3 and 4 indicate double " +
-    "and triple letter score tiles, - indicates blank tiles, and upper-case " +
-    "letters indicate existing words.")
-var tilesFlag = flag.String(
-    "t", "", "List of all 7 player tiles, in upper-case.")
-var letterValuesFlag = flag.String(
-    "l", "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10",
-    "Space-separated list of letter point values, from A-Z.")
-var numResultsFlag = flag.Int(
-    "n", 25, "Maximum number of results to output.")
+type SolveRequest struct {
+  Board [][]byte
+  Tiles string
+}
 
 func init() {
   http.HandleFunc("/solve", solve)
 }
 
 func solve(w http.ResponseWriter, r *http.Request) {
+  // Get our dictionary.
   c := appengine.NewContext(r)
   client := urlfetch.Client(c)
   resp, err := client.Get("twl")
@@ -37,34 +24,22 @@ func solve(w http.ResponseWriter, r *http.Request) {
     http.Error(w, err.String(), http.StatusInternalServerError)
     return
   }
-}
+  defer resp.body.close()
+  dict := util.ReadWordList(&resp.Body)
 
-func main() {
-  flag.Parse()
-
-  wordListFile, err := os.Open(*wordListFlag);
-  defer wordListFile.Close();
+  // Get params from request.
+  var solveRequest SolveRequest
+  err := json.NewDecoder(r.Body).Unmarshal(&solveRequest)
   if err != nil {
-    fmt.Printf("need valid file for -w, found %s\n", *wordListFlag)
-    os.Exit(1)
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
   }
-  boardFile, err := os.Open(*boardFlag);
-  defer boardFile.Close();
-  if err != nil {
-    fmt.Printf("need valid file for -b, found %s\n", *boardFlag)
-    os.Exit(1)
-  }
-  if len(*tilesFlag) != 7 {
-    fmt.Printf("need 7 tiles in -t, found %d\n", len(*tilesFlag))
-    os.Exit(1)
-  }
-  dict := util.ReadWordList(wordListFile)
-  board := util.ReadBoard(boardFile)
-  tiles := util.ReadTiles(*tilesFlag)
-  letterValues := util.ReadLetterValues(*letterValuesFlag)
+  letterValues := util.ReadLetterValues(
+      "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10")
 
-  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
+  moveList := scrabble.GetMoveList(dict, solveRequest.Board, solveRequest.Tiles,
+                                   letterValues)
 
-  util.PrintMoveList(moveList, board, *numResultsFlag)
+  w.Write([]byte(PrintMoveList(&moveList, 25)))
 }
 

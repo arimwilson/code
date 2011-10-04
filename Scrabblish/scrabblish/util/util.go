@@ -2,12 +2,11 @@
 
 package util
 
-import ("bufio"; "container/vector"; "fmt"; "strconv"; "strings";
-        "os";
+import ("bufio"; "container/vector"; "fmt"; "io"; "strconv"; "strings"; "os";
         "moves"; "trie")
 
-func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
-  wordListReader := bufio.NewReader(wordListFile)
+func ReadWordList(wordList* io.Reader) (dict* trie.Trie) {
+  wordListReader := bufio.NewReader(wordList)
   dict = trie.New()
   for {
     word, err := wordListReader.ReadString(' ')
@@ -163,14 +162,17 @@ func PrintMoveOnBoard(board [][]byte, move *moves.Move) {
   }
 }
 
-func PrintMoveList(moveList *vector.Vector, board [][]byte, numResults int) {
-  for i := 0;
-      (numResults <= 0 || i < numResults) && i < moveList.Len(); i++ {
-    fmt.Printf("%d. ", i + 1)
-    move := moveList.At(i).(moves.Move)
-    moves.PrintMove(&move)
-    PrintMoveOnBoard(board, &move)
+func PrintMoveList(moveList *vector.Vector, numResults int) string {
+  numMoves := numResults
+  if numResults <= 0 || moveList.Len() < numResults {
+    numMoves := moveList.Len()
   }
+  moves := make([]string, numMoves)
+  for i := 0; i < numMoves; i++ {
+    move := moveList.At(i).(moves.Move)
+    moves[i] = fmt.Sprintf("%d. %s", i + 1, moves.PrintMove(&move))
+  }
+  return strings.Join(moves, "\n")
 }
 
 func TestInsertIntoDictionary() (dict *trie.Trie) {
