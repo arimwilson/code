@@ -1,8 +1,7 @@
 package scrabble_test
 
-import ("fmt"; "os"; "path/filepath"; "testing";
-        "scrabblish/cross_check"; "scrabblish/moves"; "scrabblish/scrabble";
-        "scrabblish/sort_with"; "scrabblish/util")
+import ("os"; "path/filepath"; "testing";
+        "cross_check"; "moves"; "scrabble"; "sort_with"; "trie"; "util")
 
 func TestBlankScore(t *testing.T) {
   if scrabble.BlankScore(10, 5, '-') != 5 {
@@ -63,34 +62,40 @@ func TestGetMoveListAcross(t *testing.T) {
   sort_with.SortWith(*moveList, moves.Greater)
   util.RemoveDuplicates(moveList)
   if moveList.Len() != 4 {
-    fmt.Printf(util.PrintMoveList(moveList, board, 100))
+    util.PrintMoveList(moveList, board, 100)
     t.Fatalf("length of move list: %d, should have been: 4", moveList.Len())
   }
   for i := 0; i < moveList.Len(); i++ {
     move := moveList.At(i).(moves.Move)
     if !move.Equals(&comparedMoves[i]) {
-      fmt.Printf(moves.PrintMove(&move))
-      fmt.Printf(moves.PrintMove(&comparedMoves[i]))
+      moves.PrintMove(&move)
+      moves.PrintMove(&comparedMoves[i])
       t.Fatalf("move does not equal compared move")
     }
   }
 }
 
-func numTotalTopMoves(
-    t *testing.T, board [][]byte, tilesFlag string, num int, score int,
-    numTop int) {
+func prepareRealData(tilesFlag string) (
+    dict *trie.Trie, tiles map[byte] int, letterValues map[byte] int) {
   wordListFile, err := os.Open(filepath.Join(os.Getenv("SRCROOT"), "twl.txt"));
   defer wordListFile.Close();
   if err != nil {
-    t.Fatal("could not open twl.txt successfully.")
+    panic("could not open twl.txt successfully.")
   }
-  dict := util.ReadWordList(wordListFile)
-  tiles := util.ReadTiles(tilesFlag)
-  letterValues := util.ReadLetterValues(
+  dict = util.ReadWordList(wordListFile)
+  tiles = util.ReadTiles(tilesFlag)
+  letterValues = util.ReadLetterValues(
       "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10")
+  return
+}
+
+func numTotalTopMoves(
+    t *testing.T, board [][]byte, tilesFlag string, num int, score int,
+    numTop int) {
+  dict, tiles, letterValues := prepareRealData(tilesFlag)
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
   if moveList.Len() != num {
-    fmt.Printf(util.PrintMoveList(moveList, board, 100))
+    util.PrintMoveList(moveList, board, 100)
     t.Errorf("length of move list: %d, should have been: %d", moveList.Len(),
              num)
   }
@@ -100,12 +105,32 @@ func numTotalTopMoves(
   for ; i < moveList.Len() && moveList.At(i).(moves.Move).Score == topMoveScore;
       i++ {}
   if topMoveScore != score {
-    fmt.Printf(moves.PrintMove(&topMove))
+    moves.PrintMove(&topMove)
     t.Errorf("top move score: %d, should have been: %d", topMoveScore, score)
   } else if i != numTop {
     t.Errorf("number of top moves: %d, should have been: %d", i,
              numTop)
   }
+}
+
+func getComplicatedBoard() (board [][]byte) {
+  board = [][]byte{
+      []byte("4---2--3--2---4"),
+      []byte("-3---4---4---3-"),
+      []byte("--1---3-3---1--"),
+      []byte("---4---1---4---"),
+      []byte("2---1-3-LIKE--2"),
+      []byte("-4--LOTTO4---4-"),
+      []byte("--3-3---V-3-3--"),
+      []byte("3--1-FACED-1--3"),
+      []byte("--3-3-R---3-3--"),
+      []byte("-4---4ERA4---4-"),
+      []byte("2---1-3-R-1---2"),
+      []byte("---4---1K--4---"),
+      []byte("--1---3-3---1--"),
+      []byte("-3---4---4---3-"),
+      []byte("4---2--3--2---4")}
+  return
 }
 
 func TestNumTotalTopMoves(t *testing.T) {
@@ -132,22 +157,23 @@ func TestNumTotalTopMoves(t *testing.T) {
   board[8][7] = byte('A')
   board[9][7] = byte('R')
   numTotalTopMoves(t, board, "ABCDEFR", 777, 45, 3)
-  board = [][]byte{
-      []byte("4---2--3--2---4"),
-      []byte("-3---4---4---3-"),
-      []byte("--1---3-3---1--"),
-      []byte("---4---1---4---"),
-      []byte("2---1-3-LIKE--2"),
-      []byte("-4--LOTTO4---4-"),
-      []byte("--3-3---V-3-3--"),
-      []byte("3--1-FACED-1--3"),
-      []byte("--3-3-R---3-3--"),
-      []byte("-4---4ERA4---4-"),
-      []byte("2---1-3-R-1---2"),
-      []byte("---4---1K--4---"),
-      []byte("--1---3-3---1--"),
-      []byte("-3---4---4---3-"),
-      []byte("4---2--3--2---4")}
-  numTotalTopMoves(t, board, "ABCDEF ", 4903, 90, 1)
+  numTotalTopMoves(t, getComplicatedBoard(), "ABCDEF ", 4903, 90, 1)
+}
+
+func BenchmarkAll(b *testing.B) {
+  for i := 0; i < b.N; i++ {
+    dict, tiles, letterValues := prepareRealData("ABCDEFG")
+    scrabble.GetMoveList(dict, getComplicatedBoard(), tiles, letterValues)
+  }
+}
+
+func BenchmarkGetMoveList(b *testing.B) {
+  b.StopTimer()
+  dict, tiles, letterValues := prepareRealData("ABCDEFG")
+  board := getComplicatedBoard()
+  b.StartTimer()
+  for i := 0; i < b.N; i++ {
+    scrabble.GetMoveList(dict, board, tiles, letterValues)
+  }
 }
 
