@@ -2,32 +2,16 @@
 
 package trie
 
-type Child struct {
-  letter byte
-  trie *Trie
-}
-
 type Trie struct {
   terminal bool
-  children []Child
+  children map[byte]*Trie
 }
 
 // Make a new trie.
 func New() *Trie {
   trie := new(Trie)
+  trie.children = make(map[byte] *Trie)
   return trie
-}
-
-func findChild(children []Child, letter byte) (trie *Trie, existing bool) {
-  existing = false
-  for i := 0; i < len(children); i++ {
-    if children[i].letter == letter {
-      trie = children[i].trie
-      existing = true
-      return
-    }
-  }
-  return
 }
 
 // Insert a word into the trie.
@@ -36,10 +20,10 @@ func (self *Trie) Insert(word string) {
     self.terminal = true
     return
   }
-  child, existing := findChild(self.children, word[0])
+  child, existing := self.children[word[0]]
   if !existing {
     child = New()
-    self.children = append(self.children, Child{word[0], child})
+    self.children[word[0]] = child
   }
   child.Insert(word[1:])
 }
@@ -52,7 +36,7 @@ func (self *Trie) following(prefix string) (cur *Trie, existing bool) {
     letter := prefix[i]
     // TODO(ariw): Remove hack.
     if letter < 'A' { letter += 26 }
-    cur, existing = findChild(cur.children, letter)
+    cur, existing = cur.children[letter]
     if !existing { return }
   }
   return
@@ -69,8 +53,10 @@ func (self *Trie) Following(prefix string) (following []byte) {
   cur, existing := self.following(prefix)
   if !existing { return }
   following = make([]byte, len(cur.children))
-  for i := 0; i < len(cur.children); i++ {
-    following[i] = cur.children[i].letter
+  i := 0
+  for key, _ := range(cur.children) {
+    following[i] = key
+    i++
   }
   return
 }
