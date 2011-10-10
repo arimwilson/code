@@ -45,6 +45,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
   var dict *trie.Trie
   // Get our dictionary.
   items, err := memcache.GetMulti(c, getKeys("dict", 2))
+  // TODO(ariw): Why am I getting no errors and 0 len items?
   if err != nil || len(items) == 0 {
     client := urlfetch.Client(c)
     resp, err := client.Get("http://scrabblish.appspot.com/twl")
