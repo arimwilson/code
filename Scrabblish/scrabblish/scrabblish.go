@@ -26,8 +26,9 @@ func splitMemcache(key string, data []byte) (items []*memcache.Item) {
   for i := 0; i < len(data); i += MAX_MEMCACHE_VALUE_SIZE {
     item := new(memcache.Item)
     item.Key = keys[i]
-    item.Value =
-        data[i * MAX_MEMCACHE_VALUE_SIZE:(i + 1) * MAX_MEMCACHE_VALUE_SIZE]
+    j := i + MAX_MEMCACHE_VALUE_SIZE
+    if j > len(data) { j = len(data) }
+    item.Value = data[i:j]
   }
   return
 }
@@ -44,7 +45,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
   var dict *trie.Trie
   // Get our dictionary.
   items, err := memcache.GetMulti(c, getKeys("dict", 2))
-  if err != nil {
+  if err != nil || len(items) == 0 {
     client := urlfetch.Client(c)
     resp, err := client.Get("http://scrabblish.appspot.com/twl")
     if err != nil {
