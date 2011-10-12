@@ -96,6 +96,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
   } else {
     data := bytes.NewBuffer(joinMemcache(items))
     dec := gob.NewDecoder(data)
+    dict = new(trie.Trie)
     err := dec.Decode(dict)
     if err != nil {
       c.Errorf("Could not decode dict with error: %s", err.String())
