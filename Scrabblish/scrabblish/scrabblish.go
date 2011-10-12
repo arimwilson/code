@@ -21,7 +21,7 @@ func bToI(b []byte) int {
 func iToB(i int) []byte {
   b := make([]byte, 4)
   for j := 0; j < 4; j++ {
-    b[i] = byte(i >> (8 * j))
+    b[i] = byte(i >> uint(8 * j))
   }
   return b
 }
@@ -70,6 +70,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
   var dict *trie.Trie
   // Get our dictionary.
   items, err := memcache.GetMulti(c, getKeys(c, "dict"))
+  // TODO(ariw): WTF len(items)?
   if err != nil || len(items) == 0 {
     client := urlfetch.Client(c)
     resp, err := client.Get("http://scrabblish.appspot.com/twl")
