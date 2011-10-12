@@ -3,17 +3,36 @@
 
 package scrabblish
 
-import ("appengine"; "appengine/memcache"; "appengine/urlfetch"; "bytes"; "fmt";
-        "gob"; "http";
+import ("appengine"; "appengine/memcache"; "appengine/urlfetch"; "bytes";
+        "encoding/binary"; "fmt"; "gob"; "http";
         "scrabblish/scrabble"; "scrabblish/trie"; "scrabblish/util")
 
 func init() {
   http.HandleFunc("/solve", solve)
 }
 
-const MAX_MEMCACHE_VALUE_SIZE = 1048576
+func bToI(b []byte) int {
+  buf := bytes.NewBuffer(b)
+  var i int
+  binary.Read(buf, binary.LittleEndian, &i)
+  return i
+}
 
-func getKeys(key string, num int) (keys []string) {
+func iToB(i int) []byte {
+  b := make([]byte, 4)
+  for j := 0; j < 4; j++ {
+    b[i] = byte(i >> (8 * j))
+  }
+  return b
+}
+
+func getKeys(c appengine.Context, key string) (keys []string) {
+  item, err := memcache.Get(c, key);
+  if err != nil {
+    c.Infof("Could not retrieve number of keys with error: %s", err.String())
+    return
+  }
+  num := bToI(item.Value)
   keys = make([]string, num)
   for i := 0; i < num; i++ {
     keys[i] = fmt.Sprintf("%s%d", key, i)
@@ -21,14 +40,20 @@ func getKeys(key string, num int) (keys []string) {
   return
 }
 
+const MAX_MEMCACHE_VALUE_SIZE = 1000000
+
 func splitMemcache(key string, data []byte) (items []*memcache.Item) {
-  keys := getKeys(key, len(data))
+  item := new(memcache.Item)
+  item.Key = key
+  item.Value = iToB((len(data) - 1) / MAX_MEMCACHE_VALUE_SIZE + 1)
+  items = append(items, item)
   for i := 0; i < len(data); i += MAX_MEMCACHE_VALUE_SIZE {
-    item := new(memcache.Item)
-    item.Key = keys[i]
+    item = new(memcache.Item)
+    item.Key = fmt.Sprintf("%s%d", key, i / MAX_MEMCACHE_VALUE_SIZE)
     j := i + MAX_MEMCACHE_VALUE_SIZE
     if j > len(data) { j = len(data) }
     item.Value = data[i:j]
+    items = append(items, item)
   }
   return
 }
@@ -44,8 +69,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
   var dict *trie.Trie
   // Get our dictionary.
-  items, err := memcache.GetMulti(c, getKeys("dict", 2))
-  // TODO(ariw): Why am I getting no errors and 0 len items?
+  items, err := memcache.GetMulti(c, getKeys(c, "dict"))
   if err != nil || len(items) == 0 {
     client := urlfetch.Client(c)
     resp, err := client.Get("http://scrabblish.appspot.com/twl")
