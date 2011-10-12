@@ -11,17 +11,17 @@ func init() {
   http.HandleFunc("/solve", solve)
 }
 
-func bToI(b []byte) int {
+func bToI(b []byte) int32 {
   buf := bytes.NewBuffer(b)
-  var i int
+  var i int32
   binary.Read(buf, binary.LittleEndian, &i)
   return i
 }
 
-func iToB(i int) []byte {
+func iToB(i int32) []byte {
   b := make([]byte, 4)
   for j := 0; j < 4; j++ {
-    b[i] = byte(i >> uint(8 * j))
+    b[j] = byte(i >> uint(8 * j))
   }
   return b
 }
@@ -34,7 +34,7 @@ func getKeys(c appengine.Context, key string) (keys []string) {
   }
   num := bToI(item.Value)
   keys = make([]string, num)
-  for i := 0; i < num; i++ {
+  for i := int32(0); i < num; i++ {
     keys[i] = fmt.Sprintf("%s%d", key, i)
   }
   return
@@ -45,7 +45,7 @@ const MAX_MEMCACHE_VALUE_SIZE = 1000000
 func splitMemcache(key string, data []byte) (items []*memcache.Item) {
   item := new(memcache.Item)
   item.Key = key
-  item.Value = iToB((len(data) - 1) / MAX_MEMCACHE_VALUE_SIZE + 1)
+  item.Value = iToB(int32((len(data) - 1) / MAX_MEMCACHE_VALUE_SIZE + 1))
   items = append(items, item)
   for i := 0; i < len(data); i += MAX_MEMCACHE_VALUE_SIZE {
     item = new(memcache.Item)
@@ -70,7 +70,6 @@ func solve(w http.ResponseWriter, r *http.Request) {
   var dict *trie.Trie
   // Get our dictionary.
   items, err := memcache.GetMulti(c, getKeys(c, "dict"))
-  // TODO(ariw): WTF len(items)?
   if err != nil || len(items) == 0 {
     client := urlfetch.Client(c)
     resp, err := client.Get("http://scrabblish.appspot.com/twl")
@@ -97,7 +96,12 @@ func solve(w http.ResponseWriter, r *http.Request) {
   } else {
     data := bytes.NewBuffer(joinMemcache(items))
     dec := gob.NewDecoder(data)
-    dec.Decode(dict)
+    err := dec.Decode(dict)
+    if err != nil {
+      c.Errorf("Could not decode dict with error: %s", err.String())
+      http.Error(w, err.String(), http.StatusInternalServerError)
+      return
+    }
   }
 
   // Get params from request.
