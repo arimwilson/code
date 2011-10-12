@@ -59,8 +59,8 @@ func splitMemcache(key string, data []byte) (items []*memcache.Item) {
 }
 
 func joinMemcache(items map[string]*memcache.Item) (data []byte) {
-  for _, value := range(items) {
-    data = append(data, value.Value...)
+  for _, item := range(items) {
+    data = append(data, item.Value...)
   }
   return
 }
