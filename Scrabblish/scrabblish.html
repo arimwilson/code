@@ -5,22 +5,35 @@
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript">
-function solve() {
-  var input = $("form input:text");
+function getBoard(input) {
   var board = new String();
-  var tiles = new String();
   input.each(function(index) {
     if (index < 15 * 15) {
       if ($(this).val() == "") board += "-";
       else board += $(this).val();
-    } else {
-      tiles += $(this).val();
     }
   });
-  $.post("solve", { board: board, tiles: tiles }, function(data) {
-    $("#solution").html(data)
-  })
+  return board;
 }
+
+function getTiles(input) {
+  var tiles = new String();
+  input.each(function(index) {
+    if (input >= 15 * 15) {
+      tiles += $(this).val();
+    }
+  }
+  return tiles
+}
+
+function solve() {
+  var input = $("form input:text");
+  $.post("solve", { board: getBoard(input), tiles: getTiles(input) },
+         function(data) { $("#solution").html(data) })
+}
+
+$("save_button").click(function() {
+});
 </script>
 <script type="text/javascript">
   var _gaq = _gaq || [];
@@ -340,6 +353,9 @@ Tiles:
 </tr></table>
 <br>
 <input type="submit" value="Solve">
+<input type="button" value="Save" id="save_button">
+<select id="load" style="display:none">
+</select>
 </form>
 <br>
 <span id="solution">

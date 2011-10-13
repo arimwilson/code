@@ -9,6 +9,9 @@ import ("appengine"; "appengine/memcache"; "appengine/urlfetch"; "bytes";
 
 func init() {
   http.HandleFunc("/solve", solve)
+  http.HandleFunc("/list", list)
+  http.HandleFunc("/load", load)
+  http.HandleFunc("/save", save)
 }
 
 func bToI(b []byte) int32 {
