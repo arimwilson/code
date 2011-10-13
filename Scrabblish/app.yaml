@@ -1,5 +1,5 @@
 application: scrabblish
-version: 2
+version: 1
 runtime: go
 api_version: 3
 
