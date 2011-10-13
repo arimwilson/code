@@ -26,6 +26,7 @@ func iToB(i int32) []byte {
   return b
 }
 
+// Get the list of subkeys corresponding to the primary key.
 func getKeys(c appengine.Context, key string) (keys []string) {
   item, err := memcache.Get(c, key);
   if err != nil {
@@ -42,6 +43,8 @@ func getKeys(c appengine.Context, key string) (keys []string) {
 
 const MAX_MEMCACHE_VALUE_SIZE = 1000000
 
+// Split a byte stream into memcache items of fixed size, with given key and
+// subkeys.
 func splitMemcache(key string, data []byte) (items []*memcache.Item) {
   item := new(memcache.Item)
   item.Key = key
@@ -58,8 +61,13 @@ func splitMemcache(key string, data []byte) (items []*memcache.Item) {
   return
 }
 
-func joinMemcache(items map[string]*memcache.Item) (data []byte) {
-  for _, item := range(items) {
+// Join a byte stream, in order, from given subkeys.
+func joinMemcache(keys []string, items map[string]*memcache.Item) (data []byte) {
+  for i := 0; i < len(keys); i++ {
+    item, existing := items[keys[i]]
+    if !existing {
+      panic(fmt.Sprintf("No item for key %s!", keys[i]))
+    }
     data = append(data, item.Value...)
   }
   return
@@ -69,8 +77,9 @@ func solve(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
   var dict *trie.Trie
   // Get our dictionary.
-  items, err := memcache.GetMulti(c, getKeys(c, "dict"))
-  if err != nil || len(items) == 0 {
+  keys := getKeys(c, "dict")
+  items, err := memcache.GetMulti(c, keys)
+  if len(keys) == 0 || err != nil {
     client := urlfetch.Client(c)
     resp, err := client.Get("http://scrabblish.appspot.com/twl")
     if err != nil {
@@ -82,7 +91,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
     dict = util.ReadWordList(resp.Body)
     var data bytes.Buffer
     enc := gob.NewEncoder(&data)
-    err = enc.Encode(dict)
+    err = enc.Encode(*dict)
     if err != nil {
       c.Errorf("Could not encode twl with error: %s", err.String())
     }
@@ -94,7 +103,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
       }
     }
   } else {
-    data := bytes.NewBuffer(joinMemcache(items))
+    data := bytes.NewBuffer(joinMemcache(keys, items))
     dec := gob.NewDecoder(data)
     dict = new(trie.Trie)
     err := dec.Decode(dict)
