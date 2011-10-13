@@ -57,7 +57,7 @@ func ReadTiles(tilesFlag string) (tiles map[byte] int) {
 
 func ReadLetterValues(letterValuesFlag string) (letterValues map[byte] int) {
   letterValues = make(map[byte] int)
-  splitLetterValues := strings.Split(letterValuesFlag, " ", -1)
+  splitLetterValues := strings.Split(letterValuesFlag, " ")
   for i := 'A'; i <= 'Z'; i++ {
     letterValues[byte(i)], _ = strconv.Atoi(splitLetterValues[i - 'A'])
   }
