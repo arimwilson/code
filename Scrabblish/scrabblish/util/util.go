@@ -38,11 +38,11 @@ func ReadWordList(wordList io.Reader) (dict* trie.Trie) {
   return
 }
 
-func ReadBoard(boardFlat string) (board [][]byte) {
+func ReadBoard(flatBoard string) (board [][]byte) {
   board = make([][]byte, BOARD_SIZE)
   for i := 0; i < BOARD_SIZE; i++ {
     board[i] = make([]byte, BOARD_SIZE)
-    board[i] = []byte(boardFlat[BOARD_SIZE * i:BOARD_SIZE * (i + 1)])
+    board[i] = []byte(floatBoard[BOARD_SIZE * i:BOARD_SIZE * (i + 1)])
   }
   return
 }

@@ -5,6 +5,8 @@
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript">
+var boards_;
+
 function getBoard(input) {
   var board = new String();
   input.each(function(index) {
@@ -32,8 +34,36 @@ function solve() {
          function(data) { $("#solution").html(data) })
 }
 
-$("save_button").click(function() {
-});
+function putBoard(board, input) {
+  input.each(function(index) {
+    if (index < 15 * 15) {
+      if (board[i] == "-") $(this).val("");
+      else $(this).val(board[i]);
+    }
+  });
+}
+
+function load(dropdown) {
+  putBoard(boards_[dropdown.selectedIndex].Board, $("form input:text"));
+}
+
+$(document).ready(function() {
+  $("#save_button").click(function() {
+    var name = prompt("Name of board?");
+    $.post("save", { board: getBoard(input), name: name });
+  });
+
+  $.post("list", null, function(data) {
+    boards_ = eval(data);
+    var load = $("#load");
+    $.each(boards_, function(board) {
+      load.append($("<option></option>").html(board.Name));
+    });
+    if (boards_.length > 0)
+      load.show();
+  });
+}
+
 </script>
 <script type="text/javascript">
   var _gaq = _gaq || [];
@@ -354,7 +384,7 @@ Tiles:
 <br>
 <input type="submit" value="Solve">
 <input type="button" value="Save" id="save_button">
-<select id="load" style="display:none">
+<select name="load" onchange="load(this.form.load);" style="display:none">
 </select>
 </form>
 <br>

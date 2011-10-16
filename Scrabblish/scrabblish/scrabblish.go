@@ -3,15 +3,65 @@
 
 package scrabblish
 
-import ("appengine"; "appengine/memcache"; "appengine/urlfetch"; "bytes";
-        "encoding/binary"; "fmt"; "gob"; "http";
+import ("appengine"; "appengine/datastore"; "appengine/memcache";
+        "appengine/urlfetch"; "appengine/user"; "bytes"; "encoding/binary";
+        "fmt"; "gob"; "http"; "json";
         "scrabblish/scrabble"; "scrabblish/trie"; "scrabblish/util")
 
 func init() {
-  http.HandleFunc("/solve", solve)
-  http.HandleFunc("/list", list)
-  http.HandleFunc("/load", load)
   http.HandleFunc("/save", save)
+  http.HandleFunc("/list", list)
+  http.HandleFunc("/solve", solve)
+}
+
+type Board struct {
+  User user.User
+  Name string
+  Board string
+}
+
+func save(w http.ResponseWriter, r *http.Request) {
+  c := appengine.NewContext(r)
+
+  // Get params from request.
+  err = r.ParseForm()
+  if err != nil {
+    c.Errorf("Could not parse form with error: %s", err.String())
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  }
+  board := Board{user.Current(c), r.FormValue("name"), r.FormValue("board")}
+  var key string
+  key, err = datastore.Put(c, datastore.NewIncompleteKey("board"), &board)
+  if err != nil {
+    c.Errorf("Could not save board with error: %s", err.String())
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  }
+}
+
+func list(w http.ResponseWriter, r *http.Request) {
+  c := appengine.NewContext(r)
+
+  // Get params from request.
+  err = r.ParseForm()
+  if err != nil {
+    c.Errorf("Could not parse form with error: %s", err.String())
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  }
+  query := datastore.NewQuery("board")
+  query.Filter("User =", user.Current(c))
+  results := new([]Board)
+  _, err = query.GetAll(c, results)
+  if err != nil {
+    c.Errorf("Could not retrieve boards for user %s with error: %s",
+             user.Current(c).String(), err.String())
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
+  }
+  encoder := json.NewEncoder(w)
+  encoder.Encode(results)
 }
 
 func bToI(b []byte) int32 {
@@ -65,7 +115,8 @@ func splitMemcache(key string, data []byte) (items []*memcache.Item) {
 }
 
 // Join a byte stream, in order, from given subkeys.
-func joinMemcache(keys []string, items map[string]*memcache.Item) (data []byte) {
+func joinMemcache(keys []string,
+                  items map[string]*memcache.Item) (data []byte) {
   for i := 0; i < len(keys); i++ {
     item, existing := items[keys[i]]
     if !existing {

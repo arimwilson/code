@@ -10,7 +10,12 @@ handlers:
 - url: /
   static_files: scrabblish.html
   upload: scrabblish.html
-  login: required
-- url: /.*
+- url: /save
   script: _go_app
   login: required
+- url: /list
+  script: _go_app
+  login: required
+- url: /solve
+  script: _go_app
+
