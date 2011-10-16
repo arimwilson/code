@@ -24,7 +24,7 @@ function getTiles(input) {
     if (input >= 15 * 15) {
       tiles += $(this).val();
     }
-  }
+  });
   return tiles
 }
 
@@ -62,8 +62,7 @@ $(document).ready(function() {
     if (boards_.length > 0)
       load.show();
   });
-}
-
+});
 </script>
 <script type="text/javascript">
   var _gaq = _gaq || [];

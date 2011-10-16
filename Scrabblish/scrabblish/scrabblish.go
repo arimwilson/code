@@ -24,15 +24,14 @@ func save(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
 
   // Get params from request.
-  err = r.ParseForm()
+  err := r.ParseForm()
   if err != nil {
     c.Errorf("Could not parse form with error: %s", err.String())
     http.Error(w, err.String(), http.StatusInternalServerError)
     return
   }
-  board := Board{user.Current(c), r.FormValue("name"), r.FormValue("board")}
-  var key string
-  key, err = datastore.Put(c, datastore.NewIncompleteKey("board"), &board)
+  board := Board{*user.Current(c), r.FormValue("name"), r.FormValue("board")}
+  _, err = datastore.Put(c, datastore.NewIncompleteKey(c, "board", nil), &board)
   if err != nil {
     c.Errorf("Could not save board with error: %s", err.String())
     http.Error(w, err.String(), http.StatusInternalServerError)
@@ -44,7 +43,7 @@ func list(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
 
   // Get params from request.
-  err = r.ParseForm()
+  err := r.ParseForm()
   if err != nil {
     c.Errorf("Could not parse form with error: %s", err.String())
     http.Error(w, err.String(), http.StatusInternalServerError)
