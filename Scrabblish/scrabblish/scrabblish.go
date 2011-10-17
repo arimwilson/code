@@ -22,7 +22,6 @@ type Board struct {
 
 func save(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
-
   // Get params from request.
   err := r.ParseForm()
   if err != nil {
@@ -41,7 +40,6 @@ func save(w http.ResponseWriter, r *http.Request) {
 
 func list(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
-
   // Get params from request.
   err := r.ParseForm()
   if err != nil {

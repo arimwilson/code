@@ -30,7 +30,8 @@ function getTiles(input) {
 
 function solve() {
   var input = $("form input:text");
-  $.post("solve", { board: getBoard(input), tiles: getTiles(input) },
+  $.post("solve",
+         { board: getBoard(input), tiles: getTiles(input) },
          function(data) { $("#solution").html(data) })
 }
 
@@ -50,7 +51,8 @@ function load(dropdown) {
 $(document).ready(function() {
   $("#save_button").click(function() {
     var name = prompt("Name of board?");
-    $.post("save", { board: getBoard(input), name: name });
+    if (name == null || name == "") return;
+    $.post("save", { board: getBoard($("form input: text")), name: name });
   });
 
   $.post("list", null, function(data) {
