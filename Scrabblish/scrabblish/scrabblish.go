@@ -15,7 +15,7 @@ func init() {
 }
 
 type Board struct {
-  User user.User
+  User string
   Name string
   Board string
 }
@@ -29,8 +29,11 @@ func save(w http.ResponseWriter, r *http.Request) {
     http.Error(w, err.String(), http.StatusInternalServerError)
     return
   }
-  board := Board{*user.Current(c), r.FormValue("name"), r.FormValue("board")}
-  _, err = datastore.Put(c, datastore.NewIncompleteKey(c, "board", nil), &board)
+  cur_user := user.Current(c).String();
+  name := r.FormValue("name");
+  board := Board{cur_user, name, r.FormValue("board")}
+  _, err = datastore.Put(
+      c, datastore.NewKey(c, "board", cur_user + name, 0, nil), &board)
   if err != nil {
     c.Errorf("Could not save board with error: %s", err.String())
     http.Error(w, err.String(), http.StatusInternalServerError)
@@ -40,17 +43,10 @@ func save(w http.ResponseWriter, r *http.Request) {
 
 func list(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
-  // Get params from request.
-  err := r.ParseForm()
-  if err != nil {
-    c.Errorf("Could not parse form with error: %s", err.String())
-    http.Error(w, err.String(), http.StatusInternalServerError)
-    return
-  }
   query := datastore.NewQuery("board")
-  query.Filter("User =", user.Current(c))
+  query.Filter("User =", user.Current(c).String())
   results := new([]Board)
-  _, err = query.GetAll(c, results)
+  _, err := query.GetAll(c, results)
   if err != nil {
     c.Errorf("Could not retrieve boards for user %s with error: %s",
              user.Current(c).String(), err.String())

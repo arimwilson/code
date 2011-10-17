@@ -21,7 +21,7 @@ function getBoard(input) {
 function getTiles(input) {
   var tiles = new String();
   input.each(function(index) {
-    if (input >= 15 * 15) {
+    if (index >= 15 * 15) {
       tiles += $(this).val();
     }
   });
@@ -38,29 +38,25 @@ function solve() {
 function putBoard(board, input) {
   input.each(function(index) {
     if (index < 15 * 15) {
-      if (board[i] == "-") $(this).val("");
-      else $(this).val(board[i]);
+      if (board[index] == "-") $(this).val("");
+      else $(this).val(board[index]);
     }
   });
-}
-
-function load(dropdown) {
-  putBoard(boards_[dropdown.selectedIndex].Board, $("form input:text"));
 }
 
 $(document).ready(function() {
   $("#save_button").click(function() {
     var name = prompt("Name of board?");
     if (name == null || name == "") return;
-    $.post("save", { board: getBoard($("form input: text")), name: name });
+    $.post("save", { board: getBoard($("form input:text")), name: name });
   });
 
   $.post("list", null, function(data) {
     boards_ = eval(data);
-    var load = $("#load");
-    $.each(boards_, function(board) {
-      load.append($("<option></option>").html(board.Name));
-    });
+    var load = $("[name = load]");
+    for (i = 0; i < boards_.length; ++i) {
+      load.append($("<option></option>").html(boards_[i].Name));
+    }
     if (boards_.length > 0)
       load.show();
   });
@@ -385,7 +381,8 @@ Tiles:
 <br>
 <input type="submit" value="Solve">
 <input type="button" value="Save" id="save_button">
-<select name="load" onchange="load(this.form.load);" style="display:none">
+<select name="load" onchange="putBoard(boards_[this.form.load.selectedIndex - 1].Board, $('form input:text'));" style="display:none">
+<option></option>
 </select>
 </form>
 <br>
