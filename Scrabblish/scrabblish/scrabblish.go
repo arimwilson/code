@@ -126,7 +126,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
   // Get our dictionary.
   keys := getKeys(c, "dict")
   items, err := memcache.GetMulti(c, keys)
-  if len(keys) == 0 || err != nil {
+  if len(keys) == 0 || err != nil || len(keys) != len(items) {
     client := urlfetch.Client(c)
     resp, err := client.Get("http://scrabblish.appspot.com/twl")
     if err != nil {
