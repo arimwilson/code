@@ -5,11 +5,12 @@
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript">
-var boards_;
+var boards_ = ["4---2--3--2---4-3---4---4---3---1---3-3---1-----4---1---4---2---1-3-3-1---2-4---4---4---4---3-3-----3-3--3--1---*---1--3--3-3-----3-3---4---4---4---4-2---1-3-3-1---2---4---1---4-----1---3-3---1---3---4---4---3-4---2--3--2---4"];
+var input_;
 
-function getBoard(input) {
+function getBoard() {
   var board = new String();
-  input.each(function(index) {
+  input_.each(function(index) {
     if (index < 15 * 15) {
       if ($(this).val() == "") board += "-";
       else board += $(this).val();
@@ -18,9 +19,9 @@ function getBoard(input) {
   return board;
 }
 
-function getTiles(input) {
+function getTiles() {
   var tiles = new String();
-  input.each(function(index) {
+  input_.each(function(index) {
     if (index >= 15 * 15) {
       tiles += $(this).val();
     }
@@ -29,14 +30,12 @@ function getTiles(input) {
 }
 
 function solve() {
-  var input = $("form input:text");
-  $.post("solve",
-         { board: getBoard(input), tiles: getTiles(input) },
-         function(data) { $("#solution").html(data) })
+  $.post("solve", { board: getBoard(), tiles: getTiles() },
+                    function(data) { $("#solution").html(data) })
 }
 
-function putBoard(board, input) {
-  input.each(function(index) {
+function putBoard(board) {
+  input_.each(function(index) {
     if (index < 15 * 15) {
       if (board[index] == "-") $(this).val("");
       else $(this).val(board[index]);
@@ -45,20 +44,27 @@ function putBoard(board, input) {
 }
 
 $(document).ready(function() {
+  input_ = $("form input:text");
+  var load_ = $("#load_select");
+  putBoard(boards_[0]);
+  $.post("list", null, function(data) {
+    boards = eval(data);
+    for (i = 0; i < boards.length; ++i) {
+      boards_.push(boards[i].Board);
+      load_.append($("<option></option>").html(boards[i].Name));
+    }
+    if (boards_.length > 0)
+      load_.show();
+  });
+
   $("#save_button").click(function() {
     var name = prompt("Name of board?");
     if (name == null || name == "") return;
-    $.post("save", { board: getBoard($("form input:text")), name: name });
+    $.post("save", { board: getBoard(), name: name });
   });
 
-  $.post("list", null, function(data) {
-    boards_ = eval(data);
-    var load = $("[name = load]");
-    for (i = 0; i < boards_.length; ++i) {
-      load.append($("<option></option>").html(boards_[i].Name));
-    }
-    if (boards_.length > 0)
-      load.show();
+  load_.change(function() {
+    putBoard(boards_[$("#load_select")[0].selectedIndex]);
   });
 });
 </script>
@@ -98,55 +104,55 @@ $(document).ready(function() {
   </tr>
   <tr>
     <td>1</td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="2" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="2" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>2</td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>3</td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
   </tr>
@@ -155,159 +161,159 @@ $(document).ready(function() {
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>5</td>
-    <td><input type="text" maxlength=1 value="2" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="2" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>6</td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>7</td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>8</td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="*" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>9</td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>10</td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>11</td>
-    <td><input type="text" maxlength=1 value="2" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="2" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>12</td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
@@ -316,55 +322,55 @@ $(document).ready(function() {
     <td>13</td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="1" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>14</td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
   </tr>
   <tr>
     <td>15</td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="2" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="3" size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="2" size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
     <td><input type="text" maxlength=1 size=1></td>
-    <td><input type="text" maxlength=1 value="4" size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
+    <td><input type="text" maxlength=1 size=1></td>
   </tr>
 </table>
 <br>
@@ -381,8 +387,8 @@ Tiles:
 <br>
 <input type="submit" value="Solve">
 <input type="button" value="Save" id="save_button">
-<select name="load" onchange="putBoard(boards_[this.form.load.selectedIndex - 1].Board, $('form input:text'));" style="display:none">
-<option></option>
+<select id="load_select" style="display:none">
+<option>Default</option>
 </select>
 </form>
 <br>
