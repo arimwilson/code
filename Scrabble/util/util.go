@@ -22,7 +22,10 @@ func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
 var BOARD_SIZE = 15
 
 func Existing(board [][]byte, location *moves.Location) bool {
-  x, y := location.X, location.Y
+  return ExistingLocation(board, location.X, location.Y)
+}
+
+func ExistingLocation(board [][]byte, x int, y int) bool {
   if x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE {
     return false
   }

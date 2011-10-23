@@ -26,21 +26,19 @@ func CanFollow(dict *trie.Trie, prefix string, tiles map[byte] int) bool {
 // Return byte array consisting of existing tiles on the board to the left of
 // location.
 func GetExistingLeftTiles(board [][]byte, location *moves.Location) string {
-  end := location.Y
+  start, end := location.Y - 1, location.Y
   if end < 0 { return "" }
-  startLocation := moves.Location{location.X, location.Y - 1}
-  for ; util.Existing(board, &startLocation); startLocation.Y-- {}
-  location.Y = startLocation.Y + 1
+  for ; util.ExistingLocation(board, start, end); start-- {}
+  location.Y = start + 1
   return string(board[location.X][location.Y:end])
 }
 
 // Return byte array consisting of existing tiles on the board to the right of
 // location.
-func GetExistingRightTiles(board [][]byte, location moves.Location) string {
-  location.Y++
-  start := location.Y
+func GetExistingRightTiles(board [][]byte, location *moves.Location) string {
+  start, end := location.Y, location.Y + 1
   if start >= util.BOARD_SIZE { return "" }
-  for ; util.Existing(board, &location); location.Y++ {}
+  for ; util.ExistingLocation(board, start, end); end++ {}
   return string(board[location.X][start:location.Y])
 }
 
@@ -85,35 +83,38 @@ func Extend(
         verticallyScoredLetters[byte(i - 26)] = 0
       }
     }
-    for letter, score := range(verticallyScoredLetters) {
-      placedMove := possibleMove.Copy()
+    for letter, verticalScore := range(verticallyScoredLetters) {
+      oldWord := possibleMove.Word
       if left {
-        placedMove.Word = GetExistingLeftTiles(board, &placedMove.Start) +
-                          string(letter) + placedMove.Word
+        possibleMove.Word = GetExistingLeftTiles(board, &possibleMove.Start) +
+                            string(letter) + possibleMove.Word
       } else {
-        placedMove.Word += string(letter) +
-                           GetExistingRightTiles(board, placedLocation)
+        possibleMove.Word += string(letter) +
+                             GetExistingRightTiles(board, &placedLocation)
       }
-      placedMove.Score += score
-      if dict.Find(placedMove.Word) {
-        score = placedMove.Score
-        util.Score(board, letterValues, &placedMove)
-        moveList.Push(placedMove)
-        placedMove.Score = score
+      possibleMove.Score += verticalScore
+      if dict.Find(possibleMove.Word) {
+        oldScore := possibleMove.Score
+        util.Score(board, letterValues, &possibleMove)
+        moveList.Push(possibleMove)
+        possibleMove.Score = oldScore
       }
       tiles[tile]--
-      if CanFollow(dict, placedMove.Word, tiles) {
+      if CanFollow(dict, possibleMove.Word, tiles) {
         moveList.AppendVector(
-            Extend(dict, board, tiles, letterValues, crossChecks, placedMove,
+            Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
                    false))
       }
       if left {
-        placedMove.Start.Y--
+        possibleMove.Start.Y--
         moveList.AppendVector(
-            Extend(dict, board, tiles, letterValues, crossChecks, placedMove,
+            Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
                    true))
+        possibleMove.Start.Y++
       }
       tiles[tile]++
+      possibleMove.Score -= verticalScore
+      possibleMove.Word = oldWord
     }
   }
   return
@@ -137,10 +138,9 @@ func GetMoveListAcross(
       } else if board[i][j] >= 'A' && board[i][j] <= 'Z' {
         possibleMove.Start.X = i
         possibleMove.Start.Y = j - 1
-        possibleMove.Word = GetExistingRightTiles(board, possibleMove.Start)
+        possibleMove.Word = GetExistingRightTiles(board, &possibleMove.Start)
         moveList.AppendVector(Extend(
-            dict, board, tiles, letterValues, crossChecks,
-            possibleMove, true))
+            dict, board, tiles, letterValues, crossChecks, possibleMove, true))
         possibleMove.Start.Y = j + 1
         possibleMove.Word = GetExistingLeftTiles(board, &possibleMove.Start)
         moveList.AppendVector(Extend(
