@@ -1,5 +1,8 @@
 // Scrabble move generator. Given a word list, board, and your current tiles,
 // outputs all legal moves ranked by point value.
+//
+// Sample usage:
+// ./scrabblish -b empty_wordfeud.txt -t ABCDEFG
 
 package main
 

@@ -126,16 +126,16 @@ func GetMoveListAcross(
     letterValues map[byte] int,
     crossChecks map[int] map[byte] int) (moveList *vector.Vector) {
   moveList = new(vector.Vector)
+  possibleMove := moves.Move{ Word: "", Score: 0, Direction: moves.ACROSS }
   for i := 0; i < util.BOARD_SIZE; i++ {
     for j := 0; j < util.BOARD_SIZE; j++ {
-      possibleMove := moves.Move{
-        Word: "", Score: 0, Start: moves.Location{i, j},
-        Direction: moves.ACROSS }
       if board[i][j] == '*' {
+        possibleMove.Start = moves.Location{ i, j }
         moveList.AppendVector(Extend(
             dict, board, tiles, letterValues, crossChecks, possibleMove,
             true))
       } else if board[i][j] >= 'A' && board[i][j] <= 'Z' {
+        possibleMove.Start.X = i
         possibleMove.Start.Y = j - 1
         possibleMove.Word = GetExistingRightTiles(board, possibleMove.Start)
         moveList.AppendVector(Extend(
