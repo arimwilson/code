@@ -28,6 +28,7 @@ func CanFollow(dict *trie.Trie, prefix string, tiles map[byte] int) bool {
 func GetExistingLeftTiles(board [][]byte, location *moves.Location) string {
   end := location.Y
   if end < 0 { return "" }
+  location.Y--
   for ; util.Existing(board, location); location.Y-- {}
   location.Y++
   return string(board[location.X][location.Y:end])
@@ -52,18 +53,20 @@ func Extend(
   var positionCrossChecks map[byte] int
   var existing bool
   var placedLocation moves.Location
-  var placedMove moves.Move
+  var existingTiles string
   if left {
-    placedLocation = moves.Location{
-        possibleMove.Start.X, possibleMove.Start.Y}
+    placedLocation = possibleMove.Start
     if !util.Available(board, &placedLocation) { return }
     positionCrossChecks, existing = crossChecks[placedLocation.Hash()]
+    existingTiles = GetExistingLeftTiles(board, &placedLocation)
   } else {
     placedLocation = moves.Location{
         possibleMove.Start.X, possibleMove.Start.Y + len(possibleMove.Word)}
     if !util.Available(board, &placedLocation) { return }
     positionCrossChecks, existing = crossChecks[placedLocation.Hash()]
+    existingTiles = GetExistingRightTiles(board, &placedLocation)
   }
+  placedMove := possibleMove
   for tile, count := range(tiles) {
     if count == 0 { continue }
     verticallyScoredLetters := make(map[byte] int)
@@ -84,22 +87,17 @@ func Extend(
         verticallyScoredLetters[byte(i - 26)] = 0
       }
     }
-    placedMove = possibleMove
-    var existingTiles string
-    if left {
-      existingTiles = GetExistingLeftTiles(board, &placedMove.Start)
-    } else {
-      existingTiles = GetExistingRightTiles(board, &placedLocation)
-    }
-    for letter, verticalScore := range(verticallyScoredLetters) {
+    for letter, score := range(verticallyScoredLetters) {
+      placedMove.Score = possibleMove.Score
       if left {
-        placedMove.Word = existingTiles + string(letter) + placedMove.Word
+        placedMove.Word = existingTiles + string(letter) + possibleMove.Word
+        placedMove.Start = placedLocation
       } else {
-        placedMove.Word += string(letter) + existingTiles
+        placedMove.Word = possibleMove.Word + string(letter) + existingTiles
       }
-      placedMove.Score += verticalScore
+      placedMove.Score += score
       if dict.Find(placedMove.Word) {
-        score := placedMove.Score
+        score = placedMove.Score
         util.Score(board, letterValues, &placedMove)
         moveList.Push(placedMove)
         placedMove.Score = score
@@ -117,7 +115,6 @@ func Extend(
                    true))
       }
       tiles[tile]++
-      placedMove = possibleMove
     }
   }
   return
