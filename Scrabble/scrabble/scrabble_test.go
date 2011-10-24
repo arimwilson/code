@@ -62,7 +62,7 @@ func TestGetMoveListAcross(t *testing.T) {
   sort_with.SortWith(*moveList, moves.Greater)
   util.RemoveDuplicates(moveList)
   if moveList.Len() != 4 {
-    util.PrintMoveList(moveList, board, 100)
+    util.PrintMoveList(moveList, board, 2)
     t.Fatalf("length of move list: %d, should have been: 4", moveList.Len())
   }
   for i := 0; i < moveList.Len(); i++ {
@@ -95,7 +95,7 @@ func numTotalTopMoves(
   dict, tiles, letterValues := prepareRealData(tilesFlag)
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
   if moveList.Len() != num {
-    util.PrintMoveList(moveList, board, 100)
+    util.PrintMoveList(moveList, board, 2)
     t.Errorf("length of move list: %d, should have been: %d", moveList.Len(),
              num)
   }

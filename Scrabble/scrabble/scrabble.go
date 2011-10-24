@@ -28,7 +28,7 @@ func CanFollow(dict *trie.Trie, prefix string, tiles map[byte] int) bool {
 func GetExistingLeftTiles(board [][]byte, location *moves.Location) string {
   start, end := location.Y - 1, location.Y
   if end < 0 { return "" }
-  for ; util.ExistingLocation(board, start, end); start-- {}
+  for ; util.ExistingLocation(board, location.X, start); start-- {}
   location.Y = start + 1
   return string(board[location.X][location.Y:end])
 }
@@ -36,10 +36,10 @@ func GetExistingLeftTiles(board [][]byte, location *moves.Location) string {
 // Return byte array consisting of existing tiles on the board to the right of
 // location.
 func GetExistingRightTiles(board [][]byte, location *moves.Location) string {
-  start, end := location.Y, location.Y + 1
-  if start >= util.BOARD_SIZE { return "" }
-  for ; util.ExistingLocation(board, start, end); end++ {}
-  return string(board[location.X][start:location.Y])
+  end := location.Y + 1
+  if end >= util.BOARD_SIZE { return "" }
+  for ; util.ExistingLocation(board, location.X, end); end++ {}
+  return string(board[location.X][location.Y + 1:end])
 }
 
 // Add one letter to a possible move, checking if we've got a word, going either
