@@ -103,7 +103,7 @@ func TileMultipliers(tile *byte) (wordMultiplier int, letterMultiplier int) {
 
 func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
   // We ensure that the move is going right, for cache friendliness.
-  if (move.Direction != moves.ACROSS) { panic("Can't score down moves!") }
+  if move.Direction != moves.ACROSS { panic("Can't score down moves!") }
   wordMultiplier := 1
   score := 0
   boardTilesUsed := 0
