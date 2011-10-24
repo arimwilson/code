@@ -50,10 +50,6 @@ func main() {
     fmt.Printf("need valid file for -b, found %s\n", *boardFlag)
     os.Exit(1)
   }
-  if len(*tilesFlag) != 7 {
-    fmt.Printf("need 7 tiles in -t, found %d\n", len(*tilesFlag))
-    os.Exit(1)
-  }
   dict := util.ReadWordList(wordListFile)
   board := util.ReadBoard(boardFile)
   tiles := util.ReadTiles(*tilesFlag)
