@@ -27,12 +27,6 @@ type Move struct {
   Direction Direction
 }
 
-func (self* Move) Copy() Move {
-  newMove := new(Move)
-  *newMove = *self
-  return *newMove
-}
-
 // Hash function for Moves.
 func (self *Move) Hash() uint32 {
    return crc32.ChecksumIEEE(

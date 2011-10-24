@@ -83,14 +83,15 @@ func Extend(
         verticallyScoredLetters[byte(i - 26)] = 0
       }
     }
+    existingLeftTiles := GetExistingLeftTiles(board, &possibleMove.Start)
+    existingRightTiles := GetExistingRightTiles(board, &placedLocation)
+    oldWord := possibleMove.Word
     for letter, verticalScore := range(verticallyScoredLetters) {
-      oldWord := possibleMove.Word
       if left {
-        possibleMove.Word = GetExistingLeftTiles(board, &possibleMove.Start) +
-                            string(letter) + possibleMove.Word
+        possibleMove.Word = existingLeftTiles + string(letter) +
+                            possibleMove.Word
       } else {
-        possibleMove.Word += string(letter) +
-                             GetExistingRightTiles(board, &placedLocation)
+        possibleMove.Word += string(letter) + existingRightTiles
       }
       possibleMove.Score += verticalScore
       if dict.Find(possibleMove.Word) {
