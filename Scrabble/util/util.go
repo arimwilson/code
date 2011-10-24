@@ -6,19 +6,6 @@ import ("bufio"; "container/vector"; "fmt"; "strconv"; "strings";
         "os";
         "moves"; "trie")
 
-func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
-  wordListReader := bufio.NewReader(wordListFile)
-  dict = trie.New()
-  for {
-    word, err := wordListReader.ReadString(' ')
-    if err != nil {
-      return
-    }
-    dict.Insert(strings.TrimSpace(word))
-  }
-  return
-}
-
 var BOARD_SIZE = 15
 
 func Existing(board [][]byte, location *moves.Location) bool {
@@ -40,6 +27,19 @@ func Available(board [][]byte, location *moves.Location) bool {
   }
   tile := board[location.X][location.Y]
   return tile < 'A' || tile > 'Z'
+}
+
+func ReadWordList(wordListFile* os.File) (dict* trie.Trie) {
+  wordListReader := bufio.NewReader(wordListFile)
+  dict = trie.New()
+  for {
+    word, err := wordListReader.ReadString(' ')
+    if err != nil {
+      return
+    }
+    dict.Insert(strings.TrimSpace(word))
+  }
+  return
 }
 
 func ReadBoard(boardFile* os.File) (board [][]byte) {
