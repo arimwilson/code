@@ -1,7 +1,10 @@
 package scrabble
 
-import ("container/vector";
-        "cross_check"; "moves"; "trie"; "sort_with"; "util")
+import ("container/vector"; "log"; "runtime/pprof"; "os";
+        "cross_check"; "flag"; "moves"; "trie"; "sort_with"; "util")
+
+var memProfileFlag = flag.String(
+    "m", "", "Write memory profile at near-peak usage to file.")
 
 // Your score without the points from the blank letter given from the value
 // retrieved from letterValue.
@@ -190,6 +193,14 @@ func GetMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] int,
   moveList.AppendVector(downMoveList)
   sort_with.SortWith(*moveList, moves.Greater)
   util.RemoveDuplicates(moveList)
+  if *memProfileFlag != "" {
+    f, err := os.Create(*memProfileFlag)
+    if err != nil {
+      log.Fatal(err)
+    }
+    pprof.WriteHeapProfile(f)
+    f.Close()
+  }
   return
 }
 
