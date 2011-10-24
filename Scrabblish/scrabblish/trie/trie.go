@@ -2,28 +2,46 @@
 
 package trie
 
+import ("fmt")
+
+type Child struct {
+  letter byte
+  trie *Trie
+}
+
 type Trie struct {
-  Terminal bool
-  Children map[byte]*Trie
+  terminal bool
+  children []Child
 }
 
 // Make a new trie.
 func New() *Trie {
   trie := new(Trie)
-  trie.Children = make(map[byte] *Trie)
   return trie
+}
+
+func findChild(children []Child, letter byte) (trie *Trie, existing bool) {
+  existing = false
+  for i := 0; i < len(children); i++ {
+    if children[i].letter == letter {
+      trie = children[i].trie
+      existing = true
+      return
+    }
+  }
+  return
 }
 
 // Insert a word into the trie.
 func (self *Trie) Insert(word string) {
   if len(word) == 0 {
-    self.Terminal = true
+    self.terminal = true
     return
   }
-  child, existing := self.Children[word[0]]
+  child, existing := findChild(self.children, word[0])
   if !existing {
     child = New()
-    self.Children[word[0]] = child
+    self.children = append(self.children, Child{word[0], child})
   }
   child.Insert(word[1:])
 }
@@ -36,7 +54,7 @@ func (self *Trie) following(prefix string) (cur *Trie, existing bool) {
     letter := prefix[i]
     // TODO(ariw): Remove hack.
     if letter < 'A' { letter += 26 }
-    cur, existing = cur.Children[letter]
+    cur, existing = findChild(cur.children, letter)
     if !existing { return }
   }
   return
@@ -45,19 +63,33 @@ func (self *Trie) following(prefix string) (cur *Trie, existing bool) {
 // Whether or not a word exists in the trie.
 func (self *Trie) Find(word string) bool {
   cur, existing := self.following(word)
-  return existing && cur.Terminal
+  return existing && cur.terminal
 }
 
 // Return a list of characters that follow the given prefix.
 func (self *Trie) Following(prefix string) (following []byte) {
   cur, existing := self.following(prefix)
   if !existing { return }
-  following = make([]byte, len(cur.Children))
-  i := 0
-  for key, _ := range(cur.Children) {
-    following[i] = key
-    i++
+  following = make([]byte, len(cur.children))
+  for i := 0; i < len(cur.children); i++ {
+    following[i] = cur.children[i].letter
   }
   return
+}
+
+func (self *Trie) print(n int) {
+  if self.children == nil { return }
+  for i := 0; i < len(self.children); i++ {
+    for i := 0; i < n; i++ {
+      fmt.Printf(" ")
+    }
+    fmt.Printf(string(self.children[i].letter) + "\n")
+    self.children[i].trie.print(n + 1)
+  }
+}
+
+// Print a trie.
+func (self *Trie) Print() {
+  self.print(0)
 }
 

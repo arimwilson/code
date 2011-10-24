@@ -4,47 +4,57 @@ package trie
 
 import ("fmt")
 
+type Child struct {
+  letter byte
+  trie *Trie
+}
+
 type Trie struct {
-  Terminal bool
-  Children map[byte]*Trie
+  terminal bool
+  children []Child
 }
 
 // Make a new trie.
 func New() *Trie {
   trie := new(Trie)
-  trie.Terminal = false
-  trie.Children = nil
   return trie
+}
+
+func findChild(children []Child, letter byte) (trie *Trie, existing bool) {
+  existing = false
+  for i := 0; i < len(children); i++ {
+    if children[i].letter == letter {
+      trie = children[i].trie
+      existing = true
+      return
+    }
+  }
+  return
 }
 
 // Insert a word into the trie.
 func (self *Trie) Insert(word string) {
-  cur := self
-  for i := 0; i < len(word); i++ {
-    if cur.Children == nil {
-      cur.Children = make(map[byte] *Trie)
-    }
-    child, existing := cur.Children[word[i]]
-    if !existing {
-      child = New()
-      cur.Children[word[i]] = child
-    }
-    cur = child
+  if len(word) == 0 {
+    self.terminal = true
+    return
   }
-  cur.Terminal = true
+  child, existing := findChild(self.children, word[0])
+  if !existing {
+    child = New()
+    self.children = append(self.children, Child{word[0], child})
+  }
+  child.Insert(word[1:])
 }
 
 // Return the children data structure (if it exists) from following the trie
 // through prefix.
-func (self *Trie) following(prefix string) (existing bool, cur *Trie) {
+func (self *Trie) following(prefix string) (cur *Trie, existing bool) {
   cur = self
   for i := 0; i < len(prefix); i++ {
     letter := prefix[i]
     // TODO(ariw): Remove hack.
     if letter < 'A' { letter += 26 }
-    existing = false
-    if cur.Children == nil { return }
-    cur, existing = cur.Children[letter]
+    cur, existing = findChild(cur.children, letter)
     if !existing { return }
   }
   return
@@ -52,31 +62,29 @@ func (self *Trie) following(prefix string) (existing bool, cur *Trie) {
 
 // Whether or not a word exists in the trie.
 func (self *Trie) Find(word string) bool {
-  existing, cur := self.following(word)
-  return existing && cur.Terminal
+  cur, existing := self.following(word)
+  return existing && cur.terminal
 }
 
 // Return a list of characters that follow the given prefix.
 func (self *Trie) Following(prefix string) (following []byte) {
-  existing, cur := self.following(prefix)
-  if !existing || cur.Children == nil { return }
-  following = make([]byte, len(cur.Children))
-  i := 0
-  for key, _ := range(cur.Children) {
-    following[i] = key
-    i++
+  cur, existing := self.following(prefix)
+  if !existing { return }
+  following = make([]byte, len(cur.children))
+  for i := 0; i < len(cur.children); i++ {
+    following[i] = cur.children[i].letter
   }
   return
 }
 
 func (self *Trie) print(n int) {
-  if self.Children == nil { return }
-  for key, value := range(self.Children) {
+  if self.children == nil { return }
+  for i := 0; i < len(self.children); i++ {
     for i := 0; i < n; i++ {
       fmt.Printf(" ")
     }
-    fmt.Printf(string(key) + "\n")
-    value.print(n + 1)
+    fmt.Printf(string(self.children[i].letter) + "\n")
+    self.children[i].trie.print(n + 1)
   }
 }
 
