@@ -49,8 +49,7 @@ func GetExistingRightTiles(board [][]byte, location *moves.Location) string {
 func Extend(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, crossChecks map[int] map[byte] int,
-    possibleMove moves.Move, left bool) (moveList *vector.Vector) {
-  moveList = new(vector.Vector)
+    possibleMove moves.Move, left bool, moveList *vector.Vector) {
   var positionCrossChecks map[byte] int
   var existing bool
   var placedLocation moves.Location
@@ -105,15 +104,13 @@ func Extend(
       }
       tiles[tile]--
       if CanFollow(dict, placedMove.Word, tiles) {
-        moveList.AppendVector(
-            Extend(dict, board, tiles, letterValues, crossChecks, placedMove,
-                   false))
+        Extend(dict, board, tiles, letterValues, crossChecks, placedMove, false,
+               moveList)
       }
       if left {
         placedMove.Start.Y--
-        moveList.AppendVector(
-            Extend(dict, board, tiles, letterValues, crossChecks, placedMove,
-                   true))
+        Extend(dict, board, tiles, letterValues, crossChecks, placedMove, true,
+               moveList)
       }
       tiles[tile]++
     }
@@ -133,37 +130,34 @@ func GetMoveListAcross(
     for j := 0; j < util.BOARD_SIZE; j++ {
       if board[i][j] == '*' {
         possibleMove.Start = moves.Location{ i, j }
-        moveList.AppendVector(Extend(
-            dict, board, tiles, letterValues, crossChecks, possibleMove,
-            true))
+        Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
+               true, moveList)
       } else if board[i][j] >= 'A' && board[i][j] <= 'Z' {
         possibleMove.Start.X = i
         possibleMove.Start.Y = j - 1
         possibleMove.Word = GetExistingRightTiles(board, &possibleMove.Start)
-        moveList.AppendVector(Extend(
-            dict, board, tiles, letterValues, crossChecks, possibleMove, true))
+        Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
+               true, moveList)
         possibleMove.Start.Y = j + 1
         possibleMove.Word = GetExistingLeftTiles(board, &possibleMove.Start)
-        moveList.AppendVector(Extend(
-            dict, board, tiles, letterValues, crossChecks, possibleMove, false))
+        Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
+               false, moveList)
         possibleMove.Start.Y = j
         possibleMove.Word = ""
         leftUp := moves.Location{i - 1, j - 1}
         rightUp := moves.Location{i - 1, j + 1}
         if !util.Existing(board, &leftUp) && !util.Existing(board, &rightUp) {
           possibleMove.Start.X = i - 1
-          moveList.AppendVector(Extend(
-              dict, board, tiles, letterValues, crossChecks, possibleMove,
-              true))
+         Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
+                true, moveList)
         }
         leftDown := moves.Location{i + 1, j - 1}
         rightDown := moves.Location{i + 1, j + 1}
         if !util.Existing(board, &leftDown) &&
            !util.Existing(board, &rightDown) {
           possibleMove.Start.X = i + 1
-          moveList.AppendVector(Extend(
-              dict, board, tiles, letterValues, crossChecks, possibleMove,
-              true))
+          Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
+                 true, moveList)
         }
       }
     }
