@@ -4,13 +4,16 @@ runtime: go
 api_version: 3
 
 handlers:
-- url: /twl
-  static_files: scrabblish/twl.txt
-  upload: scrabblish/twl.txt
 - url: /
   static_files: scrabblish.html
   upload: scrabblish.html
   login: required
+- url: /favicon.ico
+  static_files: favicon.ico
+  upload: favicon.ico
+- url: /twl
+  static_files: scrabblish/twl.txt
+  upload: scrabblish/twl.txt
 - url: /save
   script: _go_app
   login: required

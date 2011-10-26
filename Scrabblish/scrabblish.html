@@ -16,7 +16,7 @@ function getBoard() {
       else board += $(this).val();
     }
   });
-  return board;
+  return board.toUpperCase();
 }
 
 function getTiles() {
@@ -26,7 +26,7 @@ function getTiles() {
       tiles += $(this).val();
     }
   });
-  return tiles
+  return tiles.toUpperCase();
 }
 
 function solve() {
@@ -45,7 +45,7 @@ function putBoard(board) {
 
 $(document).ready(function() {
   input_ = $("form input:text");
-  var load_ = $("#load_select");
+  var board_ = $("#board_select");
   putBoard(boards_[0]);
   $.post("list", null, function(data) {
     boards = eval(data);
@@ -53,8 +53,6 @@ $(document).ready(function() {
       boards_.push(boards[i].Board);
       load_.append($("<option></option>").html(boards[i].Name));
     }
-    if (boards_.length > 0)
-      load_.show();
   });
 
   $("#save_button").click(function() {
@@ -63,8 +61,8 @@ $(document).ready(function() {
     $.post("save", { board: getBoard(), name: name });
   });
 
-  load_.change(function() {
-    putBoard(boards_[$("#load_select")[0].selectedIndex]);
+  board_.change(function() {
+    putBoard(boards_[$("#board_select")[0].selectedIndex]);
   });
 });
 </script>
@@ -386,9 +384,14 @@ Tiles:
 </tr></table>
 <br>
 <input type="submit" value="Solve">
-<input type="button" value="Save" id="save_button">
-<select id="load_select" style="display:none">
-<option>Default</option>
+<input type="button" value="Save board" id="save_button">
+Board:
+<select id="board_select">
+<option>Wordfeud</option>
+</select>
+Rules:
+<select id="rules_select">
+<option>Wordfeud</option>
 </select>
 </form>
 <br>
