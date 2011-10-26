@@ -58,7 +58,7 @@ func TestGetMoveListAcross(t *testing.T) {
                  Direction: moves.ACROSS}}
 
   moveList := scrabble.GetMoveListAcross(
-    dict, board, tiles, letterValues, crossChecks)
+    dict, board, tiles, letterValues, 40, crossChecks)
   sort_with.SortWith(*moveList, moves.Greater)
   util.RemoveDuplicates(moveList)
   if moveList.Len() != 4 {
@@ -93,7 +93,7 @@ func numTotalTopMoves(
     t *testing.T, board [][]byte, tilesFlag string, num int, score int,
     numTop int) {
   dict, tiles, letterValues := prepareRealData(tilesFlag)
-  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
+  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues, 40)
   if moveList.Len() != num {
     util.PrintMoveList(moveList, board, 100)
     t.Errorf("length of move list: %d, should have been: %d", moveList.Len(),
@@ -163,7 +163,7 @@ func TestNumTotalTopMoves(t *testing.T) {
 func BenchmarkAll(b *testing.B) {
   for i := 0; i < b.N; i++ {
     dict, tiles, letterValues := prepareRealData("ABCDEFG")
-    scrabble.GetMoveList(dict, getComplicatedBoard(), tiles, letterValues)
+    scrabble.GetMoveList(dict, getComplicatedBoard(), tiles, letterValues, 40)
   }
 }
 
@@ -173,7 +173,7 @@ func BenchmarkGetMoveList(b *testing.B) {
   board := getComplicatedBoard()
   b.StartTimer()
   for i := 0; i < b.N; i++ {
-    scrabble.GetMoveList(dict, board, tiles, letterValues)
+    scrabble.GetMoveList(dict, board, tiles, letterValues, 40)
   }
 }
 

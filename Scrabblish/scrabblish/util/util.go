@@ -93,7 +93,8 @@ func TileMultipliers(tile *byte) (wordMultiplier int, letterMultiplier int) {
   return
 }
 
-func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
+func Score(board [][]byte, letterValues map[byte] int, bonus int,
+           move *moves.Move) {
   // We ensure that the move is going right, for cache friendliness.
   if (move.Direction != moves.ACROSS) { panic("Can't score down moves!") }
   wordMultiplier := 1
@@ -112,7 +113,7 @@ func Score(board [][]byte, letterValues map[byte] int, move *moves.Move) {
   move.Score += wordMultiplier * score
   // Scrabble!
   if len(move.Word) - boardTilesUsed == 7 {
-    move.Score += 40
+    move.Score += bonus
   }
 }
 

@@ -5,7 +5,7 @@
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript">
-var boards_ = ["4---2--3--2---4-3---4---4---3---1---3-3---1-----4---1---4---2---1-3-3-1---2-4---4---4---4---3-3-----3-3--3--1---*---1--3--3-3-----3-3---4---4---4---4-2---1-3-3-1---2---4---1---4-----1---3-3---1---3---4---4---3-4---2--3--2---4"];
+var boards_ = ["4---2--3--2---4-3---4---4---3---1---3-3---1-----4---1---4---2---1-3-3-1---2-4---4---4---4---3-3-----3-3--3--1---*---1--3--3-3-----3-3---4---4---4---4-2---1-3-3-1---2---4---1---4-----1---3-3---1---3---4---4---3-4---2--3--2---4", "2--3---2---3--2-1---4---4---1---1---3-3---1--3--1---3---1--3----1-----1-----4---4---4---4---3---3-3---3--2--3---*---3--2--3---3-3---3---4---4---4---4-----1-----1----3--1---3---1--3--1---3-3---1---1---4---4---1-2--3---2---3--2"];
 var input_;
 
 function getBoard() {
@@ -62,7 +62,7 @@ $(document).ready(function() {
     $.post("save", { board: board, name: name });
     var old_board = $("#board_select option:contains('" + name + "')");
     var old_index = old_board.index()
-    if (old_index > 0) {
+    if (old_index > 1) {
       boards_[old_index] = board;
       old_board.attr('selected', 'selected');
     } else {
@@ -399,10 +399,12 @@ Tiles:
 Board:
 <select id="board_select">
 <option>Wordfeud</option>
+<option>Scrabble</option>
 </select>
 Rules:
 <select id="rules_select">
 <option>Wordfeud</option>
+<option>Scrabble</option>
 </select>
 </form>
 <br>

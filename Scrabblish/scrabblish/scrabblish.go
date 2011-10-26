@@ -174,7 +174,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
       "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10")
 
   moveList := scrabble.GetMoveList(dict, board, tiles,
-                                   letterValues)
+                                   letterValues, 40)
 
   fmt.Fprint(w, util.PrintMoveList(moveList, 25))
 }

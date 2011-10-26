@@ -48,7 +48,7 @@ func GetExistingRightTiles(board [][]byte, location *moves.Location) string {
 // left or right.
 func Extend(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
-    letterValues map[byte] int, crossChecks map[int] map[byte] int,
+    letterValues map[byte] int, bonus int, crossChecks map[int] map[byte] int,
     possibleMove moves.Move, left bool, moveList *vector.Vector) {
   var positionCrossChecks map[byte] int
   var existing bool
@@ -98,19 +98,19 @@ func Extend(
       placedMove.Score += score
       if dict.Find(placedMove.Word) {
         score = placedMove.Score
-        util.Score(board, letterValues, &placedMove)
+        util.Score(board, letterValues, bonus, &placedMove)
         moveList.Push(placedMove)
         placedMove.Score = score
       }
       tiles[tile]--
       if CanFollow(dict, placedMove.Word, tiles) {
-        Extend(dict, board, tiles, letterValues, crossChecks, placedMove, false,
-               moveList)
+        Extend(dict, board, tiles, letterValues, bonus, crossChecks, placedMove,
+               false, moveList)
       }
       if left {
         placedMove.Start.Y--
-        Extend(dict, board, tiles, letterValues, crossChecks, placedMove, true,
-               moveList)
+        Extend(dict, board, tiles, letterValues, bonus, crossChecks, placedMove,
+               true, moveList)
       }
       tiles[tile]++
     }
@@ -122,7 +122,7 @@ func Extend(
 // possible.
 func GetMoveListAcross(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
-    letterValues map[byte] int,
+    letterValues map[byte] int, bonus int,
     crossChecks map[int] map[byte] int) (moveList *vector.Vector) {
   moveList = new(vector.Vector)
   possibleMove := moves.Move{ Word: "", Score: 0, Direction: moves.ACROSS }
@@ -130,34 +130,34 @@ func GetMoveListAcross(
     for j := 0; j < util.BOARD_SIZE; j++ {
       if board[i][j] == '*' {
         possibleMove.Start = moves.Location{ i, j }
-        Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
-               true, moveList)
+        Extend(dict, board, tiles, letterValues, bonus, crossChecks,
+               possibleMove, true, moveList)
       } else if board[i][j] >= 'A' && board[i][j] <= 'Z' {
         possibleMove.Start.X = i
         possibleMove.Start.Y = j - 1
         possibleMove.Word = GetExistingRightTiles(board, &possibleMove.Start)
-        Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
+        Extend(dict, board, tiles, letterValues, bonus, crossChecks, possibleMove,
                true, moveList)
         possibleMove.Start.Y = j + 1
         possibleMove.Word = GetExistingLeftTiles(board, &possibleMove.Start)
-        Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
-               false, moveList)
+        Extend(dict, board, tiles, letterValues, bonus, crossChecks,
+               possibleMove, false, moveList)
         possibleMove.Start.Y = j
         possibleMove.Word = ""
         leftUp := moves.Location{i - 1, j - 1}
         rightUp := moves.Location{i - 1, j + 1}
         if !util.Existing(board, &leftUp) && !util.Existing(board, &rightUp) {
           possibleMove.Start.X = i - 1
-         Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
-                true, moveList)
+         Extend(dict, board, tiles, letterValues, bonus, crossChecks,
+                possibleMove, true, moveList)
         }
         leftDown := moves.Location{i + 1, j - 1}
         rightDown := moves.Location{i + 1, j + 1}
         if !util.Existing(board, &leftDown) &&
            !util.Existing(board, &rightDown) {
           possibleMove.Start.X = i + 1
-          Extend(dict, board, tiles, letterValues, crossChecks, possibleMove,
-                 true, moveList)
+          Extend(dict, board, tiles, letterValues, bonus, crossChecks,
+                 possibleMove, true, moveList)
         }
       }
     }
@@ -178,15 +178,17 @@ func SetDirection(direction moves.Direction, moveList *vector.Vector) {
 }
 
 // Get all possible moves on board, ordered by score, given params.
-func GetMoveList(dict *trie.Trie, board [][]byte, tiles map[byte] int,
-                 letterValues map[byte] int) (moveList *vector.Vector) {
+func GetMoveList(
+    dict *trie.Trie, board [][]byte, tiles map[byte] int,
+    letterValues map[byte] int, bonus int) (moveList *vector.Vector) {
   transposedBoard := util.Transpose(board)
   crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, letterValues)
-  moveList = GetMoveListAcross(dict, board, tiles, letterValues, crossChecks)
+  moveList = GetMoveListAcross(dict, board, tiles, letterValues, crossChecks,
+                               bonus)
   SetDirection(moves.ACROSS, moveList)
   downCrossChecks := cross_check.GetCrossChecks(dict, board, letterValues)
   downMoveList := GetMoveListAcross(
-      dict, transposedBoard, tiles, letterValues, downCrossChecks)
+      dict, transposedBoard, tiles, letterValues, downCrossChecks, bonus)
   SetDirection(moves.DOWN, downMoveList)
   moveList.AppendVector(downMoveList)
   sort_with.SortWith(*moveList, moves.Greater)
