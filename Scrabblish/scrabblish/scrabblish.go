@@ -31,9 +31,20 @@ func save(w http.ResponseWriter, r *http.Request) {
   }
   cur_user := user.Current(c).String();
   name := r.FormValue("name");
-  board := Board{cur_user, name, r.FormValue("board")}
-  _, err = datastore.Put(
-      c, datastore.NewIncompleteKey(c, "board", nil), &board)
+  query := datastore.NewQuery("board")
+  query.Filter("User =", user.Current(c).String())
+  query.Filter("Name = ", name)
+  var key *datastore.Key
+  board := new(Board)
+  key, err = query.Run(c).Next(board)
+  if err == nil {
+    board.Board = r.FormValue("board")
+    _, err = datastore.Put(c, key, board)
+  } else {
+    board = &Board{ cur_user, name, r.FormValue("board") }
+    _, err = datastore.Put(c, datastore.NewIncompleteKey(c, "board", nil),
+                           board)
+  }
   if err != nil {
     c.Errorf("Could not save board with error: %s", err.String())
     http.Error(w, err.String(), http.StatusInternalServerError)
