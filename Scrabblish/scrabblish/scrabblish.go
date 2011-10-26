@@ -33,7 +33,7 @@ func save(w http.ResponseWriter, r *http.Request) {
   name := r.FormValue("name");
   board := Board{cur_user, name, r.FormValue("board")}
   _, err = datastore.Put(
-      c, datastore.NewKey(c, "board", cur_user + name, 0, nil), &board)
+      c, datastore.NewIncompleteKey(c, "board", nil), &board)
   if err != nil {
     c.Errorf("Could not save board with error: %s", err.String())
     http.Error(w, err.String(), http.StatusInternalServerError)

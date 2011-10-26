@@ -51,14 +51,25 @@ $(document).ready(function() {
     boards = eval(data);
     for (i = 0; i < boards.length; ++i) {
       boards_.push(boards[i].Board);
-      load_.append($("<option></option>").html(boards[i].Name));
+      board_.append($("<option></option>").html(boards[i].Name));
     }
   });
 
   $("#save_button").click(function() {
     var name = prompt("Name of board?");
     if (name == null || name == "") return;
-    $.post("save", { board: getBoard(), name: name });
+    var board = getBoard();
+    $.post("save", { board: board, name: name });
+    var old_board = $("#board_select option:contains('" + name + "')");
+    var old_index = old_board.index()
+    if (old_index > 0) {
+      boards_[old_index] = board;
+      old_board.attr('selected', 'selected');
+    } else {
+      boards_.push(board);
+      board_.append(
+          $("<option></option>").html(name).attr('selected', 'selected'));
+    }
   });
 
   board_.change(function() {
