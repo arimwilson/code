@@ -5,7 +5,7 @@ package scrabblish
 
 import ("appengine"; "appengine/datastore"; "appengine/memcache";
         "appengine/urlfetch"; "appengine/user"; "bytes"; "encoding/binary";
-        "fmt"; "gob"; "http"; "json";
+        "fmt"; "gob"; "http"; "json"; "strconv";
         "scrabblish/scrabble"; "scrabblish/trie"; "scrabblish/util")
 
 func init() {
@@ -170,11 +170,10 @@ func solve(w http.ResponseWriter, r *http.Request) {
   }
   board := util.ReadBoard(r.FormValue("board"))
   tiles := util.ReadTiles(r.FormValue("tiles"))
-  letterValues := util.ReadLetterValues(
-      "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10")
+  letterValues := util.ReadLetterValues(r.FormValue("letterValues"))
+  bonus, _ := strconv.Atoi(r.FormValue("bonus"))
 
-  moveList := scrabble.GetMoveList(dict, board, tiles,
-                                   letterValues, 40)
+  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues, bonus)
 
   fmt.Fprint(w, util.PrintMoveList(moveList, 25))
 }

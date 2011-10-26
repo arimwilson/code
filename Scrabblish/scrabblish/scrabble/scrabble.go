@@ -183,12 +183,12 @@ func GetMoveList(
     letterValues map[byte] int, bonus int) (moveList *vector.Vector) {
   transposedBoard := util.Transpose(board)
   crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, letterValues)
-  moveList = GetMoveListAcross(dict, board, tiles, letterValues, crossChecks,
-                               bonus)
+  moveList = GetMoveListAcross(dict, board, tiles, letterValues, bonus,
+                               crossChecks)
   SetDirection(moves.ACROSS, moveList)
   downCrossChecks := cross_check.GetCrossChecks(dict, board, letterValues)
   downMoveList := GetMoveListAcross(
-      dict, transposedBoard, tiles, letterValues, downCrossChecks, bonus)
+      dict, transposedBoard, tiles, letterValues, bonus, downCrossChecks)
   SetDirection(moves.DOWN, downMoveList)
   moveList.AppendVector(downMoveList)
   sort_with.SortWith(*moveList, moves.Greater)

@@ -43,7 +43,7 @@ func GetCrossChecks(
           possibleMove.Score = 0
           possibleMove.Word = strings.Join(sides, "")
           if (dict.Find(possibleMove.Word)) {
-            util.Score(transposedBoard, letterValues, &possibleMove)
+            util.Score(transposedBoard, letterValues, 0, &possibleMove)
             positionCrossChecks[k] = possibleMove.Score
           }
         }

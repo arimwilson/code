@@ -23,6 +23,7 @@ var tilesFlag = flag.String(
 var letterValuesFlag = flag.String(
     "l", "1 4 4 2 1 4 3 4 1 10 5 1 3 1 1 4 10 1 1 1 2 4 4 8 4 10",
     "Space-separated list of letter point values, from A-Z.")
+var bonusFlag = flag.Int("o", 40, "Bonus for using all 7 tiles at once.")
 var numResultsFlag = flag.Int(
     "n", 25, "Maximum number of results to output.")
 var cpuProfileFlag = flag.String("c", "", "Write CPU profile to file.")
@@ -55,7 +56,7 @@ func main() {
   tiles := util.ReadTiles(*tilesFlag)
   letterValues := util.ReadLetterValues(*letterValuesFlag)
 
-  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues, 40)
+  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues, *bonusFlag)
 
   util.PrintMoveList(moveList, board, *numResultsFlag)
 }
