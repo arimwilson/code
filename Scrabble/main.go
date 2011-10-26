@@ -55,7 +55,7 @@ func main() {
   tiles := util.ReadTiles(*tilesFlag)
   letterValues := util.ReadLetterValues(*letterValuesFlag)
 
-  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues)
+  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues, 40)
 
   util.PrintMoveList(moveList, board, *numResultsFlag)
 }
