@@ -11,6 +11,9 @@ handlers:
 - url: /favicon.ico
   static_files: favicon.ico
   upload: favicon.ico
+- url: /style.css
+  static_files: style.css
+  upload: style.css
 - url: /twl
   static_files: scrabblish/twl.txt
   upload: scrabblish/twl.txt

@@ -1,0 +1,17 @@
+table {
+  border-collapse: collapse;
+}
+table, th, td {
+  border: 1px solid gray;
+}
+td.guide {
+  text-align: center;
+  background-color: #D3D3D3;
+}
+input[type="text"].board {
+  text-align: center;
+  border: 0;
+}
+input[type="text"].tile {
+  text-align: center;
+}
