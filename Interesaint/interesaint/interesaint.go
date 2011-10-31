@@ -12,13 +12,13 @@ type Feed struct {
 }
 
 type Subscription struct {
-  User string
   FeedId *datastore.Key
+  User string
 }
 
 type Item struct {
-  Content string
   FeedId *datastore.Key
+  Content string
 }
 
 type Rating struct {
