@@ -1,6 +1,7 @@
 // Find new interesting items from an RSS feed.
 
-import ("appengine"; "appengine/datastore"; "appengine/urlfetch"; "http")
+import ("appengine"; "appengine/datastore"; "appengine/urlfetch";
+        "appengine/users"; "http")
 
 func init() {
   http.HandleFunc("/add", add)
@@ -39,8 +40,12 @@ func add(w http.ResponseWriter, r *http.Request) {
   url := r.FormValue("url")
   query := datastore.NewQuery("feed")
   query.Filter("Url =", url)
+  var key *datastore.Key
   feed := new(Feed)
-  query.Run(c).Next(feed)
+  key, err = query.Run(c).Next(feed)
+  if err == nil {
+  } else {
+  }
 }
 
 func update(w http.ResponseWriter, r *http.Request) {
