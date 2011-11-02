@@ -5,6 +5,12 @@
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript">
+function add() {
+  var input = $("form input:text");
+  $.post("add", { url: input.val() });
+}
+</script>
+<script type="text/javascript">
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'UA-8943670-8']);
   _gaq.push(['_trackPageview']);
@@ -17,7 +23,7 @@
 </script>
 </head>
 <body>
-<form action="add" method="post">
+<form action="javascript:add()">
 URL: <input type="text" name="url">
 <input type="submit" value="Submit">
 </form>

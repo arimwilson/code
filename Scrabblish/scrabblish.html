@@ -38,7 +38,7 @@ function solve() {
   $.post("solve",
          { board: getBoard(), tiles: getTiles(),
            letterValues: letter_values_[index], bonus: bonus_[index]},
-         function(data) { $("#solution").html(data) })
+         function(data) { $("#solution").html(data) });
 }
 
 function putBoard(board) {

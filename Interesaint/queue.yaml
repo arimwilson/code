@@ -1,0 +1,3 @@
+queue:
+- name: update
+  rate: 12/h

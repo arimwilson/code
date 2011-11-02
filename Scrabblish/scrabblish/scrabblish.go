@@ -29,8 +29,8 @@ func save(w http.ResponseWriter, r *http.Request) {
     http.Error(w, err.String(), http.StatusInternalServerError)
     return
   }
-  cur_user := user.Current(c).String();
-  name := r.FormValue("name");
+  cur_user := user.Current(c).String()
+  name := r.FormValue("name")
   query := datastore.NewQuery("board")
   query.Filter("User =", user.Current(c).String())
   query.Filter("Name = ", name)
