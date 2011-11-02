@@ -46,8 +46,8 @@ func add(w http.ResponseWriter, r *http.Request) {
 
   cur_user := new(User)
   cur_user.Username = user.Current(c).String()
-  query := datastore.NewQuery("user")
-  query.Filter("Username =", cur_user.Username)
+  query := datastore.NewQuery("user").
+      Filter("Username =", cur_user.Username)
   var user_id *datastore.Key
   user_id, err = query.Run(c).Next(cur_user)
   // Do we have a user already?
@@ -63,13 +63,12 @@ func add(w http.ResponseWriter, r *http.Request) {
 
   feed := new(Feed)
   feed.Url = r.FormValue("url")
-  query = datastore.NewQuery("feed")
-  query.Filter("Url =", feed.Url)
+  query = datastore.NewQuery("feed").
+      Filter("Url =", feed.Url)
   var feed_id *datastore.Key
   feed_id, err = query.Run(c).Next(feed)
   // Do we have a feed already?
-  // TODO(ariw): Something better than nil? Don't want to double store.
-  if err != nil {
+  if err == datastore.ErrNoSuchEntity {
     feed_id = datastore.NewIncompleteKey(c, "feed", nil)
     _, err = datastore.Put(c, feed_id, feed)
     if err != nil {
@@ -82,13 +81,12 @@ func add(w http.ResponseWriter, r *http.Request) {
   subscription := new(Subscription)
   subscription.UserId = user_id.Encode()
   subscription.FeedId = feed_id.Encode()
-  query = datastore.NewQuery("subscription")
-  query.Filter("UserId =", subscription.UserId)
-  query.Filter("FeedId =", subscription.FeedId)
+  query = datastore.NewQuery("subscription").
+      Filter("UserId =", subscription.UserId).
+      Filter("FeedId =", subscription.FeedId)
   _, err = query.Run(c).Next(subscription)
   // Do we have a subscription already?
-  // TODO(ariw): Something better than nil? Don't want to double store.
-  if err != nil {
+  if err == datastore.ErrNoSuchEntity {
     _, err = datastore.Put(
         c, datastore.NewIncompleteKey(c, "subscription", nil), subscription)
     if err != nil {
@@ -102,16 +100,16 @@ func add(w http.ResponseWriter, r *http.Request) {
 
 func update(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
-  next := taskqueue.NewPOSTTask("/tasks/update", nil)
-  var err os.Error
-  // Keep trying to re-add ourselves until we succeed.
-  for _, err = taskqueue.Add(c, next, "update"); err != nil; {
-  }
-
   query := datastore.NewQuery("feed")
-  feed := new(Feed)
+  var feed *Feed
   client := urlfetch.Client(c)
-  for _, err = query.Run(c).Next(feed); err != datastore.Done; {
+  var err os.Error
+  for t := query.Run(c); err != datastore.Done; {
+    _, err := t.Next(feed)
+    if err != nil {
+      c.Errorf("Unable to get subscription with error: %s", err.String())
+      return
+    }
     var resp *http.Response
     resp, err = client.Get(feed.Url)
     if err != nil {
@@ -124,6 +122,11 @@ func update(w http.ResponseWriter, r *http.Request) {
     example := make([]byte, 50)
     n, _ := resp.Body.Read(example)
     c.Infof(string(example[:n]))
+  }
+
+  next := taskqueue.NewPOSTTask("/tasks/update", nil)
+  // Keep trying to re-add ourselves until we succeed.
+  for _, err = taskqueue.Add(c, next, "update"); err != nil; {
   }
 }
 
