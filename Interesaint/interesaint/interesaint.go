@@ -3,7 +3,7 @@
 package interesaint
 
 import ("appengine"; "appengine/datastore"; "appengine/taskqueue";
-        "appengine/urlfetch"; "appengine/user"; "http"; "os")
+        "appengine/urlfetch"; "appengine/user"; "http"; "time")
 
 func init() {
   http.HandleFunc("/add", add)
@@ -51,7 +51,7 @@ func add(w http.ResponseWriter, r *http.Request) {
   var user_id *datastore.Key
   user_id, err = query.Run(c).Next(cur_user)
   // Do we have a user already?
-  if err == datastore.ErrNoSuchEntity {
+  if err == datastore.Done {
     user_id = datastore.NewIncompleteKey(c, "user", nil)
     _, err = datastore.Put(c, user_id, cur_user)
     if err != nil {
@@ -59,6 +59,11 @@ func add(w http.ResponseWriter, r *http.Request) {
                cur_user.Username, err.String())
       http.Error(w, err.String(), http.StatusInternalServerError)
     }
+  } else if err != nil {
+    c.Errorf("Unable to look up user %s with error: %s", cur_user.Username,
+             err.String())
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
   }
 
   feed := new(Feed)
@@ -68,7 +73,7 @@ func add(w http.ResponseWriter, r *http.Request) {
   var feed_id *datastore.Key
   feed_id, err = query.Run(c).Next(feed)
   // Do we have a feed already?
-  if err == datastore.ErrNoSuchEntity {
+  if err == datastore.Done {
     feed_id = datastore.NewIncompleteKey(c, "feed", nil)
     _, err = datastore.Put(c, feed_id, feed)
     if err != nil {
@@ -76,6 +81,10 @@ func add(w http.ResponseWriter, r *http.Request) {
       http.Error(w, err.String(), http.StatusInternalServerError)
       return
     }
+  } else if err != nil {
+    c.Errorf("Unable to look up feed %s with error: %s", feed.Url, err.String())
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
   }
 
   subscription := new(Subscription)
@@ -86,7 +95,7 @@ func add(w http.ResponseWriter, r *http.Request) {
       Filter("FeedId =", subscription.FeedId)
   _, err = query.Run(c).Next(subscription)
   // Do we have a subscription already?
-  if err == datastore.ErrNoSuchEntity {
+  if err == datastore.Done {
     _, err = datastore.Put(
         c, datastore.NewIncompleteKey(c, "subscription", nil), subscription)
     if err != nil {
@@ -95,17 +104,19 @@ func add(w http.ResponseWriter, r *http.Request) {
       http.Error(w, err.String(), http.StatusInternalServerError)
       return
     }
+  } else if err != nil {
+    c.Errorf("Unable to look up subscription with error: %s", err.String())
+    http.Error(w, err.String(), http.StatusInternalServerError)
+    return
   }
 }
 
 func update(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
-  query := datastore.NewQuery("feed")
-  var feed *Feed
+  t := datastore.NewQuery("feed").Run(c)
+  feed := new(Feed)
   client := urlfetch.Client(c)
-  var err os.Error
-  for t := query.Run(c); err != datastore.Done; {
-    _, err := t.Next(feed)
+  for _, err := t.Next(feed); err != datastore.Done; _, err = t.Next(feed) {
     if err != nil {
       c.Errorf("Unable to get subscription with error: %s", err.String())
       return
@@ -124,9 +135,12 @@ func update(w http.ResponseWriter, r *http.Request) {
     c.Infof(string(example[:n]))
   }
 
+  // Let's go to sleep for a bit to prevent constant refreshing.
+  // TODO(ariw): Cronjobs rather than task queue?
+  time.Sleep(10e9)
   next := taskqueue.NewPOSTTask("/tasks/update", nil)
   // Keep trying to re-add ourselves until we succeed.
-  for _, err = taskqueue.Add(c, next, "update"); err != nil; {
+  for _, err := taskqueue.Add(c, next, "update"); err != nil; {
   }
 }
 
