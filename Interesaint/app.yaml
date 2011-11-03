@@ -1,7 +1,7 @@
 application: interesaint
 version: 1
-runtime: go
-api_version: 3
+runtime: python
+api_version: 1
 
 handlers:
 - url: /
@@ -9,9 +9,9 @@ handlers:
   upload: interesaint.html
   login: required
 - url: /add
-  script: _go_app
+  script: interesaint.py
   login: required
 - url: /tasks/.*
-  script: _go_app
+  script: interesaint.py
   login: admin
 
