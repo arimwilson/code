@@ -23,6 +23,9 @@ handlers:
 - url: /list
   script: _go_app
   login: required
+- url: /_ah/(start|stop)
+  script: _go_app
+  login: admin
 - url: /solve
   script: _go_app
 
