@@ -5,13 +5,14 @@ package scrabblish
 
 import ("appengine"; "appengine/datastore"; "appengine/memcache";
         "appengine/urlfetch"; "appengine/user"; "bytes"; "encoding/binary";
-        "fmt"; "gob"; "http"; "json"; "strconv";
+        "fmt"; "gob"; "http"; "io"; "json"; "strconv";
         "scrabblish/scrabble"; "scrabblish/trie"; "scrabblish/util")
 
 func init() {
   http.HandleFunc("/save", save)
   http.HandleFunc("/list", list)
-  http.HandleFunc("/solve", solve)
+  http.HandleFunc("/_ah/start", start)
+  http.HandleFunc("/_ah/stop", stop)
 }
 
 type Board struct {
@@ -66,6 +67,14 @@ func list(w http.ResponseWriter, r *http.Request) {
   }
   encoder := json.NewEncoder(w)
   encoder.Encode(results)
+}
+
+func start(w http.ResponseWriter, r *http.Request) {
+  http.HandleFunc("/solve", solve)
+  io.WriteString(w, "OK")
+}
+
+func stop(w http.ResponseWriter, r *http.Request) {
 }
 
 func bToI(b []byte) int32 {
@@ -186,6 +195,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
 
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues, bonus)
 
+  w.Header()["Access-Control-Allow-Origin"] = []string{"*"}
   fmt.Fprint(w, util.PrintMoveList(moveList, 25))
 }
 
