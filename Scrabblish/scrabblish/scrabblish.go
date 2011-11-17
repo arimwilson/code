@@ -193,7 +193,7 @@ func solve(w http.ResponseWriter, r *http.Request) {
   letterValues := util.ReadLetterValues(r.FormValue("letterValues"))
   bonus, _ := strconv.Atoi(r.FormValue("bonus"))
 
-  moveList := scrabble.GetMoveList(c, dict, board, tiles, letterValues, bonus)
+  moveList := scrabble.GetMoveList(dict, board, tiles, letterValues, bonus)
 
   w.Header()["Access-Control-Allow-Origin"] = []string{"*"}
   fmt.Fprint(w, util.PrintMoveList(moveList, 25))
