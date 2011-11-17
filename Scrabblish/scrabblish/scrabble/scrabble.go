@@ -1,6 +1,6 @@
 package scrabble
 
-import ("container/vector";
+import ("appengine"; "appengine/user"; "container/vector";
         "scrabblish/cross_check"; "scrabblish/moves"; "scrabblish/trie";
         "scrabblish/sort_with"; "scrabblish/util")
 
@@ -44,12 +44,18 @@ func GetExistingRightTiles(board [][]byte, location *moves.Location) string {
   return string(board[location.X][location.Y + 1:end])
 }
 
+var iter_count = 0
+
 // Add one letter to a possible move, checking if we've got a word, going either
 // left or right.
 func Extend(
-    dict *trie.Trie, board [][]byte, tiles map[byte] int,
+    c appengine.Context, dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, bonus int, crossChecks map[int] map[byte] int,
     possibleMove moves.Move, left bool, moveList *vector.Vector) {
+  if iter_count % 10000 == 0 {
+    _, _ = user.LoginURL(c, "test")
+  }
+  iter_count++
   var positionCrossChecks map[byte] int
   var existing bool
   var placedLocation moves.Location
@@ -104,12 +110,12 @@ func Extend(
       }
       tiles[tile]--
       if CanFollow(dict, placedMove.Word, tiles) {
-        Extend(dict, board, tiles, letterValues, bonus, crossChecks, placedMove,
+        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks, placedMove,
                false, moveList)
       }
       if left {
         placedMove.Start.Y--
-        Extend(dict, board, tiles, letterValues, bonus, crossChecks, placedMove,
+        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks, placedMove,
                true, moveList)
       }
       tiles[tile]++
@@ -121,7 +127,7 @@ func Extend(
 // Look for new across moves connected to any existing tile. Duplicates are
 // possible.
 func GetMoveListAcross(
-    dict *trie.Trie, board [][]byte, tiles map[byte] int,
+    c appengine.Context, dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, bonus int,
     crossChecks map[int] map[byte] int) (moveList *vector.Vector) {
   moveList = new(vector.Vector)
@@ -130,17 +136,17 @@ func GetMoveListAcross(
     for j := 0; j < util.BOARD_SIZE; j++ {
       if board[i][j] == '*' {
         possibleMove.Start = moves.Location{ i, j }
-        Extend(dict, board, tiles, letterValues, bonus, crossChecks,
+        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
                possibleMove, true, moveList)
       } else if board[i][j] >= 'A' && board[i][j] <= 'Z' {
         possibleMove.Start.X = i
         possibleMove.Start.Y = j - 1
         possibleMove.Word = GetExistingRightTiles(board, &possibleMove.Start)
-        Extend(dict, board, tiles, letterValues, bonus, crossChecks, possibleMove,
+        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks, possibleMove,
                true, moveList)
         possibleMove.Start.Y = j + 1
         possibleMove.Word = GetExistingLeftTiles(board, &possibleMove.Start)
-        Extend(dict, board, tiles, letterValues, bonus, crossChecks,
+        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
                possibleMove, false, moveList)
         possibleMove.Start.Y = j
         possibleMove.Word = ""
@@ -148,7 +154,7 @@ func GetMoveListAcross(
         rightUp := moves.Location{i - 1, j + 1}
         if !util.Existing(board, &leftUp) && !util.Existing(board, &rightUp) {
           possibleMove.Start.X = i - 1
-         Extend(dict, board, tiles, letterValues, bonus, crossChecks,
+         Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
                 possibleMove, true, moveList)
         }
         leftDown := moves.Location{i + 1, j - 1}
@@ -156,7 +162,7 @@ func GetMoveListAcross(
         if !util.Existing(board, &leftDown) &&
            !util.Existing(board, &rightDown) {
           possibleMove.Start.X = i + 1
-          Extend(dict, board, tiles, letterValues, bonus, crossChecks,
+          Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
                  possibleMove, true, moveList)
         }
       }
@@ -179,16 +185,16 @@ func SetDirection(direction moves.Direction, moveList *vector.Vector) {
 
 // Get all possible moves on board, ordered by score, given params.
 func GetMoveList(
-    dict *trie.Trie, board [][]byte, tiles map[byte] int,
+    c appengine.Context, dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, bonus int) (moveList *vector.Vector) {
   transposedBoard := util.Transpose(board)
   crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, letterValues)
-  moveList = GetMoveListAcross(dict, board, tiles, letterValues, bonus,
+  moveList = GetMoveListAcross(c, dict, board, tiles, letterValues, bonus,
                                crossChecks)
   SetDirection(moves.ACROSS, moveList)
   downCrossChecks := cross_check.GetCrossChecks(dict, board, letterValues)
   downMoveList := GetMoveListAcross(
-      dict, transposedBoard, tiles, letterValues, bonus, downCrossChecks)
+      c, dict, transposedBoard, tiles, letterValues, bonus, downCrossChecks)
   SetDirection(moves.DOWN, downMoveList)
   moveList.AppendVector(downMoveList)
   sort_with.SortWith(*moveList, moves.Greater)
