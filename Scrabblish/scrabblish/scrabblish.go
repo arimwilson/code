@@ -11,6 +11,7 @@ import ("appengine"; "appengine/datastore"; "appengine/memcache";
 func init() {
   http.HandleFunc("/save", save)
   http.HandleFunc("/list", list)
+  http.HandleFunc("/solve", solve)
   http.HandleFunc("/_ah/start", start)
   http.HandleFunc("/_ah/stop", stop)
 }
@@ -70,7 +71,6 @@ func list(w http.ResponseWriter, r *http.Request) {
 }
 
 func start(w http.ResponseWriter, r *http.Request) {
-  http.HandleFunc("/solve", solve)
   io.WriteString(w, "OK")
 }
 

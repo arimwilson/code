@@ -35,9 +35,14 @@ function getTiles() {
 
 function solve() {
   var index = rule_[0].selectedIndex;
-  $.post("http://solver.scrabblish.appspot.com/solve",
-         { board: getBoard(), tiles: getTiles(),
-           letterValues: letter_values_[index], bonus: bonus_[index]},
+  var tiles = getTiles();
+  var url = "solve";
+  if (tiles.search(" ") != -1) {
+    url = "http://solver.scrabblish.appspot.com/solve";
+  }
+  $.post(url,
+         { board: getBoard(), tiles: tiles, letterValues: letter_values_[index],
+         bonus: bonus_[index] },
          function(data) { $("#solution").html(data) });
 }
 
