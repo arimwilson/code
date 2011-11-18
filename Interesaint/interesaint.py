@@ -55,7 +55,7 @@ class AddHandler(webapp.RequestHandler):
       subscription.put()
 
 class UpdateHandler(webapp.RequestHandler):
-  def post(self):
+  def get(self):
     query = Feed.all()
     feed = query.get()
     while feed:
