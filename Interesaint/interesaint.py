@@ -60,7 +60,7 @@ class UpdateHandler(webapp.RequestHandler):
     feed = query.get()
     while feed:
       parsed_feed = feedparser.parse(feed.url)
-      logging.info(parsed_feed.entries[0].content)
+      logging.info(parsed_feed.entries[0].title)
       feed = query.get()
 
 # TODO(ariw): Probably need some sort of clear handler to keep data sizes down.
