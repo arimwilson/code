@@ -1,4 +1,5 @@
 import feedparser
+import logging
 
 from google.appengine.api import users
 from google.appengine.ext import db
@@ -55,7 +56,12 @@ class AddHandler(webapp.RequestHandler):
 
 class UpdateHandler(webapp.RequestHandler):
   def post(self):
-    pass
+    query = Feed.all()
+    feed = query.get()
+    while feed:
+      parsed_feed = feedparser.parse(feed.url)
+      logging.info(parsed_feed.entries[0].content)
+      feed = query.get()
 
 # TODO(ariw): Probably need some sort of clear handler to keep data sizes down.
 

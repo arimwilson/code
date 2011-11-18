@@ -1,4 +1,0 @@
-queue:
-- name: update
-  rate: 12/h
-  max_concurrent_requests: 1
