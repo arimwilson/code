@@ -1,5 +1,5 @@
 cron:
 - description: update
   url: /tasks/update
-  schedule: every 5 minutes
+  schedule: every 10 minutes
 

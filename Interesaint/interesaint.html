@@ -9,6 +9,16 @@ function add() {
   var input = $("form input:text");
   $.post("add", { url: input.val() });
 }
+
+$(document).ready(function() {
+  // Start loading feed items.
+  $.post("list", function(data) {
+    for (var i = 0; i < len(data); i++) {
+      $("#items").append("<td>" + data[i]["title"] + "</td><td>" +
+                         data[i]["content"] + "</td>")
+    }
+  }
+})
 </script>
 <script type="text/javascript">
   var _gaq = _gaq || [];
@@ -23,6 +33,9 @@ function add() {
 </script>
 </head>
 <body>
+<table id="items">
+<tr><td>Title</td><td>Content</td></tr>
+</table>
 <form action="javascript:add()">
 URL: <input type="text" name="url">
 <input type="submit" value="Submit">

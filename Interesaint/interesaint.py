@@ -1,3 +1,4 @@
+import datetime
 import feedparser
 import logging
 
@@ -20,6 +21,7 @@ class Item(db.Model):
   feed = db.ReferenceProperty(Feed, required = True)
   published = db.DateTimeProperty(required = True)
   retrieved = db.DateTimeProperty(required = True, auto_now_add = True)
+  title = db.StringProperty(required = True)
   # TODO(ariw): This should probably use blobstore.
   content = db.StringProperty(required = True)
 
@@ -27,6 +29,10 @@ class Rating(db.Model):
   user = db.ReferenceProperty(User, required = True)
   item = db.ReferenceProperty(Item, required = True)
   interesting = db.FloatProperty(required = True)
+
+class ItemHandler(webapp.RequestHandler):
+  def post(self):
+    pass
 
 class AddHandler(webapp.RequestHandler):
   def post(self):
@@ -57,13 +63,24 @@ class AddHandler(webapp.RequestHandler):
 class UpdateHandler(webapp.RequestHandler):
   def get(self):
     for feed in Feed.all():
+      query = Item.all()
+      query.filter("feed =", feed)
+      query.order("-published")
+      last_item = query.get()
       parsed_feed = feedparser.parse(feed.url)
-      logging.info(parsed_feed.entries[0].title)
+      for entry in parsed_feed.entries:
+        if entry.published_parsed <= last_item.published:
+          break
+        item = Item(feed = feed, published = entry.published_parsed,
+                    retrieved = datetime.datetime.Now(), title = entry.title,
+                    content = entry.description)
+        item.put()
 
 # TODO(ariw): Probably need some sort of clear handler to keep data sizes down.
 
 def main():
   application = webapp.WSGIApplication([
+      ('/items', ItemHandler),
       ('/add', AddHandler),
       ('/tasks/update', UpdateHandler),
     ])

@@ -8,6 +8,9 @@ handlers:
   static_files: interesaint.html
   upload: interesaint.html
   login: required
+- url: /items
+  script: interesaint.py
+  login: required
 - url: /add
   script: interesaint.py
   login: required

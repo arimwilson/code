@@ -1,0 +1,7 @@
+indexes:
+- kind: Item
+  properties:
+  - name: feed
+  - name: published
+    direction: desc
+
