@@ -19,11 +19,12 @@ class Subscription(db.Model):
 
 class Item(db.Model):
   feed = db.ReferenceProperty(Feed, required = True)
-  published = db.DateTimeProperty(required = True)
   retrieved = db.DateTimeProperty(required = True, auto_now_add = True)
-  title = db.StringProperty(required = True)
+  published = db.DateTimeProperty()
+  updated = db.DateTimeProperty()
+  title = db.StringProperty()
   # TODO(ariw): This should probably use blobstore.
-  content = db.StringProperty(required = True)
+  content = db.TextProperty()
 
 class Rating(db.Model):
   user = db.ReferenceProperty(User, required = True)
@@ -32,7 +33,18 @@ class Rating(db.Model):
 
 class ItemHandler(webapp.RequestHandler):
   def post(self):
-    pass
+    query = User.all()
+    username = users.get_current_user().nickname()
+    query.filter("username =", username)
+    user = query.get()
+    if not user:
+      return
+    query = Subscription.all()
+    query.filter("user =", user)
+    # TODO(ariw): Get subscriptions, then items. We should really cache at least
+    # everything before the item retrieval part here. Should be minimal data
+    # size.
+
 
 class AddHandler(webapp.RequestHandler):
   def post(self):
@@ -60,6 +72,17 @@ class AddHandler(webapp.RequestHandler):
       subscription = Subscription(user = user, feed = feed)
       subscription.put()
 
+def getFirstPresent(entry, tags):
+  for tag in tags:
+    if tag in entry:
+      return entry[tag]
+  return None
+
+def getDateTime(time):
+  if not time:
+    return None
+  return datetime.datetime(*time[:-3])
+
 class UpdateHandler(webapp.RequestHandler):
   def get(self):
     for feed in Feed.all():
@@ -69,11 +92,15 @@ class UpdateHandler(webapp.RequestHandler):
       last_item = query.get()
       parsed_feed = feedparser.parse(feed.url)
       for entry in parsed_feed.entries:
-        if entry.published_parsed <= last_item.published:
+        updated = getDateTime(getFirstPresent(entry, ["updated_parsed"]))
+        if (last_item and last_item.updated and updated and
+            last_item.updated >= updated):
           break
-        item = Item(feed = feed, published = entry.published_parsed,
-                    retrieved = datetime.datetime.Now(), title = entry.title,
-                    content = entry.description)
+        published = getDateTime(getFirstPresent(entry, ["published_parsed"]))
+        title = getFirstPresent(entry, ["title"])
+        content = getFirstPresent(entry, ["content", "description"])
+        item = Item(feed = feed, published = published, updated = updated,
+                    title = title, content = content)
         item.put()
 
 # TODO(ariw): Probably need some sort of clear handler to keep data sizes down.
