@@ -2,6 +2,7 @@ import datetime
 import feedparser
 import logging
 
+from django.utils import simplejson as json
 from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.ext import webapp
@@ -41,9 +42,14 @@ class ItemHandler(webapp.RequestHandler):
       return
     query = Subscription.all()
     query.filter("user =", user)
-    # TODO(ariw): Get subscriptions, then items. We should really cache at least
-    # everything before the item retrieval part here. Should be minimal data
-    # size.
+    feeds = [subscription.feed for subscription in query]
+    query = Item.all()
+    query.filter("feed IN", tuple(feeds)).order("-published")
+    items = query.fetch(20)
+    self.response.out.write(json.dumps(
+        [{"title": item.title, "content": item.content} for item in items]))
+    # TODO(ariw): We should really cache at least everything before the item
+    # retrieval part here. Should be minimal data size.
 
 
 class AddHandler(webapp.RequestHandler):
@@ -65,8 +71,7 @@ class AddHandler(webapp.RequestHandler):
       feed.put()
 
     query = Subscription.all()
-    query.filter("user = ", user)
-    query.filter("feed = ", feed)
+    query.filter("user = ", user).filter("feed =", feed)
     subscription = query.get()
     if not subscription:
       subscription = Subscription(user = user, feed = feed)
@@ -87,8 +92,7 @@ class UpdateHandler(webapp.RequestHandler):
   def get(self):
     for feed in Feed.all():
       query = Item.all()
-      query.filter("feed =", feed)
-      query.order("-published")
+      query.filter("feed =", feed).order("-published")
       last_item = query.get()
       parsed_feed = feedparser.parse(feed.url)
       for entry in parsed_feed.entries:
@@ -99,6 +103,7 @@ class UpdateHandler(webapp.RequestHandler):
         published = getDateTime(getFirstPresent(entry, ["published_parsed"]))
         title = getFirstPresent(entry, ["title"])
         content = getFirstPresent(entry, ["content", "description"])
+        logging.info(content)
         item = Item(feed = feed, published = published, updated = updated,
                     title = title, content = content)
         item.put()

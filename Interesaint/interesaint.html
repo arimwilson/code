@@ -12,12 +12,15 @@ function add() {
 
 $(document).ready(function() {
   // Start loading feed items.
-  $.post("list", function(data) {
-    for (var i = 0; i < len(data); i++) {
-      $("#items").append("<td>" + data[i]["title"] + "</td><td>" +
-                         data[i]["content"] + "</td>")
+  $.post("items", function(data) {
+    if (!data)
+      return;
+    items = eval(data)
+    for (var i = 0; i < items.length; i++) {
+      $("#items").append("<tr><td>" + items[i]["title"] + "</td><td>" +
+                         items[i]["content"] + "</td></tr>")
     }
-  }
+  })
 })
 </script>
 <script type="text/javascript">
@@ -37,7 +40,7 @@ $(document).ready(function() {
 <tr><td>Title</td><td>Content</td></tr>
 </table>
 <form action="javascript:add()">
-URL: <input type="text" name="url">
+Add new subscription URL: <input type="text" name="url">
 <input type="submit" value="Submit">
 </form>
 </body>
