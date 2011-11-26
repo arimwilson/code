@@ -44,7 +44,7 @@ class ItemHandler(webapp.RequestHandler):
     query.filter("user =", user)
     feeds = [subscription.feed for subscription in query]
     query = Item.all()
-    query.filter("feed IN", tuple(feeds)).order("-published")
+    query.filter("feed IN", tuple(feeds)).order("-updated")
     items = query.fetch(20)
     self.response.out.write(json.dumps(
         [{"title": item.title, "content": item.content} for item in items]))
@@ -64,6 +64,9 @@ class AddHandler(webapp.RequestHandler):
 
     query = Feed.all()
     url = self.request.get("url")
+    # Make sure this feed is okay before adding it.
+    if feedparser.parse(url).bozo:
+      self.error(400)
     query.filter("url =", url)
     feed = query.get()
     if not feed:
