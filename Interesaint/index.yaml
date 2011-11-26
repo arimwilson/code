@@ -2,6 +2,6 @@ indexes:
 - kind: Item
   properties:
   - name: feed
-  - name: published
+  - name: updated
     direction: desc
 
