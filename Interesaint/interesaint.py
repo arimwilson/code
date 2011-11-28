@@ -95,13 +95,13 @@ class UpdateHandler(webapp.RequestHandler):
   def get(self):
     for feed in Feed.all():
       query = Item.all()
-      query.filter("feed =", feed).order("-published")
+      query.filter("feed =", feed).order("-updated")
       last_item = query.get()
       parsed_feed = feedparser.parse(feed.url)
       for entry in parsed_feed.entries:
         updated = getDateTime(getFirstPresent(entry, ["updated_parsed"]))
         if (last_item and last_item.updated and updated and
-            last_item.updated > updated):
+            last_item.updated >= updated):
           break
         published = getDateTime(getFirstPresent(entry, ["published_parsed"]))
         title = getFirstPresent(entry, ["title"])
