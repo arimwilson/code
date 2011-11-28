@@ -101,7 +101,7 @@ class UpdateHandler(webapp.RequestHandler):
       for entry in parsed_feed.entries:
         updated = getDateTime(getFirstPresent(entry, ["updated_parsed"]))
         if (last_item and last_item.updated and updated and
-            last_item.updated >= updated):
+            last_item.updated > updated):
           break
         published = getDateTime(getFirstPresent(entry, ["published_parsed"]))
         title = getFirstPresent(entry, ["title"])
