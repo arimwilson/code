@@ -9,10 +9,11 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 class Feed(db.Model):
-  url = db.StringProperty(required = True)
+  url = db.TextProperty(required = True)
+  title = db.TextProperty()
 
 class User(db.Model):
-  username = db.StringProperty(required = True)
+  username = db.TextProperty(required = True)
 
 class Subscription(db.Model):
   user = db.ReferenceProperty(User, required = True)
@@ -23,14 +24,22 @@ class Item(db.Model):
   retrieved = db.DateTimeProperty(required = True, auto_now_add = True)
   published = db.DateTimeProperty()
   updated = db.DateTimeProperty()
-  title = db.StringProperty()
+  title = db.TextProperty()
+  url = db.TextProperty()
   # TODO(ariw): This should probably use blobstore.
   content = db.TextProperty()
+  comments = db.TextProperty()
 
 class Rating(db.Model):
   user = db.ReferenceProperty(User, required = True)
   item = db.ReferenceProperty(Item, required = True)
   interesting = db.FloatProperty(required = True)
+
+# Convert from datastore entity to item to be sent to user.
+def getPublicItem(item):
+  return {"retrieved": item.retrieved, "published": item.published,
+          "updated": item.updated, "title": item.title, "url": item.url,
+          "content": item.content, "comments": item.content}
 
 class ItemHandler(webapp.RequestHandler):
   def post(self):
@@ -47,10 +56,9 @@ class ItemHandler(webapp.RequestHandler):
     query.filter("feed IN", tuple(feeds)).order("-updated")
     items = query.fetch(20)
     self.response.out.write(json.dumps(
-        [{"title": item.title, "content": item.content} for item in items]))
+        [getPublicItem(item) for item in items]))
     # TODO(ariw): We should really cache at least everything before the item
     # retrieval part here. Should be minimal data size.
-
 
 class AddHandler(webapp.RequestHandler):
   def post(self):
@@ -65,12 +73,14 @@ class AddHandler(webapp.RequestHandler):
     query = Feed.all()
     url = self.request.get("url")
     # Make sure this feed is okay before adding it.
-    if feedparser.parse(url).bozo:
+    parsed_feed = feedparser.parse(url)
+    if parsed_feed.bozo:
       self.error(400)
     query.filter("url =", url)
     feed = query.get()
     if not feed:
-      feed = Feed(url = url)
+      title = getFirstPresent(parsed_feed.feed, ["title"])
+      feed = Feed(url = url, title = title)
       feed.put()
 
     query = Subscription.all()
@@ -80,12 +90,15 @@ class AddHandler(webapp.RequestHandler):
       subscription = Subscription(user = user, feed = feed)
       subscription.put()
 
+# From dictionary entry, get the value that corresponds to the first present
+# key from tags, or None.
 def getFirstPresent(entry, tags):
   for tag in tags:
     if tag in entry:
       return entry[tag]
   return None
 
+# Convert feedparser time to datetime.
 def getDateTime(time):
   if not time:
     return None
@@ -105,10 +118,13 @@ class UpdateHandler(webapp.RequestHandler):
           break
         published = getDateTime(getFirstPresent(entry, ["published_parsed"]))
         title = getFirstPresent(entry, ["title"])
+        url = getFirstPresent(entry, ["link"])
+        # TODO(ariw): Fix to deal with weirdness with multiple contents.
         content = getFirstPresent(entry, ["content", "description"])
-        logging.info(content)
+        comments = getFirstPresent(entry, ["comments"])
         item = Item(feed = feed, published = published, updated = updated,
-                    title = title, content = content)
+                    title = title, url = url, content = content,
+                    comments = comments)
         item.put()
 
 # TODO(ariw): Probably need some sort of clear handler to keep data sizes down.
