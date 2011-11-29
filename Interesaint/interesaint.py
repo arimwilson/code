@@ -35,11 +35,18 @@ class Rating(db.Model):
   item = db.ReferenceProperty(Item, required = True)
   interesting = db.FloatProperty(required = True)
 
+def getPublicDate(date):
+  if date:
+    return str(date)
+  else:
+    return None
+
 # Convert from datastore entity to item to be sent to user.
 def getPublicItem(item):
-  return {"retrieved": item.retrieved, "published": item.published,
-          "updated": item.updated, "title": item.title, "url": item.url,
-          "content": item.content, "comments": item.content}
+  return {"retrieved": getPublicDate(item.retrieved),
+          "published": getPublicDate(item.published),
+          "updated": getPublicDate(item.updated), "title": item.title,
+          "url": item.url, "content": item.content, "comments": item.comments}
 
 class ItemHandler(webapp.RequestHandler):
   def post(self):
