@@ -11,6 +11,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 class Feed(db.Model):
   url = db.TextProperty(required = True)
   title = db.TextProperty()
+  last_retrieved = db.DateTimeProperty()
 
 class User(db.Model):
   username = db.TextProperty(required = True)
@@ -82,6 +83,7 @@ class AddHandler(webapp.RequestHandler):
     # Make sure this feed is okay before adding it.
     parsed_feed = feedparser.parse(url)
     if parsed_feed.bozo:
+      self.response.out.write("Cannot parse feed: %s" % url)
       self.error(400)
     query.filter("url =", url)
     feed = query.get()
@@ -118,13 +120,15 @@ class UpdateHandler(webapp.RequestHandler):
       query.filter("feed =", feed).order("-updated")
       last_item = query.get()
       parsed_feed = feedparser.parse(feed.url)
+      if parsed_feed.bozo:
+        continue
       for entry in parsed_feed.entries:
         updated = getDateTime(getFirstPresent(entry, ["updated_parsed"]))
+        title = getFirstPresent(entry, ["title"])
         if (last_item and last_item.updated and updated and
             last_item.updated >= updated):
-          break
+          continue
         published = getDateTime(getFirstPresent(entry, ["published_parsed"]))
-        title = getFirstPresent(entry, ["title"])
         url = getFirstPresent(entry, ["link"])
         # TODO(ariw): Fix to deal with weirdness with multiple contents.
         content = getFirstPresent(entry, ["content", "description"])
@@ -133,6 +137,8 @@ class UpdateHandler(webapp.RequestHandler):
                     title = title, url = url, content = content,
                     comments = comments)
         item.put()
+        feed.last_retrieved = datetime.utcnow()
+        feed.put()
 
 # TODO(ariw): Probably need some sort of clear handler to keep data sizes down.
 
