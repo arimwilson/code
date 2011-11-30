@@ -121,7 +121,7 @@ class UpdateHandler(webapp.RequestHandler):
       last_item = query.get()
       parsed_feed = feedparser.parse(feed.url)
       if parsed_feed.bozo:
-        logging.error("Cannot parse feed: %s" % url)
+        logging.error("Cannot parse feed: %s" % feed.url)
         continue
       feed.last_retrieved = datetime.utcnow()
       feed.put()
