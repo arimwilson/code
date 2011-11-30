@@ -85,6 +85,7 @@ class AddHandler(webapp.RequestHandler):
     if parsed_feed.bozo:
       logging.error("Cannot parse feed: %s" % url)
       self.error(400)
+      return
     query.filter("url =", url)
     feed = query.get()
     if not feed:
