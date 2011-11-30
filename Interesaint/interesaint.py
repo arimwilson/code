@@ -122,6 +122,8 @@ class UpdateHandler(webapp.RequestHandler):
       parsed_feed = feedparser.parse(feed.url)
       if parsed_feed.bozo:
         continue
+      feed.last_retrieved = datetime.utcnow()
+      feed.put()
       for entry in parsed_feed.entries:
         updated = getDateTime(getFirstPresent(entry, ["updated_parsed"]))
         title = getFirstPresent(entry, ["title"])
@@ -137,8 +139,6 @@ class UpdateHandler(webapp.RequestHandler):
                     title = title, url = url, content = content,
                     comments = comments)
         item.put()
-        feed.last_retrieved = datetime.utcnow()
-        feed.put()
 
 # TODO(ariw): Probably need some sort of clear handler to keep data sizes down.
 
