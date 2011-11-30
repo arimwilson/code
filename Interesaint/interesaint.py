@@ -83,9 +83,8 @@ class AddHandler(webapp.RequestHandler):
     # Make sure this feed is okay before adding it.
     parsed_feed = feedparser.parse(url)
     if parsed_feed.bozo:
-      exc = parsed_feed.bozo_exception
-      logging.error("Cannot parse feed %s with reason: %s, on line: %d" %
-                    (url, exc.getMessage(), exc.getLineNumber()))
+      logging.error("Cannot parse feed %s with error %s" %
+                    (url, str(parsed_feed.bozo_exception)))
       self.error(400)
       return
     query.filter("url =", url)
@@ -124,9 +123,8 @@ class UpdateHandler(webapp.RequestHandler):
       last_item = query.get()
       parsed_feed = feedparser.parse(feed.url)
       if parsed_feed.bozo:
-        exc = parsed_feed.bozo_exception
-        logging.error("Cannot parse feed %s with reason: %s, on line: %d" %
-                      (feed.url, exc.getMessage(), exc.getLineNumber()))
+        logging.error("Cannot parse feed %s with error %s" %
+                      (feed.url, str(parsed_feed.bozo_exception)))
         continue
       feed.last_retrieved = datetime.utcnow()
       feed.put()
