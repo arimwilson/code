@@ -3,13 +3,14 @@ import feedparser
 import logging
 
 from django.utils import simplejson as json
+from google.appengine.api import urlfetch
 from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 class Feed(db.Model):
-  url = db.TextProperty(required = True)
+  url = db.StringProperty(required = True)
   title = db.TextProperty()
   last_retrieved = db.DateTimeProperty()
 
@@ -26,7 +27,7 @@ class Item(db.Model):
   published = db.DateTimeProperty()
   updated = db.DateTimeProperty()
   title = db.TextProperty()
-  url = db.TextProperty()
+  url = db.StringProperty()
   # TODO(ariw): This should probably use blobstore.
   content = db.TextProperty()
   comments = db.TextProperty()
@@ -68,6 +69,10 @@ class ItemHandler(webapp.RequestHandler):
     # TODO(ariw): We should really cache at least everything before the item
     # retrieval part here. Should be minimal data size.
 
+def logResponse(response):
+  logging.info("status_code: %d, headers: '%s', content: '%s'" %
+               (response.status_code, str(response.headers), response.content))
+
 class AddHandler(webapp.RequestHandler):
   def post(self):
     query = User.all()
@@ -85,6 +90,7 @@ class AddHandler(webapp.RequestHandler):
     if parsed_feed.bozo:
       logging.error("Cannot parse feed %s with error %s" %
                     (url, str(parsed_feed.bozo_exception)))
+      logResponse(urlfetch.fetch(url))
       self.error(400)
       return
     query.filter("url =", url)
@@ -125,6 +131,7 @@ class UpdateHandler(webapp.RequestHandler):
       if parsed_feed.bozo:
         logging.error("Cannot parse feed %s with error %s" %
                       (feed.url, str(parsed_feed.bozo_exception)))
+        logResponse(urlfetch.fetch(feed.url))
         continue
       feed.last_retrieved = datetime.utcnow()
       feed.put()
