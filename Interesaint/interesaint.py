@@ -41,7 +41,7 @@ class Rating(db.Model):
 
 def getPublicDate(date):
   if date:
-    return str(date)
+    return str(date) + " GMT"
   else:
     return None
 
@@ -66,7 +66,7 @@ class ItemHandler(webapp.RequestHandler):
     feeds = [subscription.feed for subscription in query]
     query = Item.all()
     query.filter("feed IN", tuple(feeds)).order("-updated")
-    items = query.fetch(20)
+    items = query.fetch(20, 20 * int(self.request.get("page")))
     query = Rating.all()
     query.filter("user =", user)
     query.filter("item IN", tuple(items))

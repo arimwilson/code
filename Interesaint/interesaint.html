@@ -5,37 +5,47 @@
 <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAdIOW2ntfXQiIaSgX0c8KpRS8QIXLX2ycRdTteZS2W1M7b4khSBReveKbOTim0FAVoHdOA0qWa9TbKg"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript">
-items_ = []
+var items_ = [];
+var page_ = 0;
+var offset_ = 0;
 
 function add() {
   var input = $("form input:text");
   $.post("add", { url: input.val() });
 }
 
-$(document).ready(function() {
-  var items_;
+function printDate(d) {
+  var d = new Date(d);
+  return d.toLocaleTimeString() + " " + d.toLocaleDateString();
+}
 
-  // Start loading feed items.
-  $.post("items", function(data) {
+function items() {
+  $.post("items", { page: page_ }, function(data) {
     if (!data)
       return;
-    items_ = eval(data);
-    for (var i = 0; i < items_.length; i++) {
+    items_ = items_.concat(eval(data));
+    for (var i = offset_; i < items_.length; i++) {
       var checked = "";
       if (items_[i]["interesting"] && items_[i]["interesting"] > 0.0)
         checked = "checked='yes'";
       $("#items").append(
           "<tr><td><input type='checkbox' " + checked + "/>" +
-          "</td><td>" + items_[i]["updated"] +
-          "</td><td>" + items_[i]["title"] +
-          "</td><td>" + items_[i]["url"] + "</td></tr>")
+          "</td><td>" + printDate(items_[i]["updated"]) +
+          "</td><td><a href='" + items_[i]["url"] + "'>" + items_[i]["title"] +
+          "</a></td></tr>");
     }
     $("form input:checkbox").click(function() {
       var i = $("form input:checkbox").index(this);
       $.post("rate",
              { id: items_[i]["id"], interesting: this.checked? 1.0: 0.0 });
     });
+    page_++;
+    offset_ = items_.length;
   })
+}
+
+$(document).ready(function() {
+  items();
 })
 </script>
 <script type="text/javascript">
@@ -53,8 +63,11 @@ $(document).ready(function() {
 <body>
 <form>
 <table id="items">
-<tr><td></td><td>Time</td><td>Title</td><td>Link</td></tr>
+<tr><td></td><td>Time</td><td>Title</td></tr>
 </table>
+</form>
+<form action="javascript:items()">
+<input type="submit" value="More" />
 </form>
 <form action="javascript:add()">
 Add new subscription URL: <input type="text" name="url" />
