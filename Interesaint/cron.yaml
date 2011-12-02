@@ -2,4 +2,6 @@ cron:
 - description: update
   url: /tasks/update
   schedule: every 20 minutes
-
+- description: clean
+  url: /tasks/clean
+  schedule: every 24 hours

@@ -9,6 +9,8 @@ from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
+import interesaint
+
 class Feed(db.Model):
   url = db.StringProperty(required = True)
   title = db.TextProperty()
@@ -45,7 +47,8 @@ def getPublicDate(date):
 
 # Convert from datastore entity to item to be sent to user.
 def getPublicItem(item):
-  return {"retrieved": getPublicDate(item.retrieved),
+  return {"id": item.key().id(), "interesting": item.interesting,
+          "retrieved": getPublicDate(item.retrieved),
           "published": getPublicDate(item.published),
           "updated": getPublicDate(item.updated), "title": item.title,
           "url": item.url, "content": item.content, "comments": item.comments}
@@ -64,6 +67,17 @@ class ItemHandler(webapp.RequestHandler):
     query = Item.all()
     query.filter("feed IN", tuple(feeds)).order("-updated")
     items = query.fetch(20)
+    query = Rating.all()
+    query.filter("user =", user)
+    query.filter("item IN", tuple(items))
+    ratings = query.fetch(20)
+    for item in items:
+      item.interesting = None
+    for rating in ratings:
+      for item in items:
+        if rating.item.key() == item.key():
+          item.interesting = rating.interesting
+          break
     self.response.out.write(json.dumps(
         [getPublicItem(item) for item in items]))
     # TODO(ariw): We should really cache at least everything before the item
@@ -107,6 +121,23 @@ class AddHandler(webapp.RequestHandler):
       subscription = Subscription(user = user, feed = feed)
       subscription.put()
 
+class RateHandler(webapp.RequestHandler):
+  def post(self):
+    query = User.all()
+    username = users.get_current_user().nickname()
+    query.filter("username =", username)
+    user = query.get()
+    item = Item.get_by_id(long(self.request.get("id")))
+    interesting = float(self.request.get("interesting"))
+    query = Rating.all()
+    query.filter("user =", user).filter("item =", item)
+    rating = query.get()
+    if not rating:
+      rating = Rating(user = user, item = item, interesting = interesting)
+    else:
+      rating.interesting = interesting
+    rating.put()
+
 # From dictionary entry, get the value that corresponds to the first present
 # key from tags, or None.
 def getFirstPresent(entry, tags):
@@ -133,7 +164,7 @@ class UpdateHandler(webapp.RequestHandler):
                       (feed.url, str(parsed_feed.bozo_exception)))
         logResponse(urlfetch.fetch(feed.url))
         continue
-      feed.last_retrieved = datetime.utcnow()
+      feed.last_retrieved = datetime.datetime.utcnow()
       feed.put()
       for entry in parsed_feed.entries:
         updated = getDateTime(getFirstPresent(entry, ["updated_parsed"]))
@@ -151,13 +182,24 @@ class UpdateHandler(webapp.RequestHandler):
                     comments = comments)
         item.put()
 
-# TODO(ariw): Probably need some sort of clear handler to keep data sizes down.
+class CleanHandler(webapp.RequestHandler):
+  def get(self):
+    items_to_delete = []
+    ratings_to_delete = []
+    for item in Item.all():
+      if item.retrieved < datetime.datetime.now() - datetime.timedelta(7):
+        items_to_delete.append(item)
+        ratings_to_delete += item.rating_set
+    db.delete(items_to_delete)
+    db.delete(ratings_to_delete)
 
 def main():
   application = webapp.WSGIApplication([
       ('/items', ItemHandler),
       ('/add', AddHandler),
+      ('/rate', RateHandler),
       ('/tasks/update', UpdateHandler),
+      ('/tasks/clean', CleanHandler),
     ])
   run_wsgi_app(application)
 
