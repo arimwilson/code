@@ -37,7 +37,8 @@ class Item(db.Model):
 class Rating(db.Model):
   user = db.ReferenceProperty(User, required = True)
   item = db.ReferenceProperty(Item, required = True)
-  interesting = db.FloatProperty(required = True)
+  interesting = db.FloatProperty()
+  predicted_interesting = db.FloatProperty()
 
 def getPublicDate(date):
   if date:
@@ -47,11 +48,13 @@ def getPublicDate(date):
 
 # Convert from datastore entity to item to be sent to user.
 def getPublicItem(item):
-  return {"id": item.key().id(), "interesting": item.interesting,
+  return { "id": item.key().id(), "rating": item.interesting,
+          "predicted_rating": item.predicted_interesting,
+          "feed_title": item.feed_title,
           "retrieved": getPublicDate(item.retrieved),
           "published": getPublicDate(item.published),
           "updated": getPublicDate(item.updated), "title": item.title,
-          "url": item.url, "content": item.content, "comments": item.comments}
+          "url": item.url, "content": item.content, "comments": item.comments }
 
 class ItemHandler(webapp.RequestHandler):
   def post(self):
@@ -73,15 +76,43 @@ class ItemHandler(webapp.RequestHandler):
     ratings = query.fetch(20)
     for item in items:
       item.interesting = None
+      item.predicted_interesting = None
+    for feed in feeds:
+      for item in items:
+        if item.feed.key() == feed.key():
+          item.feed_title = feed.title
     for rating in ratings:
       for item in items:
         if rating.item.key() == item.key():
           item.interesting = rating.interesting
+          item.predicted_interesting = rating.predicted_interesting
           break
     self.response.out.write(json.dumps(
         [getPublicItem(item) for item in items]))
     # TODO(ariw): We should really cache at least everything before the item
     # retrieval part here. Should be minimal data size.
+
+class SubscriptionHandler(webapp.RequestHandler):
+  def post(self):
+    query = User.all()
+    username = users.get_current_user().nickname()
+    query.filter("username =", username)
+    user = query.get()
+    if not user:
+      return
+    query = Subscription.all()
+    query.filter("user =", user)
+    subscriptions = [subscription for subscription in query]
+    query = Feed.all()
+    feeds = Feed.get_by_id(
+        [subscription.feed.key().id() for subscription in subscriptions])
+    for feed in feeds:
+      for subscription in subscriptions:
+        if subscription.feed.key() == feed.key():
+          subscription.title = feed.title
+    self.response.out.write(json.dumps(
+        [{"id": subscription.key().id(), "title": subscription.title} for
+          subscription in subscriptions]))
 
 def logResponse(response):
   logging.info("status_code: %d, headers: '%s', content: '%s'" %
@@ -121,6 +152,12 @@ class AddHandler(webapp.RequestHandler):
       subscription = Subscription(user = user, feed = feed)
       subscription.put()
 
+class RemoveHandler(webapp.RequestHandler):
+  def post(self):
+   subscription = Subscription.get_by_id(long(self.request.get("id")))
+   db.delete(subscription)
+   # TODO(ariw): Remove feeds and/or ratings?
+
 class RateHandler(webapp.RequestHandler):
   def post(self):
     query = User.all()
@@ -128,12 +165,13 @@ class RateHandler(webapp.RequestHandler):
     query.filter("username =", username)
     user = query.get()
     item = Item.get_by_id(long(self.request.get("id")))
-    interesting = float(self.request.get("interesting"))
+    interesting = float(self.request.get("rating"))
     query = Rating.all()
     query.filter("user =", user).filter("item =", item)
     rating = query.get()
     if not rating:
-      rating = Rating(user = user, item = item, interesting = interesting)
+      rating = Rating(user = user, item = item, predicted = False,
+                      interesting = interesting)
     else:
       rating.interesting = interesting
     rating.put()
@@ -187,7 +225,8 @@ class CleanHandler(webapp.RequestHandler):
     items_to_delete = []
     ratings_to_delete = []
     for item in Item.all():
-      if item.retrieved < datetime.datetime.now() - datetime.timedelta(7):
+      # 1 month so I can actually build up a classification history!
+      if item.retrieved < datetime.datetime.now() - datetime.timedelta(30):
         items_to_delete.append(item)
         ratings_to_delete += item.rating_set
     db.delete(items_to_delete)
@@ -196,7 +235,9 @@ class CleanHandler(webapp.RequestHandler):
 def main():
   application = webapp.WSGIApplication([
       ('/items', ItemHandler),
+      ('/subscriptions', SubscriptionHandler),
       ('/add', AddHandler),
+      ('/remove', RemoveHandler),
       ('/rate', RateHandler),
       ('/tasks/update', UpdateHandler),
       ('/tasks/clean', CleanHandler),

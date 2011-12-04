@@ -8,10 +8,18 @@ handlers:
   static_files: interesaint.html
   upload: interesaint.html
   login: required
+- url: /images
+  static_dir: images
 - url: /items
   script: interesaint.py
   login: required
+- url: /subscriptions
+  script: interesaint.py
+  login: required
 - url: /add
+  script: interesaint.py
+  login: required
+- url: /remove
   script: interesaint.py
   login: required
 - url: /rate
