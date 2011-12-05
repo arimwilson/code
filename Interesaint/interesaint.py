@@ -2,7 +2,6 @@ import datetime
 import feedparser
 import json
 import logging
-import numpy
 import webapp2
 
 from google.appengine.api import urlfetch
