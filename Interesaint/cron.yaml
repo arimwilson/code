@@ -5,3 +5,6 @@ cron:
 - description: clean
   url: /tasks/clean
   schedule: every 24 hours
+- description: learn
+  url: /tasks/learn
+  schedule: every 24 hours

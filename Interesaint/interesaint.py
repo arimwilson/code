@@ -37,6 +37,7 @@ class Item(db.Model):
 class Rating(db.Model):
   user = db.ReferenceProperty(User, required = True)
   item = db.ReferenceProperty(Item, required = True)
+  created = db.DateTimeProperty(auto_now_add = True)
   interesting = db.FloatProperty()
   predicted_interesting = db.FloatProperty()
 
@@ -204,6 +205,7 @@ class UpdateHandler(webapp.RequestHandler):
         continue
       feed.last_retrieved = datetime.datetime.utcnow()
       feed.put()
+      # TODO(ariw): Add predicted ratings here.
       for entry in parsed_feed.entries:
         updated = getDateTime(getFirstPresent(entry, ["updated_parsed"]))
         title = getFirstPresent(entry, ["title"])
@@ -232,6 +234,12 @@ class CleanHandler(webapp.RequestHandler):
     db.delete(items_to_delete)
     db.delete(ratings_to_delete)
 
+class LearnHandler(webapp.RequestHandler):
+  def get(self):
+    # TODO(ariw): Retrieve latest ratings with items, turn them into CSV,
+    # send them to Google Prediction API for streaming update.
+    pass
+
 def main():
   application = webapp.WSGIApplication([
       ('/items', ItemHandler),
@@ -241,6 +249,7 @@ def main():
       ('/rate', RateHandler),
       ('/tasks/update', UpdateHandler),
       ('/tasks/clean', CleanHandler),
+      ('/tasks/learn', LearnHandler),
     ])
   run_wsgi_app(application)
 
