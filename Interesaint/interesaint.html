@@ -12,13 +12,13 @@ var offset_ = 0;
 
 function add() {
   var input = $("form input:text");
-  $.post("add", { url: input.val() });
+  $.post("script/add", { url: input.val() });
 }
 
 function remove() {
   var index = $("form select")[0].selectedIndex;
   // TODO(ariw): Remove subscription locally as well.
-  $.post("remove", { id: subscriptions_[index]["id"] });
+  $.post("script/remove", { id: subscriptions_[index]["id"] });
 }
 
 function printDate(d) {
@@ -61,7 +61,7 @@ function starsChange(i, rating, predicted, stars) {
 }
 
 function moreItems() {
-  $.post("items", { page: page_ }, function(data) {
+  $.post("script/items", { page: page_ }, function(data) {
     if (!data)
       return;
     items_ = items_.concat(eval(data));
@@ -97,7 +97,8 @@ function moreItems() {
       var index = stars.index(this);
       var i = Math.floor(index / 5);
       items_[i]["rating"] = (index % 5 + 1) / 5;
-      $.post("rate", { id: items_[i]["id"], rating: items_[i]["rating"] });
+      $.post("script/rate",
+             { id: items_[i]["id"], rating: items_[i]["rating"] });
     })
     page_++;
     offset_ = items_.length;
@@ -106,7 +107,7 @@ function moreItems() {
 
 $(document).ready(function() {
   moreItems();
-  $.post("subscriptions", function(data) {
+  $.post("script/subscriptions", function(data) {
     subscriptions_ = eval(data);
     for (var i = 0; i < subscriptions_.length; i++) {
       $("#remove").append(

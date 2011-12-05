@@ -1,13 +1,13 @@
 import datetime
 import feedparser
+import json
 import logging
+import numpy
+import webapp2
 
-from django.utils import simplejson as json
 from google.appengine.api import urlfetch
 from google.appengine.api import users
 from google.appengine.ext import db
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
 
 import interesaint
 
@@ -57,7 +57,7 @@ def getPublicItem(item):
           "updated": getPublicDate(item.updated), "title": item.title,
           "url": item.url, "content": item.content, "comments": item.comments }
 
-class ItemHandler(webapp.RequestHandler):
+class ItemHandler(webapp2.RequestHandler):
   def post(self):
     query = User.all()
     username = users.get_current_user().nickname()
@@ -93,7 +93,7 @@ class ItemHandler(webapp.RequestHandler):
     # TODO(ariw): We should really cache at least everything before the item
     # retrieval part here. Should be minimal data size.
 
-class SubscriptionHandler(webapp.RequestHandler):
+class SubscriptionHandler(webapp2.RequestHandler):
   def post(self):
     query = User.all()
     username = users.get_current_user().nickname()
@@ -119,7 +119,7 @@ def logResponse(response):
   logging.info("status_code: %d, headers: '%s', content: '%s'" %
                (response.status_code, str(response.headers), response.content))
 
-class AddHandler(webapp.RequestHandler):
+class AddHandler(webapp2.RequestHandler):
   def post(self):
     query = User.all()
     username = users.get_current_user().nickname()
@@ -153,13 +153,13 @@ class AddHandler(webapp.RequestHandler):
       subscription = Subscription(user = user, feed = feed)
       subscription.put()
 
-class RemoveHandler(webapp.RequestHandler):
+class RemoveHandler(webapp2.RequestHandler):
   def post(self):
    subscription = Subscription.get_by_id(long(self.request.get("id")))
    db.delete(subscription)
    # TODO(ariw): Remove feeds and/or ratings?
 
-class RateHandler(webapp.RequestHandler):
+class RateHandler(webapp2.RequestHandler):
   def post(self):
     query = User.all()
     username = users.get_current_user().nickname()
@@ -191,7 +191,7 @@ def getDateTime(time):
     return None
   return datetime.datetime(*time[:-3])
 
-class UpdateHandler(webapp.RequestHandler):
+class UpdateHandler(webapp2.RequestHandler):
   def get(self):
     for feed in Feed.all():
       query = Item.all()
@@ -222,7 +222,7 @@ class UpdateHandler(webapp.RequestHandler):
                     comments = comments)
         item.put()
 
-class CleanHandler(webapp.RequestHandler):
+class CleanHandler(webapp2.RequestHandler):
   def get(self):
     items_to_delete = []
     ratings_to_delete = []
@@ -234,24 +234,20 @@ class CleanHandler(webapp.RequestHandler):
     db.delete(items_to_delete)
     db.delete(ratings_to_delete)
 
-class LearnHandler(webapp.RequestHandler):
+class LearnHandler(webapp2.RequestHandler):
   def get(self):
     # TODO(ariw): Retrieve latest ratings with items, turn them into CSV,
     # send them to Google Prediction API for streaming update.
     pass
 
-def main():
-  application = webapp.WSGIApplication([
-      ('/items', ItemHandler),
-      ('/subscriptions', SubscriptionHandler),
-      ('/add', AddHandler),
-      ('/remove', RemoveHandler),
-      ('/rate', RateHandler),
-      ('/tasks/update', UpdateHandler),
-      ('/tasks/clean', CleanHandler),
-      ('/tasks/learn', LearnHandler),
-    ])
-  run_wsgi_app(application)
+app = webapp2.WSGIApplication([
+    ('/script/items', ItemHandler),
+    ('/script/subscriptions', SubscriptionHandler),
+    ('/script/add', AddHandler),
+    ('/script/remove', RemoveHandler),
+    ('/script/rate', RateHandler),
+    ('/tasks/update', UpdateHandler),
+    ('/tasks/clean', CleanHandler),
+    ('/tasks/learn', LearnHandler),
+  ])
 
-if __name__ == '__main__':
-  main()
