@@ -37,7 +37,7 @@ class Item(db.Model):
 class Rating(db.Model):
   user = db.ReferenceProperty(User, required = True)
   item = db.ReferenceProperty(Item, required = True)
-  created = db.DateTimeProperty(auto_now_add = True)
+  created = db.DateTimeProperty()
   interesting = db.FloatProperty()
   predicted_interesting = db.FloatProperty()
 
@@ -171,8 +171,8 @@ class RateHandler(webapp.RequestHandler):
     query.filter("user =", user).filter("item =", item)
     rating = query.get()
     if not rating:
-      rating = Rating(user = user, item = item, predicted = False,
-                      interesting = interesting)
+      rating = Rating(user = user, item = item, interesting = interesting,
+                      created = datetime.datetime.utcnow())
     else:
       rating.interesting = interesting
     rating.put()
