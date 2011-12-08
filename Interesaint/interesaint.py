@@ -2,13 +2,13 @@ import datetime
 import feedparser
 import json
 import logging
+import re
 import webapp2
 
+from google.appengine.api import memcache
 from google.appengine.api import urlfetch
 from google.appengine.api import users
 from google.appengine.ext import db
-
-import interesaint
 
 class Feed(db.Model):
   url = db.StringProperty(required = True)
@@ -40,6 +40,18 @@ class Rating(db.Model):
   interesting = db.FloatProperty()
   predicted_interesting = db.FloatProperty()
 
+def getUser(username):
+  user = memcache.get(username)
+  if user:
+    return user
+  query = User.all()
+  query.filter("username =", username)
+  user = query.get()
+  if not user:
+    return
+  memcache.add(username, user)
+  return user
+
 def getPublicDate(date):
   if date:
     return str(date) + " GMT"
@@ -49,20 +61,19 @@ def getPublicDate(date):
 # Convert from datastore entity to item to be sent to user.
 def getPublicItem(item):
   return { "id": item.key().id(), "rating": item.interesting,
-          "predicted_rating": item.predicted_interesting,
-          "feed_title": item.feed_title,
-          "retrieved": getPublicDate(item.retrieved),
-          "published": getPublicDate(item.published),
-          "updated": getPublicDate(item.updated), "title": item.title,
-          "url": item.url, "content": item.content, "comments": item.comments }
+           "predicted_rating": item.predicted_interesting,
+           "feed_title": item.feed_title,
+           "retrieved": getPublicDate(item.retrieved),
+           "published": getPublicDate(item.published),
+           "updated": getPublicDate(item.updated), "title": item.title,
+           "url": item.url, "content": item.content, "comments": item.comments }
 
 class ItemHandler(webapp2.RequestHandler):
   def post(self):
-    query = User.all()
     username = users.get_current_user().nickname()
-    query.filter("username =", username)
-    user = query.get()
+    user = getUser(username)
     if not user:
+      self.error(403)
       return
     query = Subscription.all()
     query.filter("user =", user)
@@ -94,11 +105,10 @@ class ItemHandler(webapp2.RequestHandler):
 
 class SubscriptionHandler(webapp2.RequestHandler):
   def post(self):
-    query = User.all()
     username = users.get_current_user().nickname()
-    query.filter("username =", username)
-    user = query.get()
+    user = getUser(username)
     if not user:
+      self.error(403)
       return
     query = Subscription.all()
     query.filter("user =", user)
@@ -120,12 +130,10 @@ def logResponse(response):
 
 class AddHandler(webapp2.RequestHandler):
   def post(self):
-    query = User.all()
     username = users.get_current_user().nickname()
-    query.filter("username =", username)
-    user = query.get()
+    user = getUser(username)
     if not user:
-      user = User(username = username)
+      user = User(username = users)
       user.put()
 
     query = Feed.all()
@@ -160,10 +168,11 @@ class RemoveHandler(webapp2.RequestHandler):
 
 class RateHandler(webapp2.RequestHandler):
   def post(self):
-    query = User.all()
     username = users.get_current_user().nickname()
-    query.filter("username =", username)
-    user = query.get()
+    user = getUser(username)
+    if not user:
+      self.error(403)
+      return
     item = Item.get_by_id(long(self.request.get("id")))
     interesting = float(self.request.get("rating"))
     query = Rating.all()
@@ -233,11 +242,26 @@ class CleanHandler(webapp2.RequestHandler):
     db.delete(items_to_delete)
     db.delete(ratings_to_delete)
 
-class LearnHandler(webapp2.RequestHandler):
+class RatingsHandler(webapp2.RequestHandler):
   def get(self):
-    # TODO(ariw): Retrieve latest ratings with items, turn them into CSV,
-    # send them to Google Prediction API for streaming update.
-    pass
+    username = users.get_current_user().nickname()
+    user = getUser(username)
+    if not user:
+      self.error(403)
+      return
+    query = Rating.all()
+    query.filter("user =", user)
+    username = "_".join(username.lower().split())
+    for rating in query:
+      if not rating.interesting:
+        continue
+      feed_title = "_".join(rating.item.feed.title.lower().split())
+      split_title = [rating.item.title.lower()]
+      for token in " ,;:-.!?\"/()[]":
+        split_title = sum((s.split(token) for s in split_title), [])
+      title = " ".join(split_title)
+      self.response.out.write("%f,\"%s\",\"%s\",\"%s\"\n" % (
+          rating.interesting, username, feed_title, title))
 
 app = webapp2.WSGIApplication([
     ('/script/items', ItemHandler),
@@ -247,6 +271,6 @@ app = webapp2.WSGIApplication([
     ('/script/rate', RateHandler),
     ('/tasks/update', UpdateHandler),
     ('/tasks/clean', CleanHandler),
-    ('/tasks/learn', LearnHandler),
+    # Temporary; used for training Google Prediction API.
+    ('/script/ratings', RatingsHandler),
   ])
-
