@@ -235,8 +235,8 @@ class CleanHandler(webapp2.RequestHandler):
     items_to_delete = []
     ratings_to_delete = []
     for item in Item.all():
-      # 1 month so I can actually build up a classification history!
-      if item.retrieved < datetime.datetime.now() - datetime.timedelta(30):
+      # 6 months so I can actually build up a classification history!
+      if item.retrieved < datetime.datetime.now() - datetime.timedelta(6 * 30):
         items_to_delete.append(item)
         ratings_to_delete += item.rating_set
     db.delete(items_to_delete)
