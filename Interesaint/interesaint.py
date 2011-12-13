@@ -168,8 +168,8 @@ class AddHandler(webapp2.RequestHandler):
     subscription = query.get()
     if not subscription:
       subscription = Subscription(user = user, feed = feed)
-      subscription.put()
       memcache.delete("Subscriptions,user:" + user.username)
+      subscription.put()
 
 class RemoveHandler(webapp2.RequestHandler):
   def post(self):
