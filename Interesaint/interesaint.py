@@ -41,7 +41,7 @@ class Rating(db.Model):
   predicted_interesting = db.FloatProperty()
 
 def getUser(username):
-  user = memcache.get(username)
+  user = memcache.get("User,user:" + username)
   if user:
     return user
   query = User.all()
@@ -49,8 +49,20 @@ def getUser(username):
   user = query.get()
   if not user:
     return
-  memcache.add(username, user)
+  memcache.add("User,user:" + username, user)
   return user
+
+def getSubscriptions(user):
+  subscriptions = memcache.get("Subscriptions,user:" + user.username)
+  if subscriptions:
+    return subscriptions
+  query = Subscription.all()
+  query.filter("user =", user)
+  subscriptions = [subscription for subscription in query]
+  if not subscriptions:
+    return
+  memcache.add("Subscriptions,user:" + user.username, subscriptions)
+  return subscriptions
 
 def getPublicDate(date):
   if date:
@@ -68,6 +80,7 @@ def getPublicItem(item):
            "updated": getPublicDate(item.updated), "title": item.title,
            "url": item.url, "content": item.content, "comments": item.comments }
 
+# Get the latest items for a user.
 class ItemHandler(webapp2.RequestHandler):
   def post(self):
     username = users.get_current_user().nickname()
@@ -75,11 +88,10 @@ class ItemHandler(webapp2.RequestHandler):
     if not user:
       self.error(403)
       return
-    query = Subscription.all()
-    query.filter("user =", user)
-    feeds = [subscription.feed for subscription in query]
+    subscriptions = getSubscriptions(user)
+    feeds = tuple(subscription.feed for subscription in subscriptions)
     query = Item.all()
-    query.filter("feed IN", tuple(feeds)).order("-updated")
+    query.filter("feed IN", feeds).order("-updated")
     items = query.fetch(20, 20 * int(self.request.get("page")))
     query = Rating.all()
     query.filter("user =", user)
@@ -100,9 +112,8 @@ class ItemHandler(webapp2.RequestHandler):
           break
     self.response.out.write(json.dumps(
         [getPublicItem(item) for item in items]))
-    # TODO(ariw): We should really cache at least everything before the item
-    # retrieval part here. Should be minimal data size.
 
+# Get a list of user subscriptions.
 class SubscriptionHandler(webapp2.RequestHandler):
   def post(self):
     username = users.get_current_user().nickname()
@@ -110,9 +121,7 @@ class SubscriptionHandler(webapp2.RequestHandler):
     if not user:
       self.error(403)
       return
-    query = Subscription.all()
-    query.filter("user =", user)
-    subscriptions = [subscription for subscription in query]
+    subscriptions = getSubscriptions(user)
     query = Feed.all()
     feeds = Feed.get_by_id(
         [subscription.feed.key().id() for subscription in subscriptions])
@@ -128,6 +137,7 @@ def logResponse(response):
   logging.info("status_code: %d, headers: '%s', content: '%s'" %
                (response.status_code, str(response.headers), response.content))
 
+# Add a new subscription for a user.
 class AddHandler(webapp2.RequestHandler):
   def post(self):
     username = users.get_current_user().nickname()
@@ -159,6 +169,7 @@ class AddHandler(webapp2.RequestHandler):
     if not subscription:
       subscription = Subscription(user = user, feed = feed)
       subscription.put()
+      memcache.delete("Subscriptions,user:" + user.username)
 
 class RemoveHandler(webapp2.RequestHandler):
   def post(self):
@@ -166,6 +177,7 @@ class RemoveHandler(webapp2.RequestHandler):
    db.delete(subscription)
    # TODO(ariw): Remove feeds and/or ratings?
 
+# Rate some item.
 class RateHandler(webapp2.RequestHandler):
   def post(self):
     username = users.get_current_user().nickname()
@@ -199,6 +211,7 @@ def getDateTime(time):
     return None
   return datetime.datetime(*time[:-3])
 
+# Get latest items from feeds.
 class UpdateHandler(webapp2.RequestHandler):
   def get(self):
     for feed in Feed.all():
@@ -230,6 +243,7 @@ class UpdateHandler(webapp2.RequestHandler):
                     comments = comments)
         item.put()
 
+# Remove old items and ratings to clear up space.
 class CleanHandler(webapp2.RequestHandler):
   def get(self):
     items_to_delete = []
@@ -242,6 +256,8 @@ class CleanHandler(webapp2.RequestHandler):
     db.delete(items_to_delete)
     db.delete(ratings_to_delete)
 
+# Used for training Google Prediction API.
+# TODO(ariw): Remove.
 class RatingsHandler(webapp2.RequestHandler):
   def get(self):
     username = users.get_current_user().nickname()
@@ -263,6 +279,16 @@ class RatingsHandler(webapp2.RequestHandler):
       self.response.out.write("%f,\"%s\",\"%s\",\"%s\"\n" % (
           rating.interesting, username, feed_title, title))
 
+# Passes through learning task from cron to backend.
+class LearnPassHandler(webapp2.RequestHandler):
+  def get(self):
+    pass
+
+# Generates a model to predict user ratings.
+class LearnHandler(webapp2.RequestHandler):
+  def get(self):
+    pass
+
 app = webapp2.WSGIApplication([
     ('/script/items', ItemHandler),
     ('/script/subscriptions', SubscriptionHandler),
@@ -271,6 +297,7 @@ app = webapp2.WSGIApplication([
     ('/script/rate', RateHandler),
     ('/tasks/update', UpdateHandler),
     ('/tasks/clean', CleanHandler),
-    # Temporary; used for training Google Prediction API.
-    ('/script/ratings', RatingsHandler),
+    ('/tasks/learn', LearnPassHandler),
+    ('/backend/ratings', RatingsHandler),
+    ('/backend/learn', LearnHandler),
   ])

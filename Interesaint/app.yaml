@@ -17,6 +17,9 @@ handlers:
 - url: /tasks/.*
   script: interesaint.app
   login: admin
+- url: /backend/.*
+  script: interesaint.app
+  login: admin
 
 libraries:
 - name: numpy
