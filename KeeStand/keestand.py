@@ -47,7 +47,6 @@ class SaltHandler(webapp.RequestHandler):
 # Convert gzipped pickled Python dictionary back to JSON.
 def Decode(string):
   string = gzip.GzipFile(fileobj=StringIO.StringIO(string)).read()
-  # TODO(ariw): WTF why can't I depickle?!
   dictionary = pickle.loads(string)
   for (key, value) in dictionary.iteritems():
     dictionary[key] = base64.standard_b64encode(value)
@@ -114,7 +113,7 @@ def Encode(string):
   dictionary = json.loads(string)
   for (key, value) in dictionary.iteritems():
     dictionary[key] = base64.standard_b64decode(value)
-  pickled = pickle.dumps(dictionary, pickle.HIGHEST_PROTOCOL)
+  pickled = pickle.dumps(dictionary, 2)
   output = StringIO.StringIO()
   gzip.GzipFile(fileobj=output, mode="wb").write(pickled)
   return output.getvalue()
