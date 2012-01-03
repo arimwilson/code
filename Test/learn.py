@@ -39,8 +39,8 @@ def scale(coeff, means, ranges):
       scaled.append(0)
   return scaled
 
-def scoring(line, all_features, mins, maxes, x):
-  return (numpy.array(scale(coeff_row(feature_row(line), all_features), mins, maxes)) * x).sum()
+def scoring(line, all_features, means, ranges, x):
+  return (numpy.array(scale(coeff_row(feature_row(line), all_features), means, ranges)) * x).sum()
 
 lines = open("ratings.txt").readlines()
 scores = []
