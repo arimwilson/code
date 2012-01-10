@@ -39,6 +39,10 @@ def scale(coeff, means, ranges):
       scaled.append(0)
   return scaled
 
+def rank(A, tol=1e-8):
+  s = numpy.svd(numpy.array(A), compute_uv=0)
+  return numpy.sum(numpy.where(s > tol, 1, 0))
+
 def scoring(line, all_features, means, ranges, x):
   return (numpy.array(scale(coeff_row(feature_row(line), all_features), means, ranges)) * x).sum()
 
@@ -55,10 +59,11 @@ for s in features:
     all_features.add(t)
 all_features_ordered = list(all_features)
 coeffs = [coeff_row(feature, all_features_ordered) for feature in features]
+coeffs_rank = rank(coeffs)
 means, ranges = feature_scale(coeffs)
 coeffs = numpy.array([scale(coeff, means, ranges) for coeff in coeffs])
 scores = numpy.array(scores)
-x, residues, rank, s = numpy.linalg.lstsq(coeffs, scores)
+x, residues, rank, s = numpy.linalg.lstsq(coeffs, numpy.array(scores))
 test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  project accessory s01e05 beach blanket blingo ws dsr xvid  ny2  avi thread  project accessory season 1\""
 print scoring(test, all_features_ordered, means, ranges, x)
 print x
