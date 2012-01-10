@@ -1,3 +1,4 @@
+import math
 import numpy
 
 def break_row(line):
@@ -9,42 +10,67 @@ def feature_row(line):
   line = line[:-1] + [word for word in line[-1].split(" ") if word != ""]
   return line
 
-def coeff_row(features, all_features):
-  coeff = [1]  # y intercept
+def count_row(features, all_features):
+  count = [1]  # y intercept
   for feature in all_features:
-    coeff.append(features.count(feature))
-  return coeff
+    count.append(features.count(feature))
+  return count
 
-def feature_scale(coeffs):
-  mins = [1000] * (len(coeffs[0]) - 1)
-  maxes = [-1000] * (len(coeffs[0]) - 1)
-  sums = [0] * (len(coeffs[0]) - 1)
-  for coeff in coeffs:
-    for i in range(len(coeff) - 1):
-      sums[i] += coeff[i + 1]
-      if coeff[i + 1] < mins[i]:
-        mins[i] = coeff[i + 1]
-      if coeff[i + 1] > maxes[i]:
-        maxes[i] = coeff[i + 1]
-  means = [float(sums[i]) / len(coeffs) for i in range(len(sums))]
+def feature_scale(countss):
+  mins = [1000] * (len(counts[0]) - 1)
+  maxes = [-1000] * (len(countss[0]) - 1)
+  sums = [0] * (len(countss[0]) - 1)
+  for count in counts:
+    for i in range(len(count) - 1):
+      sums[i] += count[i + 1]
+      if count[i + 1] < mins[i]:
+        mins[i] = count[i + 1]
+      if count[i + 1] > maxes[i]:
+        maxes[i] = count[i + 1]
+  means = [float(sums[i]) / len(counts) for i in range(len(sums))]
   ranges = [maxes[i] - mins[i] for i in range(len(maxes))]
   return means, ranges
 
-def scale(coeff, means, ranges):
-  scaled = [coeff[0]]
-  for i in range(len(coeff) - 1):
+def scale(count, means, ranges):
+  scaled = [count[0]]
+  for i in range(len(count) - 1):
     if ranges[i] > 0:
-      scaled.append(float(coeff[i + 1] - means[i]) / ranges[i])
+      scaled.append(float(count[i + 1] - means[i]) / ranges[i])
     else:
       scaled.append(0)
   return scaled
 
 def rank(A, tol=1e-8):
-  s = numpy.svd(numpy.array(A), compute_uv=0)
+  s = numpy.linalg.svd(numpy.array(A), compute_uv=0)
   return numpy.sum(numpy.where(s > tol, 1, 0))
 
+def tfidf(counts, features):
+  tf = []
+  df = {}
+  for count in counts:
+    term_freq = {}
+    size = 0
+    for i in xrange(len(count[1:])):
+      if count[i] > 0:
+        term_freq[features[i]] = count[i + 1]
+        size += count[i]
+        if features[i] in df:
+          df[features[i]] += 1
+        else:
+          df[features[i]] = 1
+    tf.append((size, term_freq))
+  sums = {}
+  for (size, term_freq) in tf:
+    for feature, count in term_freq.items():
+      tfidf_val = float(count) / size * math.log(float(len(counts) - 1) / df[feature])
+      if feature in sums:
+        sums[feature] += tfidf_val
+      else:
+        sums[feature] = tfidf_val
+  return sums
+
 def scoring(line, all_features, means, ranges, x):
-  return (numpy.array(scale(coeff_row(feature_row(line), all_features), means, ranges)) * x).sum()
+  return (numpy.array(scale(count_row(feature_row(line), all_features), means, ranges)) * x).sum()
 
 lines = open("ratings.txt").readlines()
 scores = []
@@ -58,12 +84,14 @@ for s in features:
   for t in s:
     all_features.add(t)
 all_features_ordered = list(all_features)
-coeffs = [coeff_row(feature, all_features_ordered) for feature in features]
-coeffs_rank = rank(coeffs)
-means, ranges = feature_scale(coeffs)
-coeffs = numpy.array([scale(coeff, means, ranges) for coeff in coeffs])
+counts = [count_row(feature, all_features_ordered) for feature in features]
+counts_rank = rank(counts)
+tfidfs = tfidf(counts, all_features_ordered).items()
+tfidfs.sort(key = lambda x: -x[1])
+print tfidfs
+means, ranges = feature_scale(counts)
+coeffs = numpy.array([scale(count, means, ranges) for count in counts])
 scores = numpy.array(scores)
-x, residues, rank, s = numpy.linalg.lstsq(coeffs, numpy.array(scores))
+x, _, _, _ = numpy.linalg.lstsq(coeffs, numpy.array(scores))
 test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  project accessory s01e05 beach blanket blingo ws dsr xvid  ny2  avi thread  project accessory season 1\""
 print scoring(test, all_features_ordered, means, ranges, x)
-print x
