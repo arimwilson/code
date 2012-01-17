@@ -92,6 +92,6 @@ print tfidfs
 means, ranges = feature_scale(counts)
 coeffs = numpy.array([scale(count, means, ranges) for count in counts])
 scores = numpy.array(scores)
-x, _, _, _ = numpy.linalg.lstsq(coeffs, numpy.array(scores))
+x, _, _, _ = numpy.linalg.lstsq(coeffs, scores)
 test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  project accessory s01e05 beach blanket blingo ws dsr xvid  ny2  avi thread  project accessory season 1\""
 print scoring(test, all_features_ordered, means, ranges, x)
