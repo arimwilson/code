@@ -17,7 +17,7 @@ handlers:
 - url: /tasks/.*
   script: interesaint.app
   login: admin
-- url: /backend/.*
+- url: /admin/.*
   script: interesaint.app
   login: admin
 

@@ -1,5 +1,0 @@
-backends:
-- name: learner
-  class: B1
-  options: dynamic
-

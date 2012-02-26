@@ -38,7 +38,9 @@ class Rating(db.Model):
   item = db.ReferenceProperty(Item, required = True)
   created = db.DateTimeProperty()
   interesting = db.FloatProperty()
-  predicted_interesting = db.FloatProperty()
+
+def predictInteresting(item):
+  return None
 
 def getUser(username):
   user = memcache.get("User,user:" + username)
@@ -73,7 +75,7 @@ def getPublicDate(date):
 # Convert from datastore entity to item to be sent to user.
 def getPublicItem(item):
   return { "id": item.key().id(), "rating": item.interesting,
-           "predicted_rating": item.predicted_interesting,
+           "predicted_rating": predictInteresting(item)
            "feed_title": item.feed_title,
            "retrieved": getPublicDate(item.retrieved),
            "published": getPublicDate(item.published),
@@ -99,7 +101,6 @@ class ItemHandler(webapp2.RequestHandler):
     ratings = query.fetch(20)
     for item in items:
       item.interesting = None
-      item.predicted_interesting = None
     for feed in feeds:
       for item in items:
         if item.feed.key() == feed.key():
@@ -108,7 +109,6 @@ class ItemHandler(webapp2.RequestHandler):
       for item in items:
         if rating.item.key() == item.key():
           item.interesting = rating.interesting
-          item.predicted_interesting = rating.predicted_interesting
           break
     self.response.out.write(json.dumps(
         [getPublicItem(item) for item in items]))
@@ -256,37 +256,33 @@ class CleanHandler(webapp2.RequestHandler):
     db.delete(items_to_delete)
     db.delete(ratings_to_delete)
 
-# Used for training Google Prediction API.
+# Used for testing learning hypotheses outside the bounds of AppEngine.
 # TODO(ariw): Remove.
 class RatingsHandler(webapp2.RequestHandler):
   def get(self):
-    username = users.get_current_user().nickname()
-    user = getUser(username)
-    if not user:
-      self.error(403)
-      return
-    query = Rating.all()
-    query.filter("user =", user)
-    username = "_".join(username.lower().split())
-    for rating in query:
-      if not rating.interesting:
-        continue
-      feed_title = "_".join(rating.item.feed.title.lower().split())
-      split_title = [rating.item.title.lower()]
-      for token in " ,;:-.!?\"/()[]":
-        split_title = sum((s.split(token) for s in split_title), [])
-      title = " ".join(split_title)
-      self.response.out.write("%f,\"%s\",\"%s\",\"%s\"\n" % (
-          rating.interesting, username, feed_title, title))
-
-# Passes through learning task from cron to backend.
-class LearnPassHandler(webapp2.RequestHandler):
-  def get(self):
-    pass
+    query = User.all()
+    ratings = []
+    for user in query:
+      query = Rating.all()
+      query.filter("user =", user)
+      username = "_".join(username.lower().split())
+      for rating in query:
+        if not rating.interesting:
+          continue
+        feed_title = "_".join(rating.item.feed.title.lower().split())
+        split_title = [rating.item.title.lower()]
+        for token in " ,;:-.!?\"/()[]":
+          split_title = sum((s.split(token) for s in split_title), [])
+        title = " ".join(split_title)
+        ratings.append("%f,\"%s\",\"%s\",\"%s\"\n" % (
+            rating.interesting, username, feed_title, title))
+    self.response.out.write("".join(ratings))
 
 # Generates a model to predict user ratings.
 class LearnHandler(webapp2.RequestHandler):
   def get(self):
+    # For each user, build a kNN model based on the most recent n items.
+
     pass
 
 app = webapp2.WSGIApplication([
@@ -297,7 +293,6 @@ app = webapp2.WSGIApplication([
     ('/script/rate', RateHandler),
     ('/tasks/update', UpdateHandler),
     ('/tasks/clean', CleanHandler),
-    ('/tasks/learn', LearnPassHandler),
-    ('/backend/ratings', RatingsHandler),
-    ('/backend/learn', LearnHandler),
+    ('/tasks/learn', LearnHandler),
+    ('/admin/ratings', RatingsHandler),
   ])

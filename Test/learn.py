@@ -79,11 +79,11 @@ def word_counts(all_features):
       all_features_dict[x] += 1
   print sorted(all_features_dict.iteritems(), key=lambda x: -x[1])
 
+# Break input into easy-to-use Python lists and list-of-lists.
 lines = open("ratings.txt").readlines()
 scores = []
 features = []
 for line in lines:
-  print line
   score, feature = break_row(line)
   scores.append(score)
   features.append(feature)
@@ -91,15 +91,32 @@ all_features = set()
 for s in features:
   for t in s:
     all_features.add(t)
-all_features_ordered = list(all_features)
-counts = [count_row(feature, all_features_ordered) for feature in features]
-counts_rank = rank(counts)
-tfidfs = tfidf(counts, all_features_ordered).items()
-tfidfs.sort(key = lambda x: -x[1])
-print tfidfs
-means, ranges = feature_scale(counts)
-coeffs = numpy.array([scale(count, means, ranges) for count in counts])
-scores = numpy.array(scores)
-x, _, _, _ = numpy.linalg.lstsq(coeffs, scores)
+
+# Now build regressor matrix for linear regression.
+# all_features_ordered = list(all_features)
+# counts = [count_row(feature, all_features_ordered) for feature in features]
+# counts_rank = rank(counts)
+
+# Build sum-of-term frequency inverse document frequency counts for each term in
+# the input. Was going to try to use this to remove overtly overused/underused
+# terms to reduce feature space (since we have more features than examples...)
+# and make linear regression less underdetermined and thus avoid the need for
+# regularization. Doesn't seem to work the way I thought it did though.
+# tfidfs = tfidf(counts, all_features_ordered).items()
+# tfidfs.sort(key = lambda x: -x[1])
+
+# Scale regressor matrix into common ranges (-1 <= x <= 1) using mean
+# normalization. Really only helpful for gradient descent, but I thought it
+# would avoid my underdetermined problems. Nope.
+# means, ranges = feature_scale(counts)
+# coeffs = numpy.array([scale(count, means, ranges) for count in counts])
+# scores = numpy.array(scores)
+
+# Solve the least squares problem using numpy.
+#x, _, _, _ = numpy.linalg.lstsq(coeffs, scores)
+
+# Build kNN model with filtering.
+
+# Run my test cases. Should come up with high and low score, respectively.
 test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  parks and recreation 417 hdtv lol mp4 thread  parks and recreation   season 4\""
 print scoring(test, all_features_ordered, means, ranges, x)
