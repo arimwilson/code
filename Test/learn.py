@@ -72,10 +72,18 @@ def tfidf(counts, features):
 def scoring(line, all_features, means, ranges, x):
   return (numpy.array(scale(count_row(feature_row(line), all_features), means, ranges)) * x).sum()
 
+def word_counts(all_features):
+  all_features_dict = dict((feature, 0) for feature in all_features)
+  for feature in features:
+    for x in feature:
+      all_features_dict[x] += 1
+  print sorted(all_features_dict.iteritems(), key=lambda x: -x[1])
+
 lines = open("ratings.txt").readlines()
 scores = []
 features = []
 for line in lines:
+  print line
   score, feature = break_row(line)
   scores.append(score)
   features.append(feature)
@@ -93,5 +101,5 @@ means, ranges = feature_scale(counts)
 coeffs = numpy.array([scale(count, means, ranges) for count in counts])
 scores = numpy.array(scores)
 x, _, _, _ = numpy.linalg.lstsq(coeffs, scores)
-test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  project accessory s01e05 beach blanket blingo ws dsr xvid  ny2  avi thread  project accessory season 1\""
+test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  parks and recreation 417 hdtv lol mp4 thread  parks and recreation   season 4\""
 print scoring(test, all_features_ordered, means, ranges, x)
