@@ -272,7 +272,7 @@ def getFeatureCounts(learning_items, limit=-1):
       else:
         feature_counts[feature] = 1
   feature_counts = sorted(
-      feature_counts.itemitems(), key=lambda x: -x[1])
+      feature_counts.iteritems(), key=lambda x: -x[1])
   if limit < 0:
     return dict(feature_counts)
   else:
