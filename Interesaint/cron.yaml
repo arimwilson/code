@@ -4,7 +4,7 @@ cron:
   schedule: every 90 minutes
 - description: clean
   url: /tasks/clean
-  schedule: every day
+  schedule: every 24 hours
 - description: learn
   url: /tasks/learn
-  schedule: every 2 days
+  schedule: every 24 hours

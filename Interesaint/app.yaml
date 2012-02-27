@@ -21,7 +21,3 @@ handlers:
   script: interesaint.app
   login: admin
 
-libraries:
-- name: numpy
-  version: latest
-

@@ -4,4 +4,9 @@ indexes:
   - name: feed
   - name: updated
     direction: desc
+- kind: Rating
+  properties:
+  - name: user
+  - name: created
+    direction: desc
 

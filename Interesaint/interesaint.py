@@ -75,7 +75,7 @@ def getPublicDate(date):
 # Convert from datastore entity to item to be sent to user.
 def getPublicItem(item):
   return { "id": item.key().id(), "rating": item.interesting,
-           "predicted_rating": predictInteresting(item)
+           "predicted_rating": predictInteresting(item),
            "feed_title": item.feed_title,
            "retrieved": getPublicDate(item.retrieved),
            "published": getPublicDate(item.published),
@@ -256,33 +256,85 @@ class CleanHandler(webapp2.RequestHandler):
     db.delete(items_to_delete)
     db.delete(ratings_to_delete)
 
-# Used for testing learning hypotheses outside the bounds of AppEngine.
-# TODO(ariw): Remove.
-class RatingsHandler(webapp2.RequestHandler):
+def getLearningItem(item):
+  feed_title = "_".join(item.feed.title.lower().split())
+  title = [item.title.lower()]
+  for token in " ,;:-.!?\"/()[]":
+    title = sum((t.split(token) for t in title), [])
+  return [feed_title] + title
+
+def getFeatureCounts(learning_items, limit=-1):
+  feature_counts = {}
+  for learning_item in learning_items:
+    for feature in learning_item:
+      if feature in feature_counts:
+        feature_counts[feature] += 1
+      else:
+        feature_counts[feature] = 1
+  feature_counts = sorted(
+      feature_counts.itemitems(), key=lambda x: -x[1])
+  if limit < 0:
+    return dict(feature_counts)
+  else:
+    return dict(feature_counts[:limit])
+
+def getLimitedItem(learning_item, feature_counts):
+  limited_item = {}
+  for feature in learning_item:
+    if feature in feature_counts:
+      if feature in limited_item:
+        limited_item[feature] += 1
+      else:
+        limited_item[feature] = 1
+  return limited_item
+
+# Generates a model to predict user ratings.
+class LearnHandler(webapp2.RequestHandler):
+  def get(self):
+    # For each user, build a nearest neighbor model based on the most recent
+    # ratings' feeds and titles.
+    NUM_ITEMS = 100
+    NUM_FEATURES = 100
+    query = User.all()
+    ratings = []
+    limited_items = []
+    for user in query:
+      query = Rating.all()
+      query.filter("user =", user).order("-created")
+      ratings = query.fetch(NUM_ITEMS)
+      learning_items = [getLearningItem(rating.item) for rating in ratings]
+      feature_counts = getFeatureCounts(learning_items, NUM_FEATURES)
+      limited_items = []
+      for i in range(NUM_ITEMS):
+        limited_items.append(
+            (ratings[i].interesting,
+             getLimitedItem(learning_items[i], feature_counts)))
+      self.response.out.write(str(limited_items))
+
+# List ratings and their items. Used for training learning hypotheses outside the
+# bounds of AppEngine.
+class RatingsListingHandler(webapp2.RequestHandler):
   def get(self):
     query = User.all()
     ratings = []
     for user in query:
       query = Rating.all()
       query.filter("user =", user)
-      username = "_".join(username.lower().split())
+      username = "_".join(user.username.lower().split())
       for rating in query:
         if not rating.interesting:
           continue
-        feed_title = "_".join(rating.item.feed.title.lower().split())
-        split_title = [rating.item.title.lower()]
-        for token in " ,;:-.!?\"/()[]":
-          split_title = sum((s.split(token) for s in split_title), [])
-        title = " ".join(split_title)
-        ratings.append("%f,\"%s\",\"%s\",\"%s\"\n" % (
-            rating.interesting, username, feed_title, title))
-    self.response.out.write("".join(ratings))
+        learning_item = getLearningItem(rating.item)
+        ratings.append("%f,\"%s\",\"%s\",\"%s\"" % (
+            rating.interesting, username, learning_item[0],
+            " ".join(learning_item[1:])))
+    self.response.out.write("\n".join(ratings))
 
-# Generates a model to predict user ratings.
-class LearnHandler(webapp2.RequestHandler):
+# List items (up to 100) to test learning hypotheses outside the bounds of
+# AppEngine.
+class ItemsListingHandler(webapp2.RequestHandler):
   def get(self):
-    # For each user, build a kNN model based on the most recent n items.
-
+    # TODO(ariw): Fill out.
     pass
 
 app = webapp2.WSGIApplication([
@@ -294,5 +346,6 @@ app = webapp2.WSGIApplication([
     ('/tasks/update', UpdateHandler),
     ('/tasks/clean', CleanHandler),
     ('/tasks/learn', LearnHandler),
-    ('/admin/ratings', RatingsHandler),
+    ('/admin/ratings', RatingsListingHandler),
+    ('/admin/items', ItemsListingHandler),
   ])
