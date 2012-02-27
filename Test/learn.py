@@ -16,10 +16,10 @@ def count_row(features, all_features):
     count.append(features.count(feature))
   return count
 
-def feature_scale(countss):
+def feature_scale(counts):
   mins = [1000] * (len(counts[0]) - 1)
-  maxes = [-1000] * (len(countss[0]) - 1)
-  sums = [0] * (len(countss[0]) - 1)
+  maxes = [-1000] * (len(counts[0]) - 1)
+  sums = [0] * (len(counts[0]) - 1)
   for count in counts:
     for i in range(len(count) - 1):
       sums[i] += count[i + 1]
@@ -69,15 +69,61 @@ def tfidf(counts, features):
         sums[feature] = tfidf_val
   return sums
 
-def scoring(line, all_features, means, ranges, x):
+def linear_scoring(line, all_features, means, ranges, x):
   return (numpy.array(scale(count_row(feature_row(line), all_features), means, ranges)) * x).sum()
 
-def word_counts(all_features):
+def feature_counts(all_features, features):
   all_features_dict = dict((feature, 0) for feature in all_features)
   for feature in features:
     for x in feature:
       all_features_dict[x] += 1
-  print sorted(all_features_dict.iteritems(), key=lambda x: -x[1])
+  return sorted(all_features_dict.iteritems(), key=lambda x: -x[1])
+
+def get_limited_instance(instance, features):
+  limited_instance = {}
+  for feature in instance:
+    if feature in features:
+      if feature in limited_instance:
+        limited_instance[feature] += 1
+      else:
+        limited_instance[feature] = 1
+  return limited_instance
+
+# TODO(ariw): Shouldn't this also count diffs from the neighbor onto the
+# instance?
+def nearest_score(instance, neighbor):
+  score = 0
+  for feature in instance:
+    if feature in neighbor:
+      score += instance[feature] - neighbor[feature]
+    else:
+      score += instance[feature]
+  for feature in neighbor:
+    if feature in instance:
+      score += neighbor[feature] - instance[feature]
+    else:
+      score += neighbor[feature]
+  return score
+
+def nearest_scoring(line, neighbors, features):
+  instance_row = feature_row(line)
+  instance = get_limited_instance(instance_row, features)
+  nearest_neighbor = (9998, None)
+  next_nearest_neighbor = (9999, None)
+  for neighbor in neighbors:
+    score = nearest_score(instance, neighbor[1])
+    if score <= (len(instance_row) + sum(y for (x, y) in neighbor[1].iteritems())) / 2:
+      if score < nearest_neighbor[0]:
+        next_nearest_neighbor = nearest_neighbor
+        nearest_neighbor = (score, neighbor)
+      elif score < next_nearest_neighbor[0]:
+        next_nearest_neighbor = (score, neighbor)
+  if nearest_neighbor[1] == None and next_nearest_neighbor[1] == None:
+    return None
+  elif next_nearest_neighbor[1] == None:
+    return nearest_neighbor[1][0]
+  else:
+    return (nearest_neighbor[1][0] + next_nearest_neighbor[1][0]) / 2
 
 # Break input into easy-to-use Python lists and list-of-lists.
 lines = open("ratings.txt").readlines()
@@ -116,7 +162,26 @@ for s in features:
 #x, _, _, _ = numpy.linalg.lstsq(coeffs, scores)
 
 # Build kNN model with filtering.
+# Assume last entries in features are newest, take the latest 100 of them,
+# encode only the most-common 75 features in a dictionary from word->count.
+# When scoring, do an average of 3 nearest neighbors search with filtering (if
+# no neighbor matches more than 50% of features, don't return a score). Metric
+# is number of words not matched.
+limited_features = [x for (x, y) in feature_counts(all_features, features)[:75]]
+instances = features[-100:]
+instances_score = scores[-100:]
+limited_instances = []
+for i in range(100):
+  limited_instances.append((
+      instances_score[i], get_limited_instance(instances[i], limited_features)))
 
-# Run my test cases. Should come up with high and low score, respectively.
-test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  parks and recreation 417 hdtv lol mp4 thread  parks and recreation   season 4\""
-print scoring(test, all_features_ordered, means, ranges, x)
+# Run my test cases. Should come up with high score.
+# test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  parks and recreation 420 hdtv lol mp4 thread  parks and recreation   season 4\""
+
+# Linear regression.
+# print linear_scoring(test, all_features_ordered, means, ranges, x)
+
+# kNN.
+new_lines = [line.split(",", 1) for line in lines[:25]]
+for (score, line) in new_lines:
+  print float(score), nearest_scoring(line, limited_instances, limited_features)
