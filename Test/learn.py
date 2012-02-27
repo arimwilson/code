@@ -125,63 +125,71 @@ def nearest_scoring(line, neighbors, features):
   else:
     return (nearest_neighbor[1][0] + next_nearest_neighbor[1][0]) / 2
 
-# Break input into easy-to-use Python lists and list-of-lists.
-lines = open("ratings.txt").readlines()
-scores = []
-features = []
-for line in lines:
-  score, feature = break_row(line)
-  scores.append(score)
-  features.append(feature)
-all_features = set()
-for s in features:
-  for t in s:
-    all_features.add(t)
+def main():
+  # Break input into easy-to-use Python lists and list-of-lists.
+  lines = open("ratings.txt").readlines()
+  scores = []
+  features = []
+  for line in lines:
+    score, feature = break_row(line)
+    scores.append(score)
+    features.append(feature)
+  all_features = set()
+  for s in features:
+    for t in s:
+      all_features.add(t)
 
-# Now build regressor matrix for linear regression.
-# all_features_ordered = list(all_features)
-# counts = [count_row(feature, all_features_ordered) for feature in features]
-# counts_rank = rank(counts)
+  # Now build regressor matrix for linear regression.
+  # all_features_ordered = list(all_features)
+  # counts = [count_row(feature, all_features_ordered) for feature in features]
+  # counts_rank = rank(counts)
 
-# Build sum-of-term frequency inverse document frequency counts for each term in
-# the input. Was going to try to use this to remove overtly overused/underused
-# terms to reduce feature space (since we have more features than examples...)
-# and make linear regression less underdetermined and thus avoid the need for
-# regularization. Doesn't seem to work the way I thought it did though.
-# tfidfs = tfidf(counts, all_features_ordered).items()
-# tfidfs.sort(key = lambda x: -x[1])
+  # Build sum-of-term frequency inverse document frequency counts for each term in
+  # the input. Was going to try to use this to remove overtly overused/underused
+  # terms to reduce feature space (since we have more features than examples...)
+  # and make linear regression less underdetermined and thus avoid the need for
+  # regularization. Doesn't seem to work the way I thought it did though.
+  # tfidfs = tfidf(counts, all_features_ordered).items()
+  # tfidfs.sort(key = lambda x: -x[1])
 
-# Scale regressor matrix into common ranges (-1 <= x <= 1) using mean
-# normalization. Really only helpful for gradient descent, but I thought it
-# would avoid my underdetermined problems. Nope.
-# means, ranges = feature_scale(counts)
-# coeffs = numpy.array([scale(count, means, ranges) for count in counts])
-# scores = numpy.array(scores)
+  # Scale regressor matrix into common ranges (-1 <= x <= 1) using mean
+  # normalization. Really only helpful for gradient descent, but I thought it
+  # would avoid my underdetermined problems. Nope.
+  # means, ranges = feature_scale(counts)
+  # coeffs = numpy.array([scale(count, means, ranges) for count in counts])
+  # scores = numpy.array(scores)
 
-# Solve the least squares problem using numpy.
-#x, _, _, _ = numpy.linalg.lstsq(coeffs, scores)
+  # Solve the least squares problem using numpy.
+  #x, _, _, _ = numpy.linalg.lstsq(coeffs, scores)
 
-# Build kNN model with filtering.
-# Assume last entries in features are newest, take the latest 100 of them,
-# encode only the most-common 75 features in a dictionary from word->count.
-# When scoring, do an average of 3 nearest neighbors search with filtering (if
-# no neighbor matches more than 50% of features, don't return a score). Metric
-# is number of words not matched.
-limited_features = [x for (x, y) in feature_counts(all_features, features)[:75]]
-instances = features[-100:]
-instances_score = scores[-100:]
-limited_instances = []
-for i in range(100):
-  limited_instances.append((
-      instances_score[i], get_limited_instance(instances[i], limited_features)))
+  # Build kNN model with filtering.
+  # Assume last entries in features are newest, take the latest 125 of them,
+  # encode only the most-common 50 features in a dictionary from word->count.
+  # When scoring, do an average of 2 nearest neighbors search with filtering (if
+  # no neighbor matches more than 50% of features, don't return a score). Metric
+  # is number of words not matched.
+  limited_features = [x for (x, y) in feature_counts(all_features, features)[:50]]
+  instances = features[-125:]
+  instances_score = scores[-125:]
+  limited_instances = []
+  for i in range(125):
+    limited_instances.append((
+        instances_score[i], get_limited_instance(instances[i], limited_features)))
 
-# Run my test cases. Should come up with high score.
-# test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  parks and recreation 420 hdtv lol mp4 thread  parks and recreation   season 4\""
+  # Run my test cases.
 
-# Linear regression.
-# print linear_scoring(test, all_features_ordered, means, ranges, x)
+  # Linear regression.
+  # test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  parks and recreation 420 hdtv lol mp4 thread  parks and recreation   season 4\""
+  # print linear_scoring(test, all_features_ordered, means, ranges, x)
 
-# kNN.
-new_lines = [line.split(",", 1) for line in lines[:25]]
-for (score, line) in new_lines:
-  print float(score), nearest_scoring(line, limited_instances, limited_features)
+  # kNN.
+  new_lines = [line.split(",", 1) for line in lines[:50]]
+  total_error = 0
+  for (score, line) in new_lines:
+    nearest_score = nearest_scoring(line, limited_instances, limited_features)
+    print float(score), nearest_score
+    total_error += abs(float(score) - nearest_score)
+  print total_error
+
+if __name__ == "__main__":
+  main()
