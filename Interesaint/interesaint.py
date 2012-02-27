@@ -56,7 +56,7 @@ def getLearningItem(item):
 def getLimitedItem(learning_item, feature_counts):
   limited_item = {}
   for feature in learning_item:
-    if feature in feature_counts:
+    if not feature_counts or feature in feature_counts:
       if feature in limited_item:
         limited_item[feature] += 1
       else:
@@ -81,13 +81,12 @@ def predict(prediction_model, item):
   if not prediction_model:
     return None
   # Build a score based on the two nearest neighbors subject to filtering.
-  feature_counts, limited_items = prediction_model
-  limited_item = getLimitedItem(getLearningItem(item), feature_counts)
+  limited_item = getLimitedItem(getLearningItem(item), None)
   nearest_neighbor = (9998, None)
   next_nearest_neighbor = (9999, None)
-  for neighbor in limited_items:
+  for neighbor in prediction_model:
     score = getNearestScore(limited_item, neighbor[1])
-    if score <= 5:
+    if score <= 7:
       if score < nearest_neighbor[0]:
         next_nearest_neighbor = nearest_neighbor
         nearest_neighbor = (score, neighbor)
@@ -368,7 +367,7 @@ class LearnHandler(webapp2.RequestHandler):
         limited_items.append(
             (ratings[i].interesting,
              getLimitedItem(learning_items[i], feature_counts)))
-      pickled = pickle.dumps((feature_counts, limited_items), 2)
+      pickled = pickle.dumps(limited_items, 2)
       output = StringIO.StringIO()
       gzip.GzipFile(fileobj=output, mode="wb").write(pickled)
       query = PredictionModel.all()
@@ -378,7 +377,7 @@ class LearnHandler(webapp2.RequestHandler):
         prediction_model = PredictionModel(
             user = user, model = output.getvalue())
       else:
-        prediction_model.model = model
+        prediction_model.model = output.getvalue()
       memcache.delete("PredictionModel,user:" + user.username)
       prediction_model.put()
 
