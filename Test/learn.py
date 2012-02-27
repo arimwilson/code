@@ -89,8 +89,6 @@ def get_limited_instance(instance, features):
         limited_instance[feature] = 1
   return limited_instance
 
-# TODO(ariw): Shouldn't this also count diffs from the neighbor onto the
-# instance?
 def nearest_score(instance, neighbor):
   score = 0
   for feature in instance:

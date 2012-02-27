@@ -1,8 +1,11 @@
 import datetime
 import feedparser
+import gzip
 import json
 import logging
+import pickle
 import re
+import StringIO
 import webapp2
 
 from google.appengine.api import memcache
@@ -39,8 +42,63 @@ class Rating(db.Model):
   created = db.DateTimeProperty()
   interesting = db.FloatProperty()
 
-def predictInteresting(item):
-  return None
+class PredictionModel(db.Model):
+  user = db.ReferenceProperty(User, required = True)
+  model = db.BlobProperty()
+
+def getLearningItem(item):
+  feed_title = "_".join(item.feed.title.lower().split())
+  title = [item.title.lower()]
+  for token in " ,;:-.!?\"/()[]":
+    title = sum((t.split(token) for t in title), [])
+  return [feed_title] + title
+
+def getLimitedItem(learning_item, feature_counts):
+  limited_item = {}
+  for feature in learning_item:
+    if feature in feature_counts:
+      if feature in limited_item:
+        limited_item[feature] += 1
+      else:
+        limited_item[feature] = 1
+  return limited_item
+
+def getNearestScore(limited_item, neighbor):
+  score = 0
+  for feature in limited_item:
+    if feature in neighbor:
+      score += limited_item[feature] - neighbor[feature]
+    else:
+      score += limited_item[feature]
+  for feature in neighbor:
+    if feature in limited_item:
+      score += neighbor[feature] - limited_item[feature]
+    else:
+      score += neighbor[feature]
+  return score
+
+def predict(prediction_model, item):
+  if not prediction_model:
+    return None
+  # Build a score based on the two nearest neighbors subject to filtering.
+  feature_counts, limited_items = prediction_model
+  limited_item = getLimitedItem(getLearningItem(item), feature_counts)
+  nearest_neighbor = (9998, None)
+  next_nearest_neighbor = (9999, None)
+  for neighbor in limited_items:
+    score = getNearestScore(limited_item, neighbor[1])
+    if score <= 5:
+      if score < nearest_neighbor[0]:
+        next_nearest_neighbor = nearest_neighbor
+        nearest_neighbor = (score, neighbor)
+      elif score < next_nearest_neighbor[0]:
+        next_nearest_neighbor = (score, neighbor)
+  if nearest_neighbor[1] == None and next_nearest_neighbor[1] == None:
+    return None
+  elif next_nearest_neighbor[1] == None:
+    return nearest_neighbor[1][0]
+  else:
+    return (nearest_neighbor[1][0] + next_nearest_neighbor[1][0]) / 2
 
 def getUser(username):
   user = memcache.get("User,user:" + username)
@@ -73,14 +131,26 @@ def getPublicDate(date):
     return None
 
 # Convert from datastore entity to item to be sent to user.
-def getPublicItem(item):
+def getPublicItem(item, predicted_rating):
   return { "id": item.key().id(), "rating": item.interesting,
-           "predicted_rating": predictInteresting(item),
+           "predicted_rating": predicted_rating,
            "feed_title": item.feed_title,
            "retrieved": getPublicDate(item.retrieved),
            "published": getPublicDate(item.published),
            "updated": getPublicDate(item.updated), "title": item.title,
            "url": item.url, "content": item.content, "comments": item.comments }
+
+def getPredictionModel(user):
+  prediction_model = memcache.get("PredictionModel,user:" + user.username)
+  if prediction_model:
+    return prediction_model
+  query = PredictionModel.all()
+  query.filter("user =", user)
+  prediction_model = query.get()
+  if not prediction_model:
+    return
+  memcache.add("PredictionModel,user:" + user.username, prediction_model)
+  return prediction_model
 
 # Get the latest items for a user.
 class ItemHandler(webapp2.RequestHandler):
@@ -110,8 +180,14 @@ class ItemHandler(webapp2.RequestHandler):
         if rating.item.key() == item.key():
           item.interesting = rating.interesting
           break
-    self.response.out.write(json.dumps(
-        [getPublicItem(item) for item in items]))
+    prediction_model = getPredictionModel(user)
+    if prediction_model:
+      prediction_model = pickle.loads(gzip.GzipFile(
+          fileobj=StringIO.StringIO(prediction_model.model)).read())
+    public_items = []
+    for item in items:
+      public_items.append(getPublicItem(item, predict(prediction_model, item)))
+    self.response.out.write(json.dumps(public_items))
 
 # Get a list of user subscriptions.
 class SubscriptionHandler(webapp2.RequestHandler):
@@ -256,13 +332,6 @@ class CleanHandler(webapp2.RequestHandler):
     db.delete(items_to_delete)
     db.delete(ratings_to_delete)
 
-def getLearningItem(item):
-  feed_title = "_".join(item.feed.title.lower().split())
-  title = [item.title.lower()]
-  for token in " ,;:-.!?\"/()[]":
-    title = sum((t.split(token) for t in title), [])
-  return [feed_title] + title
-
 def getFeatureCounts(learning_items, limit=-1):
   feature_counts = {}
   for learning_item in learning_items:
@@ -277,16 +346,6 @@ def getFeatureCounts(learning_items, limit=-1):
     return dict(feature_counts)
   else:
     return dict(feature_counts[:limit])
-
-def getLimitedItem(learning_item, feature_counts):
-  limited_item = {}
-  for feature in learning_item:
-    if feature in feature_counts:
-      if feature in limited_item:
-        limited_item[feature] += 1
-      else:
-        limited_item[feature] = 1
-  return limited_item
 
 # Generates a model to predict user ratings.
 class LearnHandler(webapp2.RequestHandler):
@@ -309,10 +368,22 @@ class LearnHandler(webapp2.RequestHandler):
         limited_items.append(
             (ratings[i].interesting,
              getLimitedItem(learning_items[i], feature_counts)))
-      self.response.out.write(str(limited_items))
+      pickled = pickle.dumps((feature_counts, limited_items), 2)
+      output = StringIO.StringIO()
+      gzip.GzipFile(fileobj=output, mode="wb").write(pickled)
+      query = PredictionModel.all()
+      query.filter("user =", user)
+      prediction_model = query.get()
+      if not prediction_model:
+        prediction_model = PredictionModel(
+            user = user, model = output.getvalue())
+      else:
+        prediction_model.model = model
+      memcache.delete("PredictionModel,user:" + user.username)
+      prediction_model.put()
 
-# List ratings and their items. Used for training learning hypotheses outside the
-# bounds of AppEngine.
+# List ratings and their items. Used for training learning hypotheses outside
+# the bounds of AppEngine.
 class RatingsListingHandler(webapp2.RequestHandler):
   def get(self):
     query = User.all()
