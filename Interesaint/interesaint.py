@@ -156,6 +156,7 @@ class ItemHandler(webapp2.RequestHandler):
   def post(self):
     username = users.get_current_user().nickname()
     user = getUser(username)
+    logging.info(username)
     if not user:
       self.error(403)
       return
@@ -218,7 +219,7 @@ class AddHandler(webapp2.RequestHandler):
     username = users.get_current_user().nickname()
     user = getUser(username)
     if not user:
-      user = User(username = users)
+      user = User(username = username)
       user.put()
 
     query = Feed.all()
@@ -285,6 +286,11 @@ def getDateTime(time):
   if not time:
     return None
   return datetime.datetime(*time[:-3])
+
+# Return the logout link.
+class LogoutLinkHandler(webapp2.RequestHandler):
+  def post(self):
+    self.response.out.write(users.create_logout_url("/"))
 
 # Get latest items from feeds.
 class UpdateHandler(webapp2.RequestHandler):
@@ -413,6 +419,7 @@ app = webapp2.WSGIApplication([
     ('/script/add', AddHandler),
     ('/script/remove', RemoveHandler),
     ('/script/rate', RateHandler),
+    ('/script/logoutlink', LogoutLinkHandler),
     ('/tasks/update', UpdateHandler),
     ('/tasks/clean', CleanHandler),
     ('/tasks/learn', LearnHandler),
