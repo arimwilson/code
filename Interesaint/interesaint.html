@@ -114,6 +114,9 @@ $(document).ready(function() {
         "<option>" + subscriptions_[i]["title"] + "</option>");
     }
   })
+  $.post("script/logoutlink", function(data) {
+    $("#logout").append("<a href='" + data + "'>Logout</a>");
+  })
 })
 </script>
 <script type="text/javascript">
@@ -142,6 +145,8 @@ Add new subscription: <input type="text" />
 Remove subscription: <select id="remove"></select>
 <input type="submit" value="Submit" />
 </form>
+<div id="logout">
+</div>
 </body>
 </html>
 
