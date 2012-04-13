@@ -107,7 +107,6 @@ def getUser(username):
   query.filter("username =", username)
   user = query.get()
   if not user:
-    logging.info("fuck")
     return
   memcache.add("User,user:" + username, user)
   return user
