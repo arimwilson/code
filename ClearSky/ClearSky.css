@@ -1,6 +1,6 @@
 #outer {
     width: 600px;
-    margin: 0 auto; 
+    margin: 0 auto;
 }
 
 .idea {
@@ -13,7 +13,7 @@
     font-size: 1.75em;
 }
 
-.player .score {
+.idea .score {
     display: inline-block;
     width: 100px;
     text-align: right;
@@ -22,11 +22,11 @@
     color: #777;
 }
 
-.idea.selected {
+.idea .selected {
     background-color: green;
 }
 
-.idea.selected .score {
+.idea .selected .score {
     color: black;
 }
 

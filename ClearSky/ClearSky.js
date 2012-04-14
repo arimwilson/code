@@ -5,7 +5,7 @@ Ideas = new Meteor.Collection("ideas");
 
 if (Meteor.is_client) {
   Template.leaderboard.ideas = function () {
-    return Ideas.find({}, {sort: {score: -1, idea: 1}});
+    return Ideas.find({}, {sort: {score: 1, idea: 1}});
   };
 
   Template.leaderboard.selected_idea = function () {
