@@ -5,7 +5,7 @@ Ideas = new Meteor.Collection("ideas");
 
 if (Meteor.is_client) {
   Template.leaderboard.ideas = function () {
-    return Ideas.find({}, {sort: {score: 1, idea: 1}});
+    return Ideas.find({}, {sort: {score: -1, idea: 1}});
   };
 
   Template.leaderboard.selected_idea = function () {
@@ -20,7 +20,13 @@ if (Meteor.is_client) {
   Template.leaderboard.events = {
     'click input.inc': function () {
       Ideas.update(Session.get("selected_idea"), {$inc: {score: 1}});
-    }
+    },
+    'click input.delete' : function() {
+      Ideas.remove(Session.get("selected_idea"));
+    },
+    'click input.add': function () {
+      Ideas.insert({idea: $("input.new").val(), score: 1});
+    },
   };
 
   Template.idea.events = {

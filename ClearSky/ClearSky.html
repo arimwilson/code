@@ -19,6 +19,7 @@
   <div class="details">
     <div class="idea">{{selected_idea}}</div>
     <input type="button" class="inc" value="Give 1 point" />
+    <input type="button" class="delete" value="Delete idea" />
   </div>
   {{/if}}
 
@@ -26,8 +27,8 @@
   <div class="none">Click an idea to select</div>
   {{/unless}}
 
-  <div class="new">
-    <input type="text" class="new_idea" />
+  <div class="none">
+    <input type="text" class="new" />
     <input type="button" class="add" value="Add idea" />
   </div>
 </template>
