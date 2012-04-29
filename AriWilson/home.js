@@ -56,7 +56,7 @@ HOME.animate = function() {
 
   // Adjust where we're looking based on the mouse.
   var look = HOME.camera.look;
-
+  // TODO(ariw): look.setRotationFromAxis()?
   look.x = Math.cos(Math.atan2(look.x, look.y) +
                     HOME.horizontalRotate * 2 * Math.Pi / 360);
   look.y = Math.sin(Math.atan2(look.x, look.y) +
