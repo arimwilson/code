@@ -9,4 +9,6 @@ handlers:
   upload: index.html
 - url: /(.*\.js)
   static_files: \1
-  upload: /(.*\.js)
+  upload: .*\.js
+- url: /backend
+  script: _go_app
