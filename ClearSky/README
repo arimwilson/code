@@ -1,1 +1,0 @@
-The ClearSky application runs using Meteor (http://www.meteor.com). To get started, please install Meteor and run (in the enclosing directory) "meteor create ClearSky", replacing the generated ClearSky.* files with the ones from this repository. Then just run "meteor" in the ClearSky directory to start a local server.
