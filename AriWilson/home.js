@@ -10,7 +10,7 @@ function start() {
     800 / 600,      // Aspect ratio
     0.1,            // Near plane
     10000           // Far plane
- );
+  );
   camera.position.set(-15, 10, 10);
   camera.lookAt(scene.position);
 
