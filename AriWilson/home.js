@@ -6,13 +6,13 @@ HOME.keydown = function(event) {
     HOME.horizontalSpeed = -1;
     return false;
   } else if (event.keyCode == 38) {  // up
-    HOME.forwardSpeed = 1;
+    HOME.forwardSpeed = -1;
     return false;
   } else if (event.keyCode == 39) {  // right
     HOME.horizontalSpeed = 1;
     return false;
   } else if (event.keyCode == 40) { // down
-    HOME.forwardSpeed = -1;
+    HOME.forwardSpeed = 1;
     return false;
   }
 }
@@ -59,11 +59,10 @@ HOME.animate = function() {
   look.z = ;*/
   HOME.horizontalRotate = 0;
   HOME.verticalRotate = 0;
-  look = HOME.look.clone();
 
   // Adjust where we are based on the keyboard.
-  HOME.camera.translate(HOME.forwardSpeed, look);
-  // TODO(ariw): Horizontal?
+  HOME.camera.translateZ(HOME.forwardSpeed);
+  HOME.camera.translateX(HOME.horizontalSpeed);
 
   // Render the scene.
   HOME.renderer.render(HOME.scene, HOME.camera);
@@ -86,7 +85,7 @@ HOME.start = function() {
     0.1,  // Near plane
     10000  // Far plane
   );
-  HOME.camera.position.set(0, 30, 30);
+  HOME.camera.position.set(20, 20, 20);
   HOME.camera.lookAt(HOME.scene.position);
   HOME.look = new THREE.Vector3();
   HOME.look.sub(HOME.scene.position, HOME.camera.position);
