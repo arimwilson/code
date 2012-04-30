@@ -3,32 +3,26 @@ var HOME = {
 
 HOME.keydown = function(event) {
   if (event.keyCode == 37) {  // left
-    HOME.horizontalSpeed -= 1;
+    HOME.horizontalSpeed = -1;
     return false;
   } else if (event.keyCode == 38) {  // up
-    HOME.forwardSpeed += 1;
+    HOME.forwardSpeed = 1;
     return false;
   } else if (event.keyCode == 39) {  // right
-    HOME.horizontalSpeed += 1;
+    HOME.horizontalSpeed = 1;
     return false;
   } else if (event.keyCode == 40) { // down
-    HOME.forwardSpeed -= 1;
+    HOME.forwardSpeed = -1;
     return false;
   }
 }
 
 HOME.keyup = function(event) {
-  if (event.keyCode == 37) {  // left
-    HOME.horizontalSpeed += 1;
+  if (event.keyCode == 37 || event.keyCode == 39) {  // left/right
+    HOME.horizontalSpeed = 0;
     return false;
-  } else if (event.keyCode == 38) {  // up
-    HOME.forwardSpeed -= 1;
-    return false;
-  } else if (event.keyCode == 39) {  // right
-    HOME.horizontalSpeed -= 1;
-    return false;
-  } else if (event.keyCode == 40) { // down
-    HOME.forwardSpeed += 1;
+  } else if (event.keyCode == 38 || event.keyCode == 40) {  // up/down
+    HOME.forwardSpeed = 0;
     return false;
   }
 }
@@ -47,28 +41,29 @@ HOME.mousemove = function(event) {
 HOME.animate = function() {
   // See how much time has passed since the last frame.
   var time = Date.now();
-  if (!HOME.oldTime) {
-    HOME.oldTime = time;
-    return;
+  var timeDiff = 0;
+  if (HOME.oldTime) {
+    timeDiff = time - HOME.oldTime;
   }
-  var timeDiff = time - HOME.oldTime;
   HOME.oldTime = time;
 
   // Adjust where we're looking based on the mouse.
-  var look = HOME.camera.look;
-  // TODO(ariw): look.setRotationFromAxis()?
+  var look = HOME.look;
+  /* TODO(ariw): look.setRotationFromAxis()?
+  var rotation = new Matrix4();
+
   look.x = Math.cos(Math.atan2(look.x, look.y) +
                     HOME.horizontalRotate * 2 * Math.Pi / 360);
   look.y = Math.sin(Math.atan2(look.x, look.y) +
                     HOME.horizontalRotate * 2 * Math.Pi / 360);
-  look.z = ;
-  HOME.camera.lookAt(look);
+  look.z = ;*/
   HOME.horizontalRotate = 0;
   HOME.verticalRotate = 0;
+  look = HOME.look.clone();
 
   // Adjust where we are based on the keyboard.
-  var position = HOME.camera.position;
-  // TODO(ariw): Update HOME.camera.position.
+  HOME.camera.translate(HOME.forwardSpeed, look);
+  // TODO(ariw): Horizontal?
 
   // Render the scene.
   HOME.renderer.render(HOME.scene, HOME.camera);
@@ -80,7 +75,7 @@ HOME.start = function() {
   HOME.width = document.body.clientWidth;
   HOME.height = document.body.clientHeight;
   HOME.renderer.setSize(HOME.width, HOME.height);
-  document.body.appendChild(HOME.renderer.domElement);
+  $(document.body).append(HOME.renderer.domElement);
 
   // Set up the initial scene.
   HOME.scene = new THREE.Scene();
@@ -91,8 +86,10 @@ HOME.start = function() {
     0.1,  // Near plane
     10000  // Far plane
   );
-  HOME.camera.position.set(0, 0, 30);
-  HOME.camera.look = HOME.scene.position.clone().normalize();
+  HOME.camera.position.set(0, 30, 30);
+  HOME.camera.lookAt(HOME.scene.position);
+  HOME.look = new THREE.Vector3();
+  HOME.look.sub(HOME.scene.position, HOME.camera.position);
 
   HOME.scene.add(HOME.camera);
 
@@ -106,13 +103,16 @@ HOME.start = function() {
   light.position.set(10, 0, 10);
   HOME.scene.add(light);
 
-  HOME.animate();
-
-  // Keys ready to press.
+  HOME.horizontalRotate = 0;
+  HOME.verticalRotate = 0;
   HOME.horizontalSpeed = 0;
   HOME.forwardSpeed = 0;
-  $("document").keydown(HOME.keydown);
-  $("document").keyup(HOME.keyup);
-  $("document").mousemove(HOME.mousemove);
+
+  // Keys ready to press.
+  $(document).keydown(HOME.keydown);
+  $(document).keyup(HOME.keyup);
+  $(document).mousemove(HOME.mousemove);
+
+  HOME.animate();
 }
 
