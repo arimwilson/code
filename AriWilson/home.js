@@ -38,6 +38,8 @@ HOME.mousemove = function(event) {
   HOME.verticalRotate += 10 * (event.pageY - HOME.pageY) / HOME.height;
 }
 
+var i = 0;
+
 HOME.animate = function() {
   // See how much time has passed since the last frame.
   var time = Date.now();
@@ -48,15 +50,27 @@ HOME.animate = function() {
   HOME.oldTime = time;
 
   // Adjust where we're looking based on the mouse.
-  var look = HOME.look;
-  /* TODO(ariw): look.setRotationFromAxis()?
-  var rotation = new Matrix4();
-
+  /*
+  var look = HOME.look.normalize();
+  if (i == 0) {
+    console.log(HOME.look.x);
+    console.log(HOME.look.y);
+    console.log(HOME.look.z);
+  }
   look.x = Math.cos(Math.atan2(look.x, look.y) +
                     HOME.horizontalRotate * 2 * Math.Pi / 360);
   look.y = Math.sin(Math.atan2(look.x, look.y) +
                     HOME.horizontalRotate * 2 * Math.Pi / 360);
-  look.z = ;*/
+  look.z = Math.sin(Math.atan2(look.x, look.z) +
+                    HOME.verticalRotate * 2 * Math.Pi / 360);
+  if (i == 0) {
+    console.log(HOME.look.x);
+    console.log(HOME.look.y);
+    console.log(HOME.look.z);
+  }
+  i = 1;
+  */
+  HOME.camera.lookAt(look.addSelf(HOME.camera.position));
   HOME.horizontalRotate = 0;
   HOME.verticalRotate = 0;
 
