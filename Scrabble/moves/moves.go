@@ -44,7 +44,7 @@ func (self *Move) Hash() uint32 {
    _ = binary.Write(buf, binary.LittleEndian, uint8(self.Start.X))
    _ = binary.Write(buf, binary.LittleEndian, uint8(self.Start.Y))
    _ = binary.Write(buf, binary.LittleEndian, uint8(self.Direction))
-   _ := binary.Write(buf, binary.LittleEndian, []byte(self.Word))
+   _ = binary.Write(buf, binary.LittleEndian, []byte(self.Word))
    return crc32.ChecksumIEEE(buf.Bytes())
 }
 
