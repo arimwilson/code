@@ -1,8 +1,8 @@
 package scrabble
 
-import ("appengine"; "appengine/user"; "container/vector";
+import ("appengine"; "appengine/user"; "sort";
         "scrabblish/cross_check"; "scrabblish/moves"; "scrabblish/trie";
-        "scrabblish/sort_with"; "scrabblish/util")
+        "scrabblish/util")
 
 // Your score without the points from the blank letter given from the value
 // retrieved from letterValue.
@@ -51,7 +51,7 @@ var iter_count = 0
 func Extend(
     c appengine.Context, dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, bonus int, crossChecks map[int] map[byte] int,
-    possibleMove moves.Move, left bool, moveList *vector.Vector) {
+    possibleMove moves.Move, left bool, moveList []moves.Move) {
   // TODO(ariw): Remove this nonsense once a work-around of Go AppEngine's
   // single-threadedness is found.
   if iter_count % 10000 == 0 {
@@ -107,7 +107,7 @@ func Extend(
       if dict.Find(placedMove.Word) {
         score = placedMove.Score
         util.Score(board, letterValues, bonus, &placedMove)
-        moveList.Push(placedMove)
+        moveList = append(moveList, placedMove)
         placedMove.Score = score
       }
       tiles[tile]--
@@ -131,8 +131,8 @@ func Extend(
 func GetMoveListAcross(
     c appengine.Context, dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, bonus int,
-    crossChecks map[int] map[byte] int) (moveList *vector.Vector) {
-  moveList = new(vector.Vector)
+    crossChecks map[int] map[byte] int) (moveList []moves.Move) {
+  moveList = make([]moves.Move, 100)
   possibleMove := moves.Move{ Word: "", Score: 0, Direction: moves.ACROSS }
   for i := 0; i < util.BOARD_SIZE; i++ {
     for j := 0; j < util.BOARD_SIZE; j++ {
@@ -144,8 +144,8 @@ func GetMoveListAcross(
         possibleMove.Start.X = i
         possibleMove.Start.Y = j - 1
         possibleMove.Word = GetExistingRightTiles(board, &possibleMove.Start)
-        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks, possibleMove,
-               true, moveList)
+        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
+               possibleMove, true, moveList)
         possibleMove.Start.Y = j + 1
         possibleMove.Word = GetExistingLeftTiles(board, &possibleMove.Start)
         Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
@@ -174,21 +174,21 @@ func GetMoveListAcross(
 }
 
 // Set Direction for all moves in moveList to direction.
-func SetDirection(direction moves.Direction, moveList *vector.Vector) {
-  for i := 0; i < moveList.Len(); i++ {
-    move := moveList.At(i).(moves.Move)
+func SetDirection(direction moves.Direction, moveList []moves.Move) {
+  for i := 0; i < len(moveList); i++ {
+    move := moveList[i]
     if move.Direction != direction {
       move.Start.X, move.Start.Y = move.Start.Y, move.Start.X
     }
     move.Direction = direction
-    moveList.Set(i, move)
+    moveList[i] = move
   }
 }
 
 // Get all possible moves on board, ordered by score, given params.
 func GetMoveList(
     c appengine.Context, dict *trie.Trie, board [][]byte, tiles map[byte] int,
-    letterValues map[byte] int, bonus int) (moveList *vector.Vector) {
+    letterValues map[byte] int, bonus int) (moveList []moves.Move) {
   transposedBoard := util.Transpose(board)
   crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, letterValues)
   moveList = GetMoveListAcross(c, dict, board, tiles, letterValues, bonus,
@@ -198,8 +198,8 @@ func GetMoveList(
   downMoveList := GetMoveListAcross(
       c, dict, transposedBoard, tiles, letterValues, bonus, downCrossChecks)
   SetDirection(moves.DOWN, downMoveList)
-  moveList.AppendVector(downMoveList)
-  sort_with.SortWith(*moveList, moves.Greater)
+  moveList = append(moveList, downMoveList...)
+  sort.Sort(moves.Moves(moveList))
   util.RemoveDuplicates(moveList)
   return
 }

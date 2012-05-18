@@ -5,7 +5,7 @@ package scrabblish
 
 import ("appengine"; "appengine/datastore"; "appengine/memcache";
         "appengine/urlfetch"; "appengine/user"; "bytes"; "encoding/binary";
-        "fmt"; "gob"; "http"; "io"; "json"; "strconv";
+        "encoding/gob"; "encoding/json"; "fmt"; "io"; "net/http"; "strconv";
         "scrabblish/scrabble"; "scrabblish/trie"; "scrabblish/util")
 
 func init() {
@@ -27,8 +27,8 @@ func save(w http.ResponseWriter, r *http.Request) {
   // Get params from request.
   err := r.ParseForm()
   if err != nil {
-    c.Errorf("Could not parse form with error: %s", err.String())
-    http.Error(w, err.String(), http.StatusInternalServerError)
+    c.Errorf("Could not parse form with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
   cur_user := user.Current(c).String()
@@ -48,8 +48,8 @@ func save(w http.ResponseWriter, r *http.Request) {
                            board)
   }
   if err != nil {
-    c.Errorf("Could not save board with error: %s", err.String())
-    http.Error(w, err.String(), http.StatusInternalServerError)
+    c.Errorf("Could not save board with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
 }
@@ -62,8 +62,8 @@ func list(w http.ResponseWriter, r *http.Request) {
   _, err := query.GetAll(c, results)
   if err != nil {
     c.Errorf("Could not retrieve boards for user %s with error: %s",
-             user.Current(c).String(), err.String())
-    http.Error(w, err.String(), http.StatusInternalServerError)
+             user.Current(c).String(), err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
   encoder := json.NewEncoder(w)
@@ -96,7 +96,7 @@ func iToB(i int32) []byte {
 func getKeys(c appengine.Context, key string) (keys []string) {
   item, err := memcache.Get(c, key);
   if err != nil {
-    c.Infof("Could not retrieve number of keys with error: %s", err.String())
+    c.Infof("Could not retrieve number of keys with error: %s", err)
     return
   }
   num := bToI(item.Value)
@@ -150,8 +150,8 @@ func solve(w http.ResponseWriter, r *http.Request) {
     client := urlfetch.Client(c)
     resp, err := client.Get("http://scrabblish.appspot.com/twl")
     if err != nil {
-      c.Errorf("Could not retrieve twl with error: %s", err.String())
-      http.Error(w, err.String(), http.StatusInternalServerError)
+      c.Errorf("Could not retrieve twl with error: %s", err.Error())
+      http.Error(w, err.Error(), http.StatusInternalServerError)
       return
     }
     defer resp.Body.Close()
@@ -160,23 +160,18 @@ func solve(w http.ResponseWriter, r *http.Request) {
     enc := gob.NewEncoder(&data)
     err = enc.Encode(*dict)
     if err != nil {
-      c.Errorf("Could not encode twl with error: %s", err.String())
+      c.Errorf("Could not encode twl with error: %s", err.Error())
     }
-    errs := memcache.SetMulti(c, splitMemcache("dict", data.Bytes()))
-    for i := 0; i < len(errs); i++ {
-      if errs[i] != nil {
-        c.Errorf("Could not cache dict chunk %d with error: %s", i,
-                 errs[i].String())
-      }
-    }
+    err = memcache.SetMulti(c, splitMemcache("dict", data.Bytes()))
+    c.Errorf("Could not cache dict chunks with error: %s", err.Error())
   } else {
     data := bytes.NewBuffer(joinMemcache(keys, items))
     dec := gob.NewDecoder(data)
     dict = new(trie.Trie)
     err := dec.Decode(dict)
     if err != nil {
-      c.Errorf("Could not decode dict with error: %s", err.String())
-      http.Error(w, err.String(), http.StatusInternalServerError)
+      c.Errorf("Could not decode dict with error: %s", err.Error())
+      http.Error(w, err.Error(), http.StatusInternalServerError)
       return
     }
   }
@@ -184,8 +179,8 @@ func solve(w http.ResponseWriter, r *http.Request) {
   // Get params from request.
   err = r.ParseForm()
   if err != nil {
-    c.Errorf("Could not parse form with error: %s", err.String())
-    http.Error(w, err.String(), http.StatusInternalServerError)
+    c.Errorf("Could not parse form with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
   board := util.ReadBoard(r.FormValue("board"))
