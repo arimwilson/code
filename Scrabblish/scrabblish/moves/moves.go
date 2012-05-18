@@ -20,7 +20,8 @@ type Location struct {
 // Hash function for Locations.
 func (self* Location) Hash() int {
    buf := new(bytes.Buffer)
-   _ = binary.Write(buf, binary.LittleEndian, []int{self.X, self.Y})
+  _ = binary.Write(buf, binary.LittleEndian, int8(self.X))
+  _ = binary.Write(buf, binary.LittleEndian, int8(self.Y))
   return int(crc32.ChecksumIEEE(buf.Bytes()))
 }
 
@@ -39,12 +40,12 @@ func (self* Move) Copy() Move {
 
 // Hash function for Moves.
 func (self *Move) Hash() uint32 {
-   buf := new(bytes.Buffer)
-   _ = binary.Write(buf, binary.LittleEndian,
-                    []int{self.Start.X, self.Start.Y, int(self.Direction)})
-   _ = binary.Write(buf, binary.LittleEndian,
-                    self.Word)
-   return crc32.ChecksumIEEE(buf.Bytes())
+  buf := new(bytes.Buffer)
+  _ = binary.Write(buf, binary.LittleEndian, uint8(self.Start.X))
+  _ = binary.Write(buf, binary.LittleEndian, uint8(self.Start.Y))
+  _ = binary.Write(buf, binary.LittleEndian, uint8(self.Direction))
+  _ = binary.Write(buf, binary.LittleEndian, []byte(self.Word))
+  return crc32.ChecksumIEEE(buf.Bytes())
 }
 
 // Equality function for Moves.

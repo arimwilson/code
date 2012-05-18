@@ -51,13 +51,14 @@ var iter_count = 0
 func Extend(
     c appengine.Context, dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, bonus int, crossChecks map[int] map[byte] int,
-    possibleMove moves.Move, left bool, moveList []moves.Move) {
+    possibleMove moves.Move, left bool) (moveList []moves.Move) {
   // TODO(ariw): Remove this nonsense once a work-around of Go AppEngine's
   // single-threadedness is found.
   if iter_count % 10000 == 0 {
     _, _ = user.LoginURL(c, "test")
   }
   iter_count++
+  moveList = make([]moves.Move, 0)
   var positionCrossChecks map[byte] int
   var existing bool
   var placedLocation moves.Location
@@ -112,13 +113,17 @@ func Extend(
       }
       tiles[tile]--
       if CanFollow(dict, placedMove.Word, tiles) {
-        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks, placedMove,
-               false, moveList)
+        moveList = append(
+            moveList,
+            Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
+                   placedMove, false)...)
       }
       if left {
         placedMove.Start.Y--
-        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks, placedMove,
-               true, moveList)
+        moveList = append(
+            moveList,
+            Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
+                   placedMove, true)...)
       }
       tiles[tile]++
     }
@@ -132,40 +137,50 @@ func GetMoveListAcross(
     c appengine.Context, dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, bonus int,
     crossChecks map[int] map[byte] int) (moveList []moves.Move) {
-  moveList = make([]moves.Move, 100)
+  moveList = make([]moves.Move, 0)
   possibleMove := moves.Move{ Word: "", Score: 0, Direction: moves.ACROSS }
   for i := 0; i < util.BOARD_SIZE; i++ {
     for j := 0; j < util.BOARD_SIZE; j++ {
       if board[i][j] == '*' {
         possibleMove.Start = moves.Location{ i, j }
-        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
-               possibleMove, true, moveList)
+        moveList = append(
+            moveList,
+            Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
+                   possibleMove, true)...)
       } else if board[i][j] >= 'A' && board[i][j] <= 'Z' {
         possibleMove.Start.X = i
         possibleMove.Start.Y = j - 1
         possibleMove.Word = GetExistingRightTiles(board, &possibleMove.Start)
-        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
-               possibleMove, true, moveList)
+        moveList = append(
+            moveList,
+            Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
+                   possibleMove, true)...)
         possibleMove.Start.Y = j + 1
         possibleMove.Word = GetExistingLeftTiles(board, &possibleMove.Start)
-        Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
-               possibleMove, false, moveList)
+        moveList = append(
+            moveList,
+            Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
+                   possibleMove, false)...)
         possibleMove.Start.Y = j
         possibleMove.Word = ""
         leftUp := moves.Location{i - 1, j - 1}
         rightUp := moves.Location{i - 1, j + 1}
         if !util.Existing(board, &leftUp) && !util.Existing(board, &rightUp) {
           possibleMove.Start.X = i - 1
-         Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
-                possibleMove, true, moveList)
+          moveList = append(
+              moveList,
+              Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
+                     possibleMove, true)...)
         }
         leftDown := moves.Location{i + 1, j - 1}
         rightDown := moves.Location{i + 1, j + 1}
         if !util.Existing(board, &leftDown) &&
            !util.Existing(board, &rightDown) {
           possibleMove.Start.X = i + 1
-          Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
-                 possibleMove, true, moveList)
+          moveList = append(
+              moveList,
+              Extend(c, dict, board, tiles, letterValues, bonus, crossChecks,
+                     possibleMove, true)...)
         }
       }
     }
