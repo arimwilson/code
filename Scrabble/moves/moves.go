@@ -40,12 +40,12 @@ func (self* Move) Copy() Move {
 
 // Hash function for Moves.
 func (self *Move) Hash() uint32 {
-   buf := new(bytes.Buffer)
-   _ = binary.Write(buf, binary.LittleEndian, uint8(self.Start.X))
-   _ = binary.Write(buf, binary.LittleEndian, uint8(self.Start.Y))
-   _ = binary.Write(buf, binary.LittleEndian, uint8(self.Direction))
-   _ = binary.Write(buf, binary.LittleEndian, []byte(self.Word))
-   return crc32.ChecksumIEEE(buf.Bytes())
+  buf := new(bytes.Buffer)
+  _ = binary.Write(buf, binary.LittleEndian, uint8(self.Start.X))
+  _ = binary.Write(buf, binary.LittleEndian, uint8(self.Start.Y))
+  _ = binary.Write(buf, binary.LittleEndian, uint8(self.Direction))
+  _ = binary.Write(buf, binary.LittleEndian, []byte(self.Word))
+  return crc32.ChecksumIEEE(buf.Bytes())
 }
 
 // Equality function for Moves.
