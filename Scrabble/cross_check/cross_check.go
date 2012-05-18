@@ -1,7 +1,7 @@
 package cross_check
 
 import ("fmt"; "strings";
-        "moves"; "trie"; "util")
+        "../moves"; "../trie"; "../util")
 
 // Entry in cross check set means some tiles are allowable vertically, with
 // given point values. No entry means all tiles are allowable for no points.

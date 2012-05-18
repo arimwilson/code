@@ -1,7 +1,7 @@
 package scrabble
 
-import ("container/vector"; "log"; "runtime/pprof"; "os";
-        "cross_check"; "flag"; "moves"; "trie"; "sort_with"; "util")
+import ("log"; "runtime/pprof"; "sort"; "os"; "../cross_check"; "flag";
+        "../moves"; "../trie"; "../util")
 
 var memProfileFlag = flag.String(
     "m", "", "Write memory profile at near-peak usage to file.")
@@ -51,7 +51,7 @@ func GetExistingRightTiles(board [][]byte, location *moves.Location) string {
 func Extend(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, bonus int, crossChecks map[int] map[byte] int,
-    possibleMove moves.Move, left bool, moveList *vector.Vector) {
+    possibleMove moves.Move, left bool, moveList []moves.Move) {
   var positionCrossChecks map[byte] int
   var existing bool
   var placedLocation moves.Location
@@ -101,7 +101,7 @@ func Extend(
       if dict.Find(placedMove.Word) {
         score = placedMove.Score
         util.Score(board, letterValues, bonus, &placedMove)
-        moveList.Push(placedMove)
+        moveList = append(moveList, placedMove)
         placedMove.Score = score
       }
       tiles[tile]--
@@ -125,8 +125,8 @@ func Extend(
 func GetMoveListAcross(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
     letterValues map[byte] int, bonus int,
-    crossChecks map[int] map[byte] int) (moveList *vector.Vector) {
-  moveList = new(vector.Vector)
+    crossChecks map[int] map[byte] int) (moveList []moves.Move) {
+  moveList = make([]moves.Move, 100)
   possibleMove := moves.Move{ Word: "", Score: 0, Direction: moves.ACROSS }
   for i := 0; i < util.BOARD_SIZE; i++ {
     for j := 0; j < util.BOARD_SIZE; j++ {
@@ -168,21 +168,21 @@ func GetMoveListAcross(
 }
 
 // Set Direction for all moves in moveList to direction.
-func SetDirection(direction moves.Direction, moveList *vector.Vector) {
-  for i := 0; i < moveList.Len(); i++ {
-    move := moveList.At(i).(moves.Move)
+func SetDirection(direction moves.Direction, moveList []moves.Move) {
+  for i := 0; i < len(moveList); i++ {
+    move := moveList[i]
     if move.Direction != direction {
       move.Start.X, move.Start.Y = move.Start.Y, move.Start.X
     }
     move.Direction = direction
-    moveList.Set(i, move)
+    moveList[i] = move
   }
 }
 
 // Get all possible moves on board, ordered by score, given params.
 func GetMoveList(
     dict *trie.Trie, board [][]byte, tiles map[byte] int,
-    letterValues map[byte] int, bonus int) (moveList *vector.Vector) {
+    letterValues map[byte] int, bonus int) (moveList []moves.Move) {
   transposedBoard := util.Transpose(board)
   crossChecks := cross_check.GetCrossChecks(dict, transposedBoard, letterValues)
   moveList = GetMoveListAcross(dict, board, tiles, letterValues, bonus,
@@ -192,8 +192,8 @@ func GetMoveList(
   downMoveList := GetMoveListAcross(
       dict, transposedBoard, tiles, letterValues, bonus, downCrossChecks)
   SetDirection(moves.DOWN, downMoveList)
-  moveList.AppendVector(downMoveList)
-  sort_with.SortWith(*moveList, moves.Greater)
+  moveList = append(moveList, downMoveList...)
+  sort.Sort(moves.Moves(moveList))
   util.RemoveDuplicates(moveList)
   if *memProfileFlag != "" {
     f, err := os.Create(*memProfileFlag)

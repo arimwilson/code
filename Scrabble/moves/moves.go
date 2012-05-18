@@ -2,7 +2,9 @@
 
 package moves
 
-import ("fmt";
+import ("bytes";
+        "encoding/binary";
+        "fmt";
         "hash/crc32")
 
 type Direction int; const (
@@ -17,7 +19,9 @@ type Location struct {
 
 // Hash function for Locations.
 func (self* Location) Hash() int {
-  return int(crc32.ChecksumIEEE([]byte(string([]int{self.X, self.Y}))))
+   buf := new(bytes.Buffer)
+   _ = binary.Write(buf, binary.LittleEndian, []int{self.X, self.Y})
+  return int(crc32.ChecksumIEEE(buf.Bytes()))
 }
 
 type Move struct {
@@ -27,11 +31,20 @@ type Move struct {
   Direction Direction
 }
 
+func (self* Move) Copy() Move {
+  newMove := new(Move)
+  *newMove = *self
+  return *newMove
+}
+
 // Hash function for Moves.
 func (self *Move) Hash() uint32 {
-   return crc32.ChecksumIEEE(
-       []byte(string([]int{self.Start.X, self.Start.Y, int(self.Direction)}) +
-              self.Word))
+   buf := new(bytes.Buffer)
+   _ = binary.Write(buf, binary.LittleEndian,
+                    []int{self.Start.X, self.Start.Y, int(self.Direction)})
+   _ = binary.Write(buf, binary.LittleEndian,
+                    self.Word)
+   return crc32.ChecksumIEEE(buf.Bytes())
 }
 
 // Equality function for Moves.
@@ -41,14 +54,25 @@ func (self *Move) Equals(other *Move) bool {
 }
 
 // Used to sort vectors of Move objects by score.
-func Greater(a, b interface{}) bool {
-  c := a.(Move)
-  d := b.(Move)
-  if c.Score > d.Score {
+type Moves []Move
+
+func (moves Moves) Len() int {
+  return len(moves)
+}
+
+func (moves Moves) Swap(i, j int) {
+  moves[i], moves[j] = moves[j], moves[i]
+}
+
+// Actually Greater, named Less for the purposes of the Sort interface.
+func (moves Moves) Less(i, j int) bool {
+  a := moves[i]
+  b := moves[j]
+  if a.Score > b.Score {
     return true
-  } else if c.Score < d.Score {
+  } else if a.Score < b.Score {
     return false
-  } else if c.Word < d.Word {
+  } else if a.Word < b.Word {
     return true
   }
   return false

@@ -7,7 +7,7 @@
 package main
 
 import ("flag"; "fmt"; "log"; "runtime/pprof"; "os";
-        "scrabble"; "util")
+        "./scrabble"; "./util")
 
 var wordListFlag = flag.String(
     "w", "twl.txt",

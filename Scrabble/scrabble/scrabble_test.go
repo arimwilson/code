@@ -1,7 +1,8 @@
 package scrabble_test
 
-import ("os"; "path/filepath"; "testing";
-        "cross_check"; "moves"; "scrabble"; "sort_with"; "trie"; "util")
+import ("os"; "path/filepath"; "sort"; "testing";
+        "../cross_check"; "../moves"; "../scrabble";
+        "../trie"; "../util")
 
 func TestBlankScore(t *testing.T) {
   if scrabble.BlankScore(10, 5, '-') != 5 {
@@ -59,14 +60,14 @@ func TestGetMoveListAcross(t *testing.T) {
 
   moveList := scrabble.GetMoveListAcross(
     dict, board, tiles, letterValues, 40, crossChecks)
-  sort_with.SortWith(*moveList, moves.Greater)
+  sort.Sort(moves.Moves(moveList))
   util.RemoveDuplicates(moveList)
-  if moveList.Len() != 4 {
+  if len(moveList) != 4 {
     util.PrintMoveList(moveList, board, 2)
-    t.Fatalf("length of move list: %d, should have been: 4", moveList.Len())
+    t.Fatalf("length of move list: %d, should have been: 4", len(moveList))
   }
-  for i := 0; i < moveList.Len(); i++ {
-    move := moveList.At(i).(moves.Move)
+  for i := 0; i < len(moveList); i++ {
+    move := moveList[i]
     if !move.Equals(&comparedMoves[i]) {
       moves.PrintMove(&move)
       moves.PrintMove(&comparedMoves[i])
@@ -94,15 +95,15 @@ func numTotalTopMoves(
     numTop int) {
   dict, tiles, letterValues := prepareRealData(tilesFlag)
   moveList := scrabble.GetMoveList(dict, board, tiles, letterValues, 40)
-  if moveList.Len() != num {
+  if len(moveList) != num {
     util.PrintMoveList(moveList, board, 2)
-    t.Errorf("length of move list: %d, should have been: %d", moveList.Len(),
+    t.Errorf("length of move list: %d, should have been: %d", len(moveList),
              num)
   }
-  topMove := moveList.At(0).(moves.Move)
+  topMove := moveList[0]
   topMoveScore := topMove.Score
   i := 1
-  for ; i < moveList.Len() && moveList.At(i).(moves.Move).Score == topMoveScore;
+  for ; i < len(moveList) && moveList[i].Score == topMoveScore;
       i++ {}
   if topMoveScore != score {
     moves.PrintMove(&topMove)
