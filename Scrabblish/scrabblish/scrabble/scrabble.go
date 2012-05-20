@@ -215,7 +215,7 @@ func GetMoveList(
   SetDirection(moves.DOWN, downMoveList)
   moveList = append(moveList, downMoveList...)
   sort.Sort(moves.Moves(moveList))
-  util.RemoveDuplicates(moveList)
+  util.RemoveDuplicates(&moveList)
   return
 }
 

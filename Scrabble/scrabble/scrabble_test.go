@@ -61,7 +61,7 @@ func TestGetMoveListAcross(t *testing.T) {
   moveList := scrabble.GetMoveListAcross(
     dict, board, tiles, letterValues, 40, crossChecks)
   sort.Sort(moves.Moves(moveList))
-  util.RemoveDuplicates(moveList)
+  util.RemoveDuplicates(&moveList)
   if len(moveList) != 4 {
     util.PrintMoveList(moveList, board, 2)
     t.Fatalf("length of move list: %d, should have been: 4", len(moveList))

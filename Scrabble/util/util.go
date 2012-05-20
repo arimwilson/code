@@ -124,16 +124,16 @@ func Score(board [][]byte, letterValues map[byte] int, bonus int,
   }
 }
 
-func RemoveDuplicates(moveList []moves.Move) {
+func RemoveDuplicates(moveList *[]moves.Move) {
   existingMoves := make(map[uint32] bool)
-  for i := 0; i < len(moveList); i++ {
-    move := moveList[i]
+  for i := 0; i < len(*moveList); i++ {
+    move := (*moveList)[i]
     hash := move.Hash()
     _, existing := existingMoves[hash]
     if !existing {
       existingMoves[hash] = true
     } else {
-      moveList = append(moveList[:i], moveList[i+1:]...)
+      *moveList = append((*moveList)[:i], (*moveList)[i+1:]...)
       i--
     }
   }
