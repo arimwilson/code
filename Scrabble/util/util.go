@@ -2,9 +2,8 @@
 
 package util
 
-import ("bufio"; "container/vector"; "fmt"; "strconv"; "strings";
-        "os";
-        "moves"; "trie")
+import ("bufio"; "fmt"; "strconv"; "strings"; "os";
+        "../moves"; "../trie")
 
 var BOARD_SIZE = 15
 
@@ -125,16 +124,16 @@ func Score(board [][]byte, letterValues map[byte] int, bonus int,
   }
 }
 
-func RemoveDuplicates(moveList *vector.Vector) {
+func RemoveDuplicates(moveList *[]moves.Move) {
   existingMoves := make(map[uint32] bool)
-  for i := 0; i < moveList.Len(); i++ {
-    move := moveList.At(i).(moves.Move)
+  for i := 0; i < len(*moveList); i++ {
+    move := (*moveList)[i]
     hash := move.Hash()
     _, existing := existingMoves[hash]
     if !existing {
       existingMoves[hash] = true
     } else {
-      moveList.Delete(i)
+      *moveList = append((*moveList)[:i], (*moveList)[i+1:]...)
       i--
     }
   }
@@ -167,11 +166,11 @@ func PrintMoveOnBoard(board [][]byte, move *moves.Move) {
   }
 }
 
-func PrintMoveList(moveList *vector.Vector, board [][]byte, numResults int) {
+func PrintMoveList(moveList []moves.Move, board [][]byte, numResults int) {
   for i := 0;
-      (numResults <= 0 || i < numResults) && i < moveList.Len(); i++ {
+      (numResults <= 0 || i < numResults) && i < len(moveList); i++ {
     fmt.Printf("%d. ", i + 1)
-    move := moveList.At(i).(moves.Move)
+    move := moveList[i]
     moves.PrintMove(&move)
     PrintMoveOnBoard(board, &move)
   }
