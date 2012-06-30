@@ -151,7 +151,28 @@ def getPredictionModel(user):
   memcache.add("PredictionModel,user:" + user.username, prediction_model)
   return prediction_model
 
-# Get the latest items for a user.
+def getItems(user, subscriptions, page):
+  feeds = tuple(subscription.feed for subscription in subscriptions)
+  query = Item.all()
+  query.filter("feed IN", feeds).order("-updated")
+  items = query.fetch(100, page % 5 * 100)
+  query = Rating.all()
+  query.filter("user =", user)
+  query.filter("item IN", tuple(items))
+  ratings = query.fetch(20)
+  for item in items:
+    item.interesting = None
+  for feed in feeds:
+    for item in items:
+      if item.feed.key() == feed.key():
+        item.feed_title = feed.title
+  for rating in ratings:
+    for item in items:
+      if rating.item.key() == item.key():
+        item.interesting = rating.interesting
+        break
+
+# Get most recommended items for a user.
 class ItemHandler(webapp2.RequestHandler):
   def post(self):
     username = users.get_current_user().nickname()
@@ -160,25 +181,7 @@ class ItemHandler(webapp2.RequestHandler):
       self.error(403)
       return
     subscriptions = getSubscriptions(user)
-    feeds = tuple(subscription.feed for subscription in subscriptions)
-    query = Item.all()
-    query.filter("feed IN", feeds).order("-updated")
-    items = query.fetch(20, 20 * int(self.request.get("page")))
-    query = Rating.all()
-    query.filter("user =", user)
-    query.filter("item IN", tuple(items))
-    ratings = query.fetch(20)
-    for item in items:
-      item.interesting = None
-    for feed in feeds:
-      for item in items:
-        if item.feed.key() == feed.key():
-          item.feed_title = feed.title
-    for rating in ratings:
-      for item in items:
-        if rating.item.key() == item.key():
-          item.interesting = rating.interesting
-          break
+    items = getItems(user, subscriptions, int(self.request.get("page")))
     prediction_model = getPredictionModel(user)
     if prediction_model:
       prediction_model = pickle.loads(gzip.GzipFile(
