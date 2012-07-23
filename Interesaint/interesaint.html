@@ -60,10 +60,15 @@ function starsChange(i, rating, predicted, stars) {
   }
 }
 
-function moreItems() {
-  $.post("script/items", { page: page_ }, function(data) {
-    if (!data)
-      return;
+function items(overwrite) {
+  var magic = Boolean($("#sort_select")[0].selectedIndex);
+  if (overwrite) {
+    page_ = 0;
+    offset_ = 0;
+    items_ = [];
+  }
+  $.post("script/items", { page: page_, magic: magic}, function(data) {
+    if (!data) return;
     items_ = items_.concat(eval(data));
     for (var i = offset_; i < items_.length; i++) {
       var checked = "";
@@ -106,7 +111,13 @@ function moreItems() {
 }
 
 $(document).ready(function() {
-  moreItems();
+  $("#more_button").click(function () {
+    items(false);
+  });
+  $("#sort_select").change(function () {
+    items(true);
+  });
+  items(false);
   $.post("script/subscriptions", function(data) {
     subscriptions_ = eval(data);
     for (var i = 0; i < subscriptions_.length; i++) {
@@ -134,16 +145,20 @@ $(document).ready(function() {
 <body>
 <table id="items">
 </table>
-<form action="javascript:moreItems()">
-<input type="submit" value="More" />
+<form>
+<input type="button" value="More" id="more_button" />
+<select id="sort_select">
+<option>Most recent</option>
+<option>Magic</option>
+</select>
 </form>
 <form action="javascript:add()">
-Add new subscription: <input type="text" />
-<input type="submit" value="Submit" />
+<input type="text" placeholder="New subscription"/>
+<input type="submit" value="Add" />
 </form>
 <form action="javascript:remove()">
-Remove subscription: <select id="remove"></select>
-<input type="submit" value="Submit" />
+<select id="remove"></select>
+<input type="submit" value="Remove subscription" />
 </form>
 <div id="logout">
 </div>
