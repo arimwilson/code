@@ -57,7 +57,7 @@ func save(w http.ResponseWriter, r *http.Request) {
 func list(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
   query := datastore.NewQuery("board")
-  query.Filter("User =", user.Current(c).String())
+  query = query.Filter("User =", user.Current(c).String())
   results := new([]Board)
   _, err := query.GetAll(c, results)
   if err != nil {
