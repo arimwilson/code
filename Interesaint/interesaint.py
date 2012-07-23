@@ -155,7 +155,7 @@ def getItems(user, subscriptions, page):
   feeds = tuple(subscription.feed for subscription in subscriptions)
   query = Item.all()
   query.filter("feed IN", feeds).order("-updated")
-  items = query.fetch(100, page % 5 * 100)
+  items = query.fetch(20, 20 * page)
   query = Rating.all()
   query.filter("user =", user)
   query.filter("item IN", tuple(items))
@@ -171,6 +171,8 @@ def getItems(user, subscriptions, page):
       if rating.item.key() == item.key():
         item.interesting = rating.interesting
         break
+  return items
+
 
 # Get most recommended items for a user.
 class ItemHandler(webapp2.RequestHandler):
@@ -181,6 +183,7 @@ class ItemHandler(webapp2.RequestHandler):
       self.error(403)
       return
     subscriptions = getSubscriptions(user)
+    # TODO(ariw): Deal with magic mode.
     items = getItems(user, subscriptions, int(self.request.get("page")))
     prediction_model = getPredictionModel(user)
     if prediction_model:

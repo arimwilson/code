@@ -35,13 +35,15 @@ function starsHtml(item) {
   var html = "";
   for (var i = 0; i < 5; i++) {
     if (item["rating"] && item["rating"] >= (i + 1) / 5) {
-      html += "<img src='images/goldstar.jpg' width='16' height='16'/>";
+      var src = "gold";
     } else if (item["predicted_rating"] &&
                item["predicted_rating"] >= (i + 1) / 5) {
-      html += "<img src='images/silverstar.jpg' width='16' height='16'/>";
+      var src = "silver";
     } else {
-      html += "<img src='images/whitestar.jpg' width='16' height='16'/>";
+      var src = "white";
     }
+    html += "<img src='images/" + src + "star.jpg' width='16' height='16' " +
+            "class='star'/>";
   }
   return html
 }
@@ -80,7 +82,7 @@ function items(overwrite) {
           "</td><td><a href='" + items_[i]["url"] + "'>" + items_[i]["title"] +
           "</a></td><td>" + printDate(items_[i]["updated"]) + "</tr>");
     }
-    var stars = $("img");
+    var stars = $(".star");
     stars.mouseover(function() {
       var index = stars.index(this);
       starsChange(Math.floor(index / 5), index % 5 + 1, false, stars);
