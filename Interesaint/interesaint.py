@@ -41,6 +41,7 @@ class Rating(db.Model):
   item = db.ReferenceProperty(Item, required = True)
   created = db.DateTimeProperty()
   interesting = db.FloatProperty()
+  predicted_interesting = db.FloatProperty()
 
 class PredictionModel(db.Model):
   user = db.ReferenceProperty(User, required = True)
@@ -130,9 +131,9 @@ def getPublicDate(date):
     return None
 
 # Convert from datastore entity to item to be sent to user.
-def getPublicItem(item, predicted_rating):
+def getPublicItem(item):
   return { "id": item.key().id(), "rating": item.interesting,
-           "predicted_rating": predicted_rating,
+           "predicted_rating": item.predicted_interesting,
            "feed_title": item.feed_title,
            "retrieved": getPublicDate(item.retrieved),
            "published": getPublicDate(item.published),
@@ -151,7 +152,7 @@ def getPredictionModel(user):
   memcache.add("PredictionModel,user:" + user.username, prediction_model)
   return prediction_model
 
-def getItems(user, subscriptions, page):
+def getItems(user, subscriptions, page, prediction_model):
   feeds = tuple(subscription.feed for subscription in subscriptions)
   query = Item.all()
   query.filter("feed IN", feeds).order("-updated")
@@ -169,8 +170,11 @@ def getItems(user, subscriptions, page):
   for rating in ratings:
     for item in items:
       if rating.item.key() == item.key():
+        item.predicted_interesting = rating.interesting
         item.interesting = rating.interesting
         break
+  for item in items
+    item.predicted_interesting = predict(prediction_model, item)
   return items
 
 
@@ -184,15 +188,13 @@ class ItemHandler(webapp2.RequestHandler):
       return
     subscriptions = getSubscriptions(user)
     # TODO(ariw): Deal with magic mode.
-    items = getItems(user, subscriptions, int(self.request.get("page")))
     prediction_model = getPredictionModel(user)
     if prediction_model:
       prediction_model = pickle.loads(gzip.GzipFile(
           fileobj=StringIO.StringIO(prediction_model.model)).read())
-    public_items = []
-    for item in items:
-      public_items.append(getPublicItem(item, predict(prediction_model, item)))
-    self.response.out.write(json.dumps(public_items))
+    items = getItems(user, subscriptions, int(self.request.get("page")),
+                     prediction_model)
+    self.response.out.write(json.dumps([getPublicItem(item) for item in items]))
 
 # Get a list of user subscriptions.
 class SubscriptionHandler(webapp2.RequestHandler):
