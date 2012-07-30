@@ -177,7 +177,6 @@ def main():
   # Run my test cases.
 
   # Linear regression.
-  # test = "\"ari.wilson\",\"mmmm.hm_-_tv_central_forum\",\"file  parks and recreation 420 hdtv lol mp4 thread  parks and recreation   season 4\""
   # print linear_scoring(test, all_features_ordered, means, ranges, x)
 
   # kNN.
