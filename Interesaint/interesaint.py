@@ -3,6 +3,7 @@ import feedparser
 import gzip
 import json
 import logging
+import math
 import pickle
 import re
 import StringIO
@@ -39,9 +40,8 @@ class Item(db.Model):
 class Rating(db.Model):
   user = db.ReferenceProperty(User, required = True)
   item = db.ReferenceProperty(Item, required = True)
-  created = db.DateTimeProperty()
+  created = db.DateTimeProperty(auto_now_add = True)
   interesting = db.FloatProperty()
-  predicted_interesting = db.FloatProperty()
 
 class PredictionModel(db.Model):
   user = db.ReferenceProperty(User, required = True)
@@ -152,15 +152,40 @@ def getPredictionModel(user):
   memcache.add("PredictionModel,user:" + user.username, prediction_model)
   return prediction_model
 
-def getItems(user, subscriptions, page, prediction_model):
+# Get the score of this item related to star rating, predicted rating and date.
+def getMagic(item):
+  rating = 0.5  # Default rating is 2.5 stars.
+  # Have to override if you have a real rating. Normalize from [0.2, 1] to
+  # [0, 1]
+  if item.predicted_interesting:
+    rating = 5/4 * (item.predicted_interesting - 0.2)
+  if item.interesting:
+    rating = 5/4 * (item.interesting - 0.2)
+  # Take time since item was updated, normalize from [0, inf] to [0, 1] in the
+  # last month (2592000 seconds), and invert.
+  diff = (datetime.datetime.utcnow() - item.updated).total_seconds()
+  time_rating = 1 - diff / 2592000
+  alpha, beta = 4, 1  # Weights on score versus time.
+  return alpha * rating + beta * time_rating
+
+def getItems(user, subscriptions, page, prediction_model, magic):
   feeds = tuple(subscription.feed for subscription in subscriptions)
   query = Item.all()
   query.filter("feed IN", feeds).order("-updated")
-  items = query.fetch(20, 20 * page)
-  query = Rating.all()
-  query.filter("user =", user)
-  query.filter("item IN", tuple(items))
-  ratings = query.fetch(20)
+  items_to_display = 20
+  if magic:
+    items_to_fetch = 100
+  else:
+    items_to_fetch = 20
+  page_offset = items_to_fetch * (items_to_display * page / items_to_fetch)
+  items = query.fetch(items_to_fetch, page_offset)
+  # Batch up lookups for ratings.
+  ratings = []
+  for i in xrange(0, len(items), 30):
+    query = Rating.all()
+    query.filter("user =", user)
+    query.filter("item IN", tuple(items[i:i+30]))
+    ratings.extend(query.fetch(items_to_fetch))
   for item in items:
     item.interesting = None
   for feed in feeds:
@@ -170,12 +195,14 @@ def getItems(user, subscriptions, page, prediction_model):
   for rating in ratings:
     for item in items:
       if rating.item.key() == item.key():
-        item.predicted_interesting = rating.interesting
         item.interesting = rating.interesting
         break
-  for item in items
+  for item in items:
     item.predicted_interesting = predict(prediction_model, item)
-  return items
+  page_index = items_to_display * page % items_to_fetch
+  if magic:
+    items = sorted(items, key=getMagic, reverse=True)
+  return items[page_index:page_index + items_to_display]
 
 
 # Get most recommended items for a user.
@@ -187,13 +214,14 @@ class ItemHandler(webapp2.RequestHandler):
       self.error(403)
       return
     subscriptions = getSubscriptions(user)
-    # TODO(ariw): Deal with magic mode.
     prediction_model = getPredictionModel(user)
     if prediction_model:
       prediction_model = pickle.loads(gzip.GzipFile(
           fileobj=StringIO.StringIO(prediction_model.model)).read())
+    # TODO(ariw): Gotta be a better way to do this.
+    magic = True if self.request.get("magic") == "true" else False
     items = getItems(user, subscriptions, int(self.request.get("page")),
-                     prediction_model)
+                     prediction_model, magic)
     self.response.out.write(json.dumps([getPublicItem(item) for item in items]))
 
 # Get a list of user subscriptions.
@@ -274,8 +302,7 @@ class RateHandler(webapp2.RequestHandler):
     query.filter("user =", user).filter("item =", item)
     rating = query.get()
     if not rating:
-      rating = Rating(user = user, item = item, interesting = interesting,
-                      created = datetime.datetime.utcnow())
+      rating = Rating(user = user, item = item, interesting = interesting)
     else:
       rating.interesting = interesting
     rating.put()

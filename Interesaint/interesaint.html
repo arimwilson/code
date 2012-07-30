@@ -68,6 +68,7 @@ function items(overwrite) {
     page_ = 0;
     offset_ = 0;
     items_ = [];
+    $("#items").empty();
   }
   $.post("script/items", { page: page_, magic: magic}, function(data) {
     if (!data) return;
