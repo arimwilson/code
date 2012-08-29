@@ -11,6 +11,8 @@ handlers:
   login: required
 - url: /images
   static_dir: images
+- url: /bootstrap
+  static_dir: bootstrap
 - url: /script/.*
   script: interesaint.app
   login: required
