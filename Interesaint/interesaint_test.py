@@ -17,16 +17,14 @@ class InteresaintTestCase(unittest.TestCase):
     self.testbed.deactivate()
 
   def testGetUserDb(self):
-    user = User(username = u"test")
+    user = User(username = "test")
     user.put()
-    query = User.all()
-    user = query.get()
-    self.assertEqual(user.username, getUser(u"test").username)
+    self.assertEqual(user.username, getUser("test").username)
 
   def testGetUserMemcache(self):
-    user = User(username = u"test")
-    memcache.add("User,user:test", user)
-    self.assertEqual(user.username, getUser(u"test").username)
+    user = User(username = "test")
+    memcache.add("User,user:" + user.username, user)
+    self.assertEqual(user.username, getUser("test").username)
 
 if __name__ == "__main__":
   unittest.main()

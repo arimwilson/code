@@ -20,7 +20,7 @@ class Feed(db.Model):
   last_retrieved = db.DateTimeProperty()
 
 class User(db.Model):
-  username = db.TextProperty(required = True)
+  username = db.StringProperty(required = True)
 
 class Subscription(db.Model):
   user = db.ReferenceProperty(User, required = True)
@@ -105,9 +105,8 @@ def getUser(username):
   if user:
     return user
   query = User.all()
-#  query.filter("username =", username)
+  query.filter("username =", username)
   user = query.get()
-  print user
   if not user:
     return
   memcache.add("User,user:" + username, user)
