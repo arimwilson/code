@@ -1,7 +1,6 @@
 package scrabble_test
 
-import ("os"; "path/filepath"; "sort"; "testing";
-        "../cross_check"; "../moves"; "../scrabble";
+import ("os"; "sort"; "testing"; "../cross_check"; "../moves"; "../scrabble";
         "../trie"; "../util")
 
 func TestBlankScore(t *testing.T) {
@@ -78,8 +77,7 @@ func TestGetMoveListAcross(t *testing.T) {
 
 func prepareRealData(tilesFlag string) (
     dict *trie.Trie, tiles map[byte] int, letterValues map[byte] int) {
-  wordListFile, err := os.Open(filepath.Join(
-      os.Getenv("HOME"), "code", "Scrabble", "twl.txt"));
+  wordListFile, err := os.Open("twl.txt");
   defer wordListFile.Close();
   if err != nil {
     panic("could not open twl.txt successfully.")

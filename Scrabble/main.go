@@ -10,7 +10,7 @@ import ("flag"; "fmt"; "log"; "runtime/pprof"; "os";
         "./scrabble"; "./util")
 
 var wordListFlag = flag.String(
-    "w", "twl.txt",
+    "w", "scrabble/twl.txt",
     "File with space-separated list of legal words, in upper-case.")
 var boardFlag = flag.String(
     "b", "",
