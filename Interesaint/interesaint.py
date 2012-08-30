@@ -105,8 +105,9 @@ def getUser(username):
   if user:
     return user
   query = User.all()
-  query.filter("username =", username)
+#  query.filter("username =", username)
   user = query.get()
+  print user
   if not user:
     return
   memcache.add("User,user:" + username, user)
