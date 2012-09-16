@@ -120,7 +120,7 @@ def getSubscriptions(user):
   query.filter("user =", user)
   subscriptions = [subscription for subscription in query]
   if not subscriptions:
-    return
+    return []
   memcache.add("Subscriptions,user:" + user.username, subscriptions)
   return subscriptions
 
@@ -213,15 +213,15 @@ class ItemHandler(webapp2.RequestHandler):
     if not user:
       self.error(403)
       return
-    subscriptions = getSubscriptions(user)
     prediction_model = getPredictionModel(user)
     if prediction_model:
       prediction_model = pickle.loads(gzip.GzipFile(
           fileobj=StringIO.StringIO(prediction_model.model)).read())
     # TODO(ariw): Gotta be a better way to do this.
     magic = True if self.request.get("magic") == "true" else False
-    items = getItems(user, subscriptions, int(self.request.get("page")),
-                     prediction_model, magic)
+    items = getItems(
+        user, getSubscriptions(user), int(self.request.get("page")),
+        prediction_model, magic)
     self.response.out.write(json.dumps([getPublicItem(item) for item in items]))
 
 # Get a list of user subscriptions.
@@ -284,9 +284,12 @@ class AddHandler(webapp2.RequestHandler):
 
 class RemoveHandler(webapp2.RequestHandler):
   def post(self):
-   subscription = Subscription.get_by_id(long(self.request.get("id")))
-   db.delete(subscription)
-   # TODO(ariw): Remove feeds and/or ratings?
+    id = long(self.request.get("id"))
+    subscription = Subscription.get_by_id(id)
+    memcache.delete("Subscriptions,user:" +
+        getUser(users.get_current_user().nickname()).username)
+    db.delete(subscription)
+    # TODO(ariw): Remove feeds and/or ratings?
 
 # Rate some item.
 class RateHandler(webapp2.RequestHandler):
