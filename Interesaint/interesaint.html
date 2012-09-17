@@ -45,7 +45,7 @@ function starsHtml(item) {
     } else {
       var src = "white";
     }
-    html += "<img src='images/" + src + "star.jpg' width='16' height='16' " +
+    html += "<img src='images/" + src + "star.png' width='16' height='16' " +
             "class='star'/>";
   }
   return html
@@ -55,12 +55,12 @@ function starsChange(i, rating, predicted, stars) {
   for (var j = i * 5; j < (i + 1) * 5; j++) {
     if (j < i * 5 + rating) {
       if (!predicted) {
-        stars[j].src = "images/goldstar.jpg";
+        stars[j].src = "images/goldstar.png";
       } else {
-        stars[j].src = "images/silverstar.jpg";
+        stars[j].src = "images/silverstar.png";
       }
     } else {
-      stars[j].src = "images/whitestar.jpg";
+      stars[j].src = "images/whitestar.png";
     }
   }
 }
