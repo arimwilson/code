@@ -15,12 +15,11 @@ var page_ = 0;
 var offset_ = 0;
 
 function add() {
-  var input = $("form input:text");
-  $.post("script/add", { url: input.val() });
+  $.post("script/add", { url: $("#add").val() });
 }
 
 function remove() {
-  var index = $("form select")[0].selectedIndex;
+  var index = $("#remove")[0].selectedIndex;
   // TODO(ariw): Remove subscription locally as well.
   $.post("script/remove", { id: subscriptions_[index]["id"] });
 }
@@ -67,7 +66,7 @@ function starsChange(i, rating, predicted, stars) {
 }
 
 function items(overwrite) {
-  var magic = Boolean($("#sort_select")[0].selectedIndex);
+  var magic = Boolean($("#sort_select")[0].selectedIndex - 1);
   if (overwrite) {
     page_ = 0;
     offset_ = 0;
@@ -124,6 +123,21 @@ $(document).ready(function() {
   $("#sort_select").change(function () {
     items(true);
   });
+  $("#settings_button").click(function() {
+    $("#main").hide();
+    $("#settings").show();
+  })
+  $("#add_button").click(function() {
+    add();
+  })
+  $("#remove_button").click(function() {
+    remove();
+  })
+  $("#main_button").click(function() {
+    $("#settings").hide();
+    $("#main").show();
+  })
+
   items(false);
   $.post("script/subscriptions", function(data) {
     subscriptions_ = eval(data);
@@ -150,25 +164,32 @@ $(document).ready(function() {
 </script>
 </head>
 <body>
-<table id="items">
+<span id="main">
+<table id="items" class="table table-hover table-condensed">
 </table>
-<form>
+<form class="form-inline">
 <input type="button" value="More" id="more_button" />
 <select id="sort_select">
+<option disabled="enabled">Sort by</option>
 <option>Most recent</option>
 <option>Magic</option>
 </select>
+<input type="button" value="Settings" id="settings_button"/>
+<span id="logout">
+</span>
 </form>
-<form action="javascript:add()">
-<input type="text" placeholder="New subscription"/>
-<input type="submit" value="Add" />
-</form>
-<form action="javascript:remove()">
-<select id="remove"></select>
-<input type="submit" value="Remove subscription" />
-</form>
-<div id="logout">
+</span>
+<form id="settings" style="display:none">
+<div>
+<input type="text" placeholder="New subscription" id="add"/>
+<input type="submit" value="Add" id="add_button"/>
 </div>
+<div>
+<select id="remove"></select>
+<input type="submit" value="Remove subscription" id="remove_button"/>
+</div>
+<input type="button" value="Back to items" id="main_button"/>
+</form>
 </body>
 </html>
 
