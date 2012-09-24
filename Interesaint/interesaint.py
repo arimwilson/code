@@ -181,6 +181,8 @@ def getItems(user, subscriptions, page, prediction_model, magic):
   items = query.fetch(items_to_fetch, page_offset)
   # Batch up lookups for ratings.
   ratings = []
+  # TODO(ariw): Instead of getting ratings this way, cross-reference with items
+  # somehow or sort by *item* updated rather than rating created?
   for i in xrange(0, len(items), 30):
     query = Rating.all()
     query.filter("user =", user)
