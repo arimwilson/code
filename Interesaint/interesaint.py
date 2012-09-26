@@ -87,7 +87,7 @@ def predict(prediction_model, item):
   next_nearest_neighbor = (9999, None)
   for neighbor in prediction_model:
     score = getNearestScore(limited_item, neighbor[1])
-    if score <= 7:
+    if score <= 7:  # Filtering. Tuned by example.
       if score < nearest_neighbor[0]:
         next_nearest_neighbor = nearest_neighbor
         nearest_neighbor = (score, neighbor)
