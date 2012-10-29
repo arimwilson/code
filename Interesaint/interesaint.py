@@ -408,7 +408,7 @@ class LearnHandler(webapp2.RequestHandler):
       learning_items = [getLearningItem(rating.item) for rating in ratings]
       feature_counts = getFeatureCounts(learning_items, NUM_FEATURES)
       limited_items = []
-      for i in range(NUM_ITEMS):
+      for i in range(len(ratings)):
         limited_items.append(
             (ratings[i].interesting,
              getLimitedItem(learning_items[i], feature_counts)))
