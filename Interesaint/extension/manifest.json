@@ -1,0 +1,7 @@
+{
+  "manifest_version": 2,
+
+  "name": "Interesaint",
+  "description": "This extension fills in passwords from a central store.",
+  "version": "1.0",
+}
