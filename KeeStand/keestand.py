@@ -76,8 +76,9 @@ class LoginHandler(webapp.RequestHandler):
       passwords = "".join([chunk.chunk for chunk in chunks])
       if passwords:  # Existing data.
         self.response.out.write(json.dumps(
-            { "last_modified": time.mktime(user.last_modified.timetuple()),
-              "passwords": Decode(passwords) }))
+          { "version" : user.version,
+            "last_modified": time.mktime(user.last_modified.timetuple()),
+            "passwords": Decode(passwords) }))
     else:  # New user.
       salt = self.request.get("salt")
       assert salt
@@ -125,13 +126,13 @@ def Split(string, n):
     split.append(string[i:i + n])
   return split
 
-# Save new password file as one datastore transaction.
+# Save new password file and update user as one datastore transaction.
 def Save(user, password_chunks, old_password_chunks):
   for index, chunk in enumerate(password_chunks):
     PasswordChunk(parent = user, user = user, index = index,
                   chunk = db.Blob(chunk)).put()
   db.delete([chunk for chunk in old_password_chunks])
-  # Update last_modified.
+  # Update last_modified and version.
   user.put()
 
 class SaveHandler(webapp.RequestHandler):
@@ -144,6 +145,8 @@ class SaveHandler(webapp.RequestHandler):
     # Can store at least 10 ** 6 bytes in one entity property.
     password_chunks = Split(passwords, 10 ** 6)
     old_password_chunks = [chunk for chunk in user.passwordchunk_set]
+    if self.request.get("version")
+    user.version = int(self.request.get("version"))
     db.run_in_transaction(Save, user, password_chunks, old_password_chunks)
 
 def DeleteAccount(password_chunks, user):

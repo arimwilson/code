@@ -28,6 +28,7 @@ $(document).ready(function() {
   var password_ = "";
   var salt_ = "";
   var password_hash_ = "";
+  var version_ = 1;
   var local_storage_ = false;
   var stop_ = false;
 
@@ -110,6 +111,8 @@ $(document).ready(function() {
            function(data) {
              $("#login").hide();
              $("#edit").show();
+             // Determine whether or not to use local storage based on last
+             // modification date.
              if (local_storage_) {
                last_modified_local = new Date(localStorage["last_modified"]);
              }
@@ -119,9 +122,11 @@ $(document).ready(function() {
              if (data &&
                  (!local_storage_ || last_modified >= last_modified_local)) {
                editor(decrypt(data["passwords"]));
+               version_ = data["version"];
                save_local(data["passwords"], last_modified);
              } else if (local_storage_) {
                editor(decrypt(localStorage["passwords"]));
+               version_ = parseInt(localStorage["version"])
                save(localStorage["passwords"]);
              }
            }, "json");
@@ -147,6 +152,7 @@ $(document).ready(function() {
         localStorage.getItem("salt") &&
         localStorage.getItem("password_hash") &&
         localStorage.getItem("last_modified") &&
+        localStorage.getItem("version") &&
         localStorage.getItem("passwords") &&
         password_hash(password_, localStorage["salt"]) === localStorage[
             "password_hash"];
@@ -185,11 +191,12 @@ $(document).ready(function() {
     localStorage["password_hash"] = password_hash_;
     localStorage["passwords"] = passwords;
     localStorage["last_modified"] = last_modified.toUTCString();
+    localStorage["version"] = version_;
   }
 
   function save(passwords) {
     // TODO(ariw): Notify when successful.
-    $.post("script/save", { passwords: passwords });
+    $.post("script/save", { passwords: passwords, version: version_ });
   }
 
   $("#save_button").click(function() {
