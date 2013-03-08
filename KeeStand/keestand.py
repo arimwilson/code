@@ -129,7 +129,7 @@ def Split(string, n):
 # Save new password file and update user as one datastore transaction.
 def Save(user, password_chunks, old_password_chunks):
   for index, chunk in enumerate(password_chunks):
-    PasswordChunk(parent = user, user = user, index = in/ex,
+    PasswordChunk(parent = user, user = user, index = index,
                   chunk = db.Blob(chunk)).put()
   db.delete([chunk for chunk in old_password_chunks])
   # Update last_modified and version.
