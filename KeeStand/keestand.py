@@ -1,15 +1,15 @@
 import base64
 import gzip
+import json
 import logging
 import pickle
 import os
 import re
 import StringIO
 import time
+import webapp2 as webapp
 
-from django.utils import simplejson as json
 from google.appengine.ext import db
-from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 class User(db.Model):
@@ -90,8 +90,8 @@ class LoginHandler(webapp.RequestHandler):
       user.put()
     self.response.headers.add_header(
         "Set-Cookie",
-        "session=%s.%s" % (
-            base64.standard_b64encode(username), password_hash))
+        str("session=%s.%s" % (
+            base64.standard_b64encode(username), password_hash)))
 
 def AuthorizedUser(cookies):
   session = cookies.get("session", "").split(".")
@@ -129,7 +129,7 @@ def Split(string, n):
 # Save new password file and update user as one datastore transaction.
 def Save(user, password_chunks, old_password_chunks):
   for index, chunk in enumerate(password_chunks):
-    PasswordChunk(parent = user, user = user, index = index,
+    PasswordChunk(parent = user, user = user, index = in/ex,
                   chunk = db.Blob(chunk)).put()
   db.delete([chunk for chunk in old_password_chunks])
   # Update last_modified and version.
@@ -145,8 +145,8 @@ class SaveHandler(webapp.RequestHandler):
     # Can store at least 10 ** 6 bytes in one entity property.
     password_chunks = Split(passwords, 10 ** 6)
     old_password_chunks = [chunk for chunk in user.passwordchunk_set]
-    if self.request.get("version")
-    user.version = int(self.request.get("version"))
+    if self.request.get("version"):
+      user.version = int(self.request.get("version"))
     db.run_in_transaction(Save, user, password_chunks, old_password_chunks)
 
 def DeleteAccount(password_chunks, user):
@@ -161,14 +161,10 @@ class DeleteAccountHandler(webapp.RequestHandler):
     password_chunks = [chunk for chunk in user.passwordchunk_set]
     db.run_in_transaction(DeleteAccount, password_chunks, user)
 
-def main():
-  application = webapp.WSGIApplication([
-      ('/script/salt', SaltHandler),
-      ('/script/login', LoginHandler),
-      ('/script/save', SaveHandler),
-      ('/script/deleteaccount', DeleteAccountHandler),
-    ])
-  run_wsgi_app(application)
+app = webapp.WSGIApplication([
+    ('/script/salt', SaltHandler),
+    ('/script/login', LoginHandler),
+    ('/script/save', SaveHandler),
+    ('/script/deleteaccount', DeleteAccountHandler),
+  ])
 
-if __name__ == '__main__':
-  main()

@@ -1,7 +1,8 @@
 application: keestand-hrd
 version: 2
-runtime: python
+runtime: python27
 api_version: 1
+threadsafe: false
 
 builtins:
 - remote_api: on
@@ -28,5 +29,5 @@ handlers:
   upload: cache.manifest
   secure: always
 - url: /script/.*
-  script: keestand.py
+  script: keestand.app
   secure: always

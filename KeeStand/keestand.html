@@ -276,11 +276,13 @@ $(document).ready(function() {
       var really_sure = confirm(
           "Are you really sure you want to delete your account? This action " +
           "cannot be undone!");
-      if (really_sure)
+      if (really_sure) {
         localStorage.clear();
         // TODO(ariw): Alert if unable to delete for some reason.
+        // TODO(ariw): This isn't actually sending requests for some reason...
         $.ajax("script/deleteaccount", {},
-               function() { location.reload(true); });
+            function() { location.reload(true); });
+      }
     }
   });
 });
