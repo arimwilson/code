@@ -279,9 +279,8 @@ $(document).ready(function() {
       if (really_sure) {
         localStorage.clear();
         // TODO(ariw): Alert if unable to delete for some reason.
-        // TODO(ariw): This isn't actually sending requests for some reason...
-        $.ajax("script/deleteaccount", {},
-            function() { location.reload(true); });
+        $.ajax({type: "POST", url: "script/deleteaccount",
+                success: function() { location.reload(true); }});
       }
     }
   });
