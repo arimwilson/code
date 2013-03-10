@@ -163,7 +163,9 @@ func solve(w http.ResponseWriter, r *http.Request) {
       c.Errorf("Could not encode twl with error: %s", err.Error())
     }
     err = memcache.SetMulti(c, splitMemcache("dict", data.Bytes()))
-    c.Errorf("Could not cache dict chunks with error: %s", err.Error())
+    if err != nil {
+      c.Errorf("Could not cache dict chunks with error: %s", err.Error())
+    }
   } else {
     data := bytes.NewBuffer(joinMemcache(keys, items))
     dec := gob.NewDecoder(data)
