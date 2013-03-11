@@ -2,6 +2,10 @@
   "manifest_version": 2,
 
   "name": "KeeStand",
-  "description": "This extension fills in passwords from a central store.",
+  "description": "This extension securely stores and retrieves passwords from the cloud.",
   "version": "1.0",
+
+  "permissions": [
+    "https://keestand.appspot.com/"
+  ]
 }
