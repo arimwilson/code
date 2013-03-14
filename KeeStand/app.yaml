@@ -12,12 +12,16 @@ handlers:
   static_files: favicon.ico
   upload: favicon.ico
   secure: always
-- url: /css
-  static_dir: css
-  secure: always
 - url: /sjcl.js
   static_files: sjcl.js
   upload: sjcl.js
+  secure: always
+- url: /keestand.js
+  static_files: keestand.js
+  upload: keestand.js
+  secure: always
+- url: /css
+  static_dir: css
   secure: always
 - url: /
   static_files: keestand.html
