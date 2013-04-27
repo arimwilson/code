@@ -2,12 +2,28 @@
 var MEEPESH = {
 }
 
-MEEPESH.animate = function() {
-  MEEPESH.controls.update(0.01);
-
+MEEPESH.update = function() {
   // Render the scene.
+  requestAnimationFrame(MEEPESH.update);
   MEEPESH.renderer.render(MEEPESH.scene, MEEPESH.camera);
-  window.webkitRequestAnimationFrame(MEEPESH.animate);
+
+  // Update controls.
+  MEEPESH.controls.update(Date.now() - MEEPESH.time);
+  MEEPESH.time = Date.now();
+}
+
+MEEPESH.onWindowResize = function() {
+  MEEPESH.camera.aspect = window.innerWidth / window.innerHeight;
+  MEEPESH.camera.updateProjectionMatrix();
+  MEEPESH.renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+MEEPESH.pointerLockChange = function(event) {
+  if (document.pointerLockElement == MEEPESH.element) {
+    MEEPESH.controls.enabled = true;
+  } else {
+    MEEPESH.controls.enabled = false;
+  }
 }
 
 MEEPESH.start = function() {
@@ -31,7 +47,6 @@ MEEPESH.start = function() {
   MEEPESH.camera.up.y = 0;
   MEEPESH.camera.up.z = 1;
   MEEPESH.camera.lookAt(MEEPESH.scene.position);
-
   MEEPESH.scene.add(MEEPESH.camera);
 
   var cube = new THREE.Mesh(
@@ -54,7 +69,16 @@ MEEPESH.start = function() {
 
   // Set up controls.
   MEEPESH.controls = new THREE.PointerLockControls(MEEPESH.camera);
+  document.addEventListener(
+      'pointerlockchange', MEEPESH.pointerLockChange, false);
+  document.addEventListener(
+      'webkitpointerlockchange', MEEPESH.pointerLockChange, false);
+  MEEPESH.element = document.body;
+  MEEPESH.element.webkitRequestPointerLock();
 
-  MEEPESH.animate();
+  window.addEventListener('resize', MEEPESH.onWindowResize, false);
+
+  MEEPESH.time = Date.now();
+  MEEPESH.update();
 }
 
