@@ -3,7 +3,7 @@ var MEEPESH = {
 }
 
 MEEPESH.animate = function() {
-  // MEEPESH.controls.update();
+  MEEPESH.controls.update(0.01);
 
   // Render the scene.
   MEEPESH.renderer.render(MEEPESH.scene, MEEPESH.camera);
@@ -54,7 +54,6 @@ MEEPESH.start = function() {
 
   // Set up controls.
   MEEPESH.controls = new THREE.PointerLockControls(MEEPESH.camera);
-  MEEPESH.controls.noFly = true;
 
   MEEPESH.animate();
 }
