@@ -19,7 +19,9 @@ MEEPESH.onWindowResize = function() {
 }
 
 MEEPESH.pointerLockChange = function(event) {
-  if (document.pointerLockElement == MEEPESH.element) {
+  if (document.pointerLockElement === MEEPESH.element ||
+      document.webkitPointerLockElement === MEEPESH.element ||
+      document.mozPointerLockElement === MEEPESH.element) {
     MEEPESH.controls.enabled = true;
   } else {
     MEEPESH.controls.enabled = false;
@@ -31,16 +33,15 @@ MEEPESH.start = function() {
   MEEPESH.width = document.body.clientWidth;
   MEEPESH.height = document.body.clientHeight;
   MEEPESH.renderer.setSize(MEEPESH.width, MEEPESH.height);
-  $(document.body).append(MEEPESH.renderer.domElement);
 
   // Set up the initial scene.
   MEEPESH.scene = new THREE.Scene();
 
   MEEPESH.camera = new THREE.PerspectiveCamera(
-    35,  // Field of view
-    MEEPESH.width / MEEPESH.height,  // Aspect ratio
-    0.1,  // Near plane
-    10000  // Far plane
+      35,  // Field of view
+      MEEPESH.width / MEEPESH.height,  // Aspect ratio
+      0.1,  // Near plane
+      10000  // Far plane
   );
   MEEPESH.camera.position.set(20, 20, 0);
   MEEPESH.camera.up.x = 0;
@@ -50,13 +51,13 @@ MEEPESH.start = function() {
   MEEPESH.scene.add(MEEPESH.camera);
 
   var cube = new THREE.Mesh(
-    new THREE.CubeGeometry(5, 5, 5),
-    new THREE.MeshLambertMaterial({ color: 0xFF0000 })
+      new THREE.CubeGeometry(5, 5, 5),
+      new THREE.MeshLambertMaterial({ color: 0xFF0000 })
   );
   MEEPESH.scene.add(cube);
   var cube2 = new THREE.Mesh(
-    new THREE.CubeGeometry(500, 500, 5),
-    new THREE.MeshLambertMaterial({ color: 0x00FF00 })
+      new THREE.CubeGeometry(500, 500, 5),
+      new THREE.MeshLambertMaterial({ color: 0x00FF00 })
   );
   cube2.translateX(250);
   cube2.translateY(250);
@@ -69,15 +70,43 @@ MEEPESH.start = function() {
 
   // Set up controls.
   MEEPESH.controls = new THREE.PointerLockControls(MEEPESH.camera);
+  MEEPESH.scene.add(MEEPESH.controls.getObject());
+  var havePointerLock = 'pointerLockElement' in document ||
+                        'mozPointerLockElement' in document ||
+                        'webkitPointerLockElement' in document;
+  if (!havePointerLock) {
+    alert("No pointer lock functionality detected!");
+  }
+  MEEPESH.element = document.body;
+  // TODO(ariw): This breaks on Firefox since we don't requestFullscreen()
+  // first.
   document.addEventListener(
       'pointerlockchange', MEEPESH.pointerLockChange, false);
   document.addEventListener(
       'webkitpointerlockchange', MEEPESH.pointerLockChange, false);
-  MEEPESH.element = document.body;
-  MEEPESH.element.webkitRequestPointerLock();
+  document.addEventListener(
+      'mozpointerlockchange', MEEPESH.pointerLockChange, false);
 
+  document.addEventListener(
+      'pointerlockerror', function(event) {}, false);
+  document.addEventListener(
+      'webkitpointerlockerror', function(event) {}, false);
+  document.addEventListener(
+      'mozpointerlockerror', function(event) {}, false);
+  MEEPESH.element.addEventListener('click', function(event) {
+    MEEPESH.element.requestPointerLock =
+        MEEPESH.element.requestPointerLock ||
+        MEEPESH.element.webkitRequestPointerLock ||
+        MEEPESH.element.mozRequestPointerLock;
+    MEEPESH.element.requestPointerLock();
+  }, false);
+
+
+  // Get the window ready.
+  document.body.appendChild(MEEPESH.renderer.domElement);
   window.addEventListener('resize', MEEPESH.onWindowResize, false);
 
+  // Begin updating.
   MEEPESH.time = Date.now();
   MEEPESH.update();
 }
