@@ -7,6 +7,9 @@ handlers:
 - url: /
   static_files: index.html
   upload: index.html
+- url: /favicon.ico
+  static_files: favicon.ico
+  upload: favicon.ico
 - url: /(.*\.js)
   static_files: \1
   upload: .*\.js
