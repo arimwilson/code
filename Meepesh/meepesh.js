@@ -1,9 +1,11 @@
-var t = THREE, scene, camera, renderer, controls, time, width, height;
+var t, renderer, scene, width, height, camera, controls, time;
 
 onWindowResize = function() {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  width = window.innerWidth;
+  height = window.innerHeight;
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(width, height);
 }
 
 // Global object for scene-specific stuff..
@@ -30,23 +32,24 @@ MEEPESH.pointerLockChange = function(event) {
 }
 
 MEEPESH.start = function() {
+  t = THREE;
   renderer = new t.WebGLRenderer();
   width = document.body.clientWidth;
   height = document.body.clientHeight;
   renderer.setSize(width, height);
-
-  // Set up the initial scene.
-  MEEPESH.unitSize = 10;
-  MEEPESH.units = 1000;
-
   scene = new t.Scene();
-
   camera = new t.PerspectiveCamera(
       60,  // Field of view
       width / height,  // Aspect ratio
       1,  // Near plane
       10000  // Far plane
   );
+  time = Date.now();
+
+  // Set up the initial scene with camera and controls.
+  MEEPESH.unitSize = 10;
+  MEEPESH.units = 1000;
+
   camera.position.set(0, MEEPESH.unitSize * 0.2, 0);
   camera.up.x = 0;
   camera.up.y = 1;
@@ -113,7 +116,6 @@ MEEPESH.start = function() {
   window.addEventListener('resize', onWindowResize, false);
 
   // Begin updating.
-  time = Date.now();
   MEEPESH.update();
 }
 
