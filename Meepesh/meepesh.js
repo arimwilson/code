@@ -1,3 +1,4 @@
+// Generic three.js objects are in the global namespace.
 var t, renderer, scene, width, height, camera, controls, time;
 
 onWindowResize = function() {
@@ -47,34 +48,41 @@ MEEPESH.start = function() {
   time = Date.now();
 
   // Set up the initial scene with camera and controls.
-  MEEPESH.unitSize = 10;
+  MEEPESH.unitSize = 20;
   MEEPESH.units = 1000;
 
-  camera.position.set(0, MEEPESH.unitSize * 0.2, 0);
+  // Camera starts a little bit above the floor.
+  camera.position.set(0, MEEPESH.unitSize * 0.5, 0);
   camera.up.x = 0;
   camera.up.y = 1;
   camera.up.z = 0;
   scene.add(camera);
 
+  // Scene initially involves a floor, two lights, and a cube.
   var cube = new t.Mesh(
-      new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
+      new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
+                         MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
       new t.MeshLambertMaterial({ color: 0xFF0000 })
   );
-  cube.position.set(0, MEEPESH.unitSize / 2, 2 * MEEPESH.unitSize);
+  cube.position.set(0, MEEPESH.unitSize / 2, -2 * MEEPESH.unitSize);
   scene.add(cube);
+  var geometry = new t.PlaneGeometry(
+      MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
+      MEEPESH.unitSize, MEEPESH.unitSize);
+  // Floors generally are on the xz plane rather than the yz plane. Rotate it
+  // there :).
+  geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
   var floor = new t.Mesh(
-      new t.CubeGeometry(MEEPESH.unitSize * MEEPESH.units,
-                         MEEPESH.unitSize, MEEPESH.unitSize * MEEPESH.units),
-      new t.MeshLambertMaterial({ color: 0x00FF00 })
+      geometry, new t.MeshLambertMaterial({ color: 0x00FF00 })
   );
   scene.add(floor);
-
   var light = new t.PointLight(0xFFFF00);
-  light.position.set(2 * MEEPESH.unitSize, 2 * MEEPESH.unitSize, 2 * MEEPESH.unitSize);
+  light.position.set(
+      2 * MEEPESH.unitSize, 2 * MEEPESH.unitSize, 2 * MEEPESH.unitSize);
   scene.add(light);
   var light2 = new t.PointLight(0xFFFF00);
-  light2.position.set(-2 * MEEPESH.unitSize, 2 * MEEPESH.unitSize,
-                      -2 * MEEPESH.unitSize);
+  light2.position.set(
+      -2 * MEEPESH.unitSize, 2 * MEEPESH.unitSize, -2 * MEEPESH.unitSize);
   scene.add(light2);
 
   // Set up controls.
