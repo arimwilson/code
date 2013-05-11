@@ -20,6 +20,7 @@ MEEPESH.update = function() {
 
   // Update controls.
   controls.update(Date.now() - time);
+  time = Date.now();
 }
 
 MEEPESH.pointerLockChange = function(event) {
@@ -39,25 +40,10 @@ MEEPESH.start = function() {
   height = document.body.clientHeight;
   renderer.setSize(width, height);
   scene = new t.Scene();
-  camera = new t.PerspectiveCamera(
-      60,  // Field of view
-      width / height,  // Aspect ratio
-      1,  // Near plane
-      10000  // Far plane
-  );
   time = Date.now();
 
-  // Set up the initial scene with camera and controls.
   MEEPESH.unitSize = 20;
   MEEPESH.units = 1000;
-
-  // Camera starts a little bit above the floor.
-  camera.position.set(0, MEEPESH.unitSize * 0.5, 0);
-  camera.up.x = 0;
-  camera.up.y = 1;
-  camera.up.z = 0;
-  scene.add(camera);
-
   // Scene initially involves a floor, two lights, and a cube.
   var cube = new t.Mesh(
       new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
@@ -86,6 +72,12 @@ MEEPESH.start = function() {
   scene.add(light2);
 
   // Set up controls.
+  camera = new t.PerspectiveCamera(
+      60,  // Field of view
+      width / height,  // Aspect ratio
+      1,  // Near plane
+      10000  // Far plane
+  );
   controls = new t.PointerLockControls(camera);
   scene.add(controls.getObject());
   var havePointerLock = 'pointerLockElement' in document ||
