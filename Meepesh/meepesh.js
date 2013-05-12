@@ -9,6 +9,13 @@ onWindowResize = function() {
   renderer.setSize(width, height);
 }
 
+cameraDirection = function() {
+  // Transform point in front of camera in camera space into global space to
+  // find the direction of the camera.
+  return new t.Vector3(0, 0, -1).applyMatrix4(camera.matrixWorld).sub(
+      controls.getObject().position).normalize();
+}
+
 // Global object for scene-specific stuff..
 var MEEPESH = {
 }
@@ -28,8 +35,12 @@ MEEPESH.pointerLockChange = function(event) {
       document.webkitPointerLockElement === MEEPESH.element ||
       document.mozPointerLockElement === MEEPESH.element) {
     controls.enabled = true;
+    document.removeEventListener('click', MEEPESH.pointerLockClick, false);
+    document.addEventListener('click', MEEPESH.buildClick, false);
   } else {
     controls.enabled = false;
+    document.removeEventListener('click', MEEPESH.buildClick, false);
+    document.addEventListener('click', MEEPESH.pointerLockClick, false);
   }
 }
 
@@ -39,14 +50,40 @@ MEEPESH.pointerLockClick = function(event) {
       MEEPESH.element.webkitRequestPointerLock ||
       MEEPESH.element.mozRequestPointerLock;
   MEEPESH.element.requestPointerLock();
-  document.removeEventListener('click', MEEPESH.pointerLockClick, false);
-  document.addEventListener('click', MEEPESH.click, false);
+}
+
+MEEPESH.createCube = function(v) {
+  // Return in grid coordinates where this cube should be located.
+  v = (function(v){
+    v.x = Math.floor(v.x / MEEPESH.unitSize);
+    v.y = Math.floor(v.y / MEEPESH.unitSize);
+    v.z = Math.floor(v.z / MEEPESH.unitSize);
+    return v;
+  })(v);
+  var cube = new t.Mesh(
+      new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
+                         MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
+      new t.MeshLambertMaterial(
+          { color: MEEPESH.cubeColor, ambient: MEEPESH.cubeColor })
+  );
+  cube.position.set(v.x * MEEPESH.unitSize, (v.y + 0.5) * MEEPESH.unitSize,
+                    v.z * MEEPESH.unitSize);
+  return cube;
 }
 
 // Build blocks / destroy blocks controls.
-MEEPESH.click = function(event) {
-  if (event.which === 1) { // left click
-  } else if (event.which === 3) { // right click
+MEEPESH.buildClick = function(event) {
+  var direction = cameraDirection();
+  var ray = new t.Raycaster(controls.getObject().position, direction);
+  var intersects = ray.intersectObjects(MEEPESH.objects);
+
+  if (intersects.length > 0) {
+    if (event.which === 1) { // left click
+      var cube = MEEPESH.createCube(intersects[0].point.sub(direction));
+      scene.add(cube);
+      MEEPESH.objects.push(cube);
+    } else if (event.which === 3) { // right click
+    }
   }
 }
 
@@ -61,30 +98,27 @@ MEEPESH.start = function() {
 
   MEEPESH.unitSize = 20;
   MEEPESH.units = 1000;
-  // Scene initially involves a floor, a cube, and ambient white lighting.
-  // Gold cube.
+  MEEPESH.objects = new Array();
+
+  // Scene initially involves a floor and ambient white lighting.
   MEEPESH.cubeColor = 0xD4AF37;
-  var cube = new t.Mesh(
-      new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
-                         MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
-      new t.MeshLambertMaterial(
-          { color: MEEPESH.cubeColor, ambient: MEEPESH.cubeColor })
-  );
-  cube.position.set(0, MEEPESH.unitSize / 2, -2 * MEEPESH.unitSize);
-  scene.add(cube);
+
+  // Green grass floor.
   var geometry = new t.PlaneGeometry(
       MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
       MEEPESH.unitSize, MEEPESH.unitSize);
   // Floors generally are on the xz plane rather than the yz plane. Rotate it
   // there :).
   geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
-  // Green grass floor.
   floorColor = 0x395D33;
   var floor = new t.Mesh(
       geometry, new t.MeshLambertMaterial(
           { color: floorColor, ambient: floorColor })
   );
   scene.add(floor);
+  MEEPESH.objects.push(floor);
+
+  // White ambient light.
   var light = new t.AmbientLight(0xFFFFFF);
   scene.add(light);
 
