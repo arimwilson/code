@@ -33,6 +33,23 @@ MEEPESH.pointerLockChange = function(event) {
   }
 }
 
+MEEPESH.pointerLockClick = function(event) {
+  MEEPESH.element.requestPointerLock =
+      MEEPESH.element.requestPointerLock ||
+      MEEPESH.element.webkitRequestPointerLock ||
+      MEEPESH.element.mozRequestPointerLock;
+  MEEPESH.element.requestPointerLock();
+  document.removeEventListener('click', MEEPESH.pointerLockClick, false);
+  document.addEventListener('click', MEEPESH.click, false);
+}
+
+// Build blocks / destroy blocks controls.
+MEEPESH.click = function(event) {
+  if (event.which === 1) { // left click
+  } else if (event.which === 3) { // right click
+  }
+}
+
 MEEPESH.start = function() {
   t = THREE;
   renderer = new t.WebGLRenderer();
@@ -95,21 +112,13 @@ MEEPESH.start = function() {
       'webkitpointerlockchange', MEEPESH.pointerLockChange, false);
   document.addEventListener(
       'mozpointerlockchange', MEEPESH.pointerLockChange, false);
-
   document.addEventListener(
       'pointerlockerror', function(event) {}, false);
   document.addEventListener(
       'webkitpointerlockerror', function(event) {}, false);
   document.addEventListener(
       'mozpointerlockerror', function(event) {}, false);
-  MEEPESH.element.addEventListener('click', function(event) {
-    MEEPESH.element.requestPointerLock =
-        MEEPESH.element.requestPointerLock ||
-        MEEPESH.element.webkitRequestPointerLock ||
-        MEEPESH.element.mozRequestPointerLock;
-    MEEPESH.element.requestPointerLock();
-  }, false);
-
+  document.addEventListener('click', MEEPESH.pointerLockClick, false);
 
   // Get the window ready.
   document.body.appendChild(renderer.domElement);
