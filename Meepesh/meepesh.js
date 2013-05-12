@@ -44,11 +44,14 @@ MEEPESH.start = function() {
 
   MEEPESH.unitSize = 20;
   MEEPESH.units = 1000;
-  // Scene initially involves a floor, two lights, and a cube.
+  // Scene initially involves a floor, a cube, and ambient white lighting.
+  // Gold cube.
+  MEEPESH.cubeColor = 0xD4AF37;
   var cube = new t.Mesh(
       new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
                          MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
-      new t.MeshLambertMaterial({ color: 0xFF0000 })
+      new t.MeshLambertMaterial(
+          { color: MEEPESH.cubeColor, ambient: MEEPESH.cubeColor })
   );
   cube.position.set(0, MEEPESH.unitSize / 2, -2 * MEEPESH.unitSize);
   scene.add(cube);
@@ -58,18 +61,15 @@ MEEPESH.start = function() {
   // Floors generally are on the xz plane rather than the yz plane. Rotate it
   // there :).
   geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
+  // Green grass floor.
+  floorColor = 0x395D33;
   var floor = new t.Mesh(
-      geometry, new t.MeshLambertMaterial({ color: 0x00FF00 })
+      geometry, new t.MeshLambertMaterial(
+          { color: floorColor, ambient: floorColor })
   );
   scene.add(floor);
-  var light = new t.PointLight(0xFFFF00);
-  light.position.set(
-      2 * MEEPESH.unitSize, 2 * MEEPESH.unitSize, 2 * MEEPESH.unitSize);
+  var light = new t.AmbientLight(0xFFFFFF);
   scene.add(light);
-  var light2 = new t.PointLight(0xFFFF00);
-  light2.position.set(
-      -2 * MEEPESH.unitSize, 2 * MEEPESH.unitSize, -2 * MEEPESH.unitSize);
-  scene.add(light2);
 
   // Set up controls.
   camera = new t.PerspectiveCamera(

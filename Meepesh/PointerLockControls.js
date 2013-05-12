@@ -17,9 +17,8 @@ THREE.PointerLockControls = function ( camera ) {
 	var moveBackward = false;
 	var moveLeft = false;
 	var moveRight = false;
-
-	var isOnObject = false;
-	var canJump = false;
+  var flyUp = false;
+  var flyDown = false;
 
 	var velocity = new THREE.Vector3();
 
@@ -50,7 +49,8 @@ THREE.PointerLockControls = function ( camera ) {
 
 			case 37: // left
 			case 65: // a
-				moveLeft = true; break;
+				moveLeft = true;
+        break;
 
 			case 40: // down
 			case 83: // s
@@ -63,9 +63,11 @@ THREE.PointerLockControls = function ( camera ) {
 				break;
 
 			case 32: // space
-				if ( canJump === true ) velocity.y += 10;
-				canJump = false;
+        flyUp = true;
 				break;
+      case 16: // shift
+        flyDown = true;
+        break;
 
 		}
 
@@ -95,6 +97,12 @@ THREE.PointerLockControls = function ( camera ) {
 				moveRight = false;
 				break;
 
+      case 32: // space
+        flyUp = false;
+        break;
+      case 16: // shift
+        flyDown = false;
+        break;
 		}
 
 	};
@@ -111,13 +119,6 @@ THREE.PointerLockControls = function ( camera ) {
 
 	};
 
-	this.isOnObject = function ( boolean ) {
-
-		isOnObject = boolean;
-		canJump = boolean;
-
-	};
-
 	this.update = function ( delta ) {
 
 		if ( scope.enabled === false ) return;
@@ -126,8 +127,7 @@ THREE.PointerLockControls = function ( camera ) {
 
 		velocity.x += ( - velocity.x ) * 0.08 * delta;
 		velocity.z += ( - velocity.z ) * 0.08 * delta;
-
-		velocity.y -= 0.25 * delta;
+    velocity.y += ( - velocity.y ) * 0.08 * delta;
 
 		if ( moveForward ) velocity.z -= 0.12 * delta;
 		if ( moveBackward ) velocity.z += 0.12 * delta;
@@ -135,11 +135,8 @@ THREE.PointerLockControls = function ( camera ) {
 		if ( moveLeft ) velocity.x -= 0.12 * delta;
 		if ( moveRight ) velocity.x += 0.12 * delta;
 
-		if ( isOnObject === true ) {
-
-			velocity.y = Math.max( 0, velocity.y );
-
-		}
+    if ( flyUp ) velocity.y += 0.12 * delta;
+    if ( flyDown ) velocity.y -= 0.12 * delta;
 
 		yawObject.translateX( velocity.x );
 		yawObject.translateY( velocity.y );
@@ -149,8 +146,6 @@ THREE.PointerLockControls = function ( camera ) {
 
 			velocity.y = 0;
 			yawObject.position.y = 10;
-
-			canJump = true;
 
 		}
 
