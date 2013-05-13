@@ -96,13 +96,14 @@ MEEPESH.buildClick = function(event) {
       scene.add(cube);
       MEEPESH.objects.push(cube);
     } else if (event.which === 3) { // right click
-      for (i = 0; i < MEEPESH.objects.length; ++i) {
+      var i = 0;
+      for (; i < MEEPESH.objects.length; ++i) {
         if (MEEPESH.objects[i].id === intersects[0].object.id) {
           if (i != 0) MEEPESH.objects.remove(i);
           break;
         }
       }
-      scene.remove(intersects[0].object);
+      if (i != 0) scene.remove(intersects[0].object);
     }
   }
 }
