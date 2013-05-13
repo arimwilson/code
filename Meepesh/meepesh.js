@@ -95,11 +95,10 @@ MEEPESH.buildClick = function(event) {
       var cube = MEEPESH.createCube(intersects[0].point.sub(direction));
       scene.add(cube);
       MEEPESH.objects.push(cube);
-    } else if (event.which === 3 && // right click
-               intersects[0].object.id !== 0) {
+    } else if (event.which === 3) { // right click
       for (i = 0; i < MEEPESH.objects.length; ++i) {
         if (MEEPESH.objects[i].id === intersects[0].object.id) {
-          MEEPESH.objects.remove(i);
+          if (i != 0) MEEPESH.objects.remove(i);
           break;
         }
       }
@@ -109,9 +108,8 @@ MEEPESH.buildClick = function(event) {
 }
 
 MEEPESH.save = function(event) {
-  console.log(event.keyCode);
   if (event.keyCode !== 122) return;
-  // TODO(ariw): Fix this so it doesn't crash and die.
+  // TODO(ariw): Fix this so it doesn't hang.
   // $.post("backend/save", MEEPESH.objects);
 }
 
