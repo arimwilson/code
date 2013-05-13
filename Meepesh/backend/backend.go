@@ -1,14 +1,16 @@
 package ariwilson
 
 import (
-  "fmt"
   "net/http"
 )
 
 func init() {
-    http.HandleFunc("/", handler)
+  http.HandleFunc("/backend/load", load)
+  http.HandleFunc("/backend/save", save)
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-  fmt.Fprint(w, "You have reached the secret backdoor!")
+func load(w http.ResponseWriter, r *http.Request) {
+}
+
+func save(w http.ResponseWriter, r *http.Request) {
 }

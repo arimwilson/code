@@ -16,7 +16,7 @@ cameraDirection = function() {
       controls.getObject().position).normalize();
 }
 
-// Global object for scene-specific stuff..
+// Global object for scene-specific stuff.
 var MEEPESH = {
 }
 
@@ -30,6 +30,17 @@ MEEPESH.update = function() {
   time = Date.now();
 }
 
+MEEPESH.load = function() {
+  $.ajax({
+      url: "backend/load", type: 'POST', async: false,
+      success: function(objects) {
+        if (objects.length > 0) {
+          MEEPESH.objects = eval(objects);
+        }
+      },
+  });
+}
+
 MEEPESH.pointerLockChange = function(event) {
   if (document.pointerLockElement === MEEPESH.element ||
       document.webkitPointerLockElement === MEEPESH.element ||
@@ -37,9 +48,11 @@ MEEPESH.pointerLockChange = function(event) {
     controls.enabled = true;
     document.removeEventListener('click', MEEPESH.pointerLockClick, false);
     document.addEventListener('click', MEEPESH.buildClick, false);
+    document.addEventListener('keypress', MEEPESH.save, false);
   } else {
     controls.enabled = false;
     document.removeEventListener('click', MEEPESH.buildClick, false);
+    document.removeEventListener('keypress', MEEPESH.save, false);
     document.addEventListener('click', MEEPESH.pointerLockClick, false);
   }
 }
@@ -54,7 +67,7 @@ MEEPESH.pointerLockClick = function(event) {
 
 MEEPESH.createCube = function(v) {
   // Return in grid coordinates where this cube should be located.
-  v = (function(v){
+  v = (function(v) {
     v.x = Math.floor(v.x / MEEPESH.unitSize);
     v.y = Math.floor(v.y / MEEPESH.unitSize);
     v.z = Math.floor(v.z / MEEPESH.unitSize);
@@ -82,9 +95,24 @@ MEEPESH.buildClick = function(event) {
       var cube = MEEPESH.createCube(intersects[0].point.sub(direction));
       scene.add(cube);
       MEEPESH.objects.push(cube);
-    } else if (event.which === 3) { // right click
+    } else if (event.which === 3 && // right click
+               intersects[0].object.id !== 0) {
+      for (i = 0; i < MEEPESH.objects.length; ++i) {
+        if (MEEPESH.objects[i].id === intersects[0].object.id) {
+          MEEPESH.objects.remove(i);
+          break;
+        }
+      }
+      scene.remove(intersects[0].object);
     }
   }
+}
+
+MEEPESH.save = function(event) {
+  console.log(event.keyCode);
+  if (event.keyCode !== 122) return;
+  // TODO(ariw): Fix this so it doesn't crash and die.
+  // $.post("backend/save", MEEPESH.objects);
 }
 
 MEEPESH.start = function() {
@@ -98,25 +126,31 @@ MEEPESH.start = function() {
 
   MEEPESH.unitSize = 20;
   MEEPESH.units = 1000;
-  MEEPESH.objects = new Array();
 
-  // Scene initially involves a floor and ambient white lighting.
   MEEPESH.cubeColor = 0xD4AF37;
 
-  // Green grass floor.
-  var geometry = new t.PlaneGeometry(
-      MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
-      MEEPESH.unitSize, MEEPESH.unitSize);
-  // Floors generally are on the xz plane rather than the yz plane. Rotate it
-  // there :).
-  geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
-  floorColor = 0x395D33;
-  var floor = new t.Mesh(
-      geometry, new t.MeshLambertMaterial(
-          { color: floorColor, ambient: floorColor })
-  );
-  scene.add(floor);
-  MEEPESH.objects.push(floor);
+  MEEPESH.load();
+  if (typeof MEEPESH.objects !== "undefined") {
+    for (i = 0; i < MEEPESH.objects.length; ++i) {
+      scene.add(MEEPESH.objects[i]);
+    }
+  } else {
+    // Green grass floor
+    MEEPESH.objects = new Array();
+    var geometry = new t.PlaneGeometry(
+        MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
+        MEEPESH.unitSize, MEEPESH.unitSize);
+    // Floors generally are on the xz plane rather than the yz plane. Rotate it
+    // there :).
+    geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
+    floorColor = 0x395D33;
+    var floor = new t.Mesh(
+        geometry, new t.MeshLambertMaterial(
+            { color: floorColor, ambient: floorColor })
+    );
+    scene.add(floor);
+    MEEPESH.objects.push(floor);
+  }
 
   // White ambient light.
   var light = new t.AmbientLight(0xFFFFFF);
