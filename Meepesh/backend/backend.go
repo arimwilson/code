@@ -12,7 +12,7 @@ func init() {
 
 type World struct {
   User string
-  Objects string
+  Objects []byte
 }
 
 func load(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +28,7 @@ func load(w http.ResponseWriter, r *http.Request) {
     return
   }
   encoder := json.NewEncoder(w)
-  encoder.Encode(world.Objects)
+  encoder.Encode(string(world.Objects))
 }
 
 func save(w http.ResponseWriter, r *http.Request) {
@@ -47,10 +47,10 @@ func save(w http.ResponseWriter, r *http.Request) {
   world := new(World)
   key, err = query.Run(c).Next(world)
   if err == nil {
-    world.Objects = r.FormValue("objects")
+    world.Objects = []byte(r.FormValue("objects"))
     _, err = datastore.Put(c, key, world)
   } else {
-    world = &World{ cur_user, r.FormValue("objects") }
+    world = &World{ cur_user, []byte(r.FormValue("objects")) }
     _, err = datastore.Put(c, datastore.NewIncompleteKey(c, "world", nil),
                            world)
   }
