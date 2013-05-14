@@ -34,7 +34,7 @@ func save(w http.ResponseWriter, r *http.Request) {
   cur_user := user.Current(c).String()
   name := r.FormValue("name")
   query := datastore.NewQuery("board")
-  query.Filter("User =", user.Current(c).String())
+  query.Filter("User =", cur_user)
   query.Filter("Name = ", name)
   var key *datastore.Key
   board := new(Board)

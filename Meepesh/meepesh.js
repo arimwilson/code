@@ -34,8 +34,14 @@ MEEPESH.load = function() {
   $.ajax({
       url: "backend/load", type: 'POST', async: false,
       success: function(objects) {
+        objects = eval(objects)
         if (objects.length > 0) {
-          MEEPESH.objects = eval(objects);
+          objects = eval(objects);
+          for (i = 0; i < objects.length; ++i) {
+            objects[i] = MEEPESH.createCube(objects[i]);
+            scene.add(objects[i]);
+          }
+          MEEPESH.objects = MEEPESH.objects.concat(objects);
         }
       },
   });
@@ -65,14 +71,17 @@ MEEPESH.pointerLockClick = function(event) {
   MEEPESH.element.requestPointerLock();
 }
 
+// Given world coordinates, return grid coordinates.
+MEEPESH.gridCoordinates = function(v) {
+  var u = new t.Vector3();
+  u.x = Math.floor(v.x / MEEPESH.unitSize);
+  u.y = Math.floor(v.y / MEEPESH.unitSize);
+  u.z = Math.floor(v.z / MEEPESH.unitSize);
+  return u;
+}
+
+// v should be in grid coordinates.
 MEEPESH.createCube = function(v) {
-  // Return in grid coordinates where this cube should be located.
-  v = (function(v) {
-    v.x = Math.floor(v.x / MEEPESH.unitSize);
-    v.y = Math.floor(v.y / MEEPESH.unitSize);
-    v.z = Math.floor(v.z / MEEPESH.unitSize);
-    return v;
-  })(v);
   var cube = new t.Mesh(
       new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
                          MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
@@ -92,7 +101,8 @@ MEEPESH.buildClick = function(event) {
 
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
-      var cube = MEEPESH.createCube(intersects[0].point.sub(direction));
+      var cube = MEEPESH.createCube(MEEPESH.gridCoordinates(
+          intersects[0].point.sub(direction)));
       scene.add(cube);
       MEEPESH.objects.push(cube);
     } else if (event.which === 3) { // right click
@@ -110,8 +120,12 @@ MEEPESH.buildClick = function(event) {
 
 MEEPESH.save = function(event) {
   if (event.keyCode !== 122) return;
-  // TODO(ariw): Fix this so it doesn't hang.
-  // $.post("backend/save", MEEPESH.objects);
+  var objects = new Array();
+  // Don't include floor in serialized objects.
+  for (i = 1; i < MEEPESH.objects.length; ++i) {
+    objects.push(MEEPESH.gridCoordinates(MEEPESH.objects[i].position));
+  }
+  $.post("backend/save", { objects: JSON.stringify(objects) });
 }
 
 MEEPESH.start = function() {
@@ -128,28 +142,24 @@ MEEPESH.start = function() {
 
   MEEPESH.cubeColor = 0xD4AF37;
 
+  // Green grass floor
+  MEEPESH.objects = new Array();
+  var geometry = new t.PlaneGeometry(
+      MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
+      MEEPESH.unitSize, MEEPESH.unitSize);
+  // Floors generally are on the xz plane rather than the yz plane. Rotate it
+  // there :).
+  geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
+  floorColor = 0x395D33;
+  var floor = new t.Mesh(
+      geometry, new t.MeshLambertMaterial(
+          { color: floorColor, ambient: floorColor })
+  );
+  scene.add(floor);
+  MEEPESH.objects.push(floor);
+
+  // Existing cubes.
   MEEPESH.load();
-  if (typeof MEEPESH.objects !== "undefined") {
-    for (i = 0; i < MEEPESH.objects.length; ++i) {
-      scene.add(MEEPESH.objects[i]);
-    }
-  } else {
-    // Green grass floor
-    MEEPESH.objects = new Array();
-    var geometry = new t.PlaneGeometry(
-        MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
-        MEEPESH.unitSize, MEEPESH.unitSize);
-    // Floors generally are on the xz plane rather than the yz plane. Rotate it
-    // there :).
-    geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
-    floorColor = 0x395D33;
-    var floor = new t.Mesh(
-        geometry, new t.MeshLambertMaterial(
-            { color: floorColor, ambient: floorColor })
-    );
-    scene.add(floor);
-    MEEPESH.objects.push(floor);
-  }
 
   // White ambient light.
   var light = new t.AmbientLight(0xFFFFFF);
