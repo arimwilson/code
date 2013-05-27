@@ -18,7 +18,7 @@ type World struct {
 }
 
 func getWorld(c appengine.Context, cur_user string, name string) (
-    *datastore.Key, World, error) {
+    *datastore.Key, *World, error) {
   query := datastore.NewQuery("world")
   query.Filter("User =", cur_user)
   query.Filter("Name =", name)
@@ -61,7 +61,6 @@ func save(w http.ResponseWriter, r *http.Request) {
   }
   cur_user := user.Current(c).String()
   name := r.FormValue("name")
-  world := new(World)
   var key *datastore.Key
   var world *World
   key, world, err = getWorld(c, cur_user, name)
