@@ -1,8 +1,8 @@
 package meepesh
 
 import (
-  "appengine"; "appengine/datastore"; "appengine/user"; "encoding/json";
-  "net/http"
+  "appengine"; "appengine/datastore"; "appengine/user"; "bytes";
+  "compress/gzip"; "encoding/json"; i"ioutil"; "net/http"
 )
 
 func init() {
@@ -27,6 +27,17 @@ func getWorld(c appengine.Context, cur_user string, name string) (
   return key, world, err
 }
 
+func unzip([]byte bytes) ([]byte, error) {
+  buffer := bytes.NewBuffer(bytes)
+  reader, err := gzip.NewReader(buffer)
+  if err != nil {
+    return nil, err
+  }
+  var unzipped_bytes []byte
+  unzipped_bytes, err = ioutil.ReadAll(reader)
+  return unzipped_bytes, err
+}
+
 func load(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
   // Get params from request.
@@ -47,7 +58,25 @@ func load(w http.ResponseWriter, r *http.Request) {
     return
   }
   encoder := json.NewEncoder(w)
-  encoder.Encode(string(world.Data))
+  var data []byte
+  data, err = unzip(world.Data)
+  if err != nil {
+    c.Errorf("Could not decompress data with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  encoder.Encode(string(data))
+}
+
+func zip([]byte bytes) ([]byte, error) {
+  buffer := new(bytes.Buffer)
+  writer := gzip.NewWriter(buffer)
+  _, err := writer.Write(bytes)
+  if err != nil {
+    return nil, err
+  }
+  err = writer.Close()
+  return buffer.Bytes(), err
 }
 
 func save(w http.ResponseWriter, r *http.Request) {
@@ -63,12 +92,19 @@ func save(w http.ResponseWriter, r *http.Request) {
   name := r.FormValue("name")
   var key *datastore.Key
   var world *World
+  var data []byte
+  data, err = zip([]byte(r.FormValue("data")));
+  if err != nil {
+    c.Errorf("Could not compress data with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
   key, world, err = getWorld(c, cur_user, name)
   if err == nil {
-    world.Data = []byte(r.FormValue("data"))
+    world.Data = data
     _, err = datastore.Put(c, key, world)
   } else {
-    world = &World{ cur_user, name, 2, []byte(r.FormValue("data")) }
+    world = &World{ cur_user, name, 2, data }
     _, err = datastore.Put(c, datastore.NewIncompleteKey(c, "world", nil),
                            world)
   }

@@ -30,23 +30,6 @@ MEEPESH.update = function() {
   time = Date.now();
 }
 
-MEEPESH.load = function() {
-  $.ajax({
-      url: "backend/load", type: 'POST', async: false,
-      success: function(objects) {
-        objects = eval(objects)
-        if (objects.length > 0) {
-          objects = eval(objects);
-          for (i = 0; i < objects.length; ++i) {
-            objects[i] = MEEPESH.createCube(objects[i]);
-            scene.add(objects[i]);
-          }
-          MEEPESH.objects = MEEPESH.objects.concat(objects);
-        }
-      },
-  });
-}
-
 MEEPESH.pointerLockChange = function(event) {
   if (document.pointerLockElement === MEEPESH.element ||
       document.webkitPointerLockElement === MEEPESH.element ||
@@ -55,10 +38,12 @@ MEEPESH.pointerLockChange = function(event) {
     document.removeEventListener('click', MEEPESH.pointerLockClick, false);
     document.addEventListener('click', MEEPESH.buildClick, false);
     document.addEventListener('keypress', MEEPESH.save, false);
+    document.addEventListener('keypress', MEEPESH.load, false);
   } else {
     controls.enabled = false;
     document.removeEventListener('click', MEEPESH.buildClick, false);
     document.removeEventListener('keypress', MEEPESH.save, false);
+    document.removeEventListener('keypress', MEEPESH.load, false);
     document.addEventListener('click', MEEPESH.pointerLockClick, false);
   }
 }
@@ -80,13 +65,28 @@ MEEPESH.gridCoordinates = function(v) {
   return u;
 }
 
+MEEPESH.createFloor = function() {
+  var geometry = new t.PlaneGeometry(
+      MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
+      MEEPESH.units, MEEPESH.units);
+  // Floors generally are on the xz plane rather than the yz plane. Rotate it
+  // there :).
+  geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
+  floorColor = 0x395D33;
+  return new t.Mesh(
+      geometry, new t.MeshLambertMaterial(
+          { color: floorColor, ambient: floorColor })
+  );
+}
+
 // v should be in grid coordinates.
 MEEPESH.createCube = function(v) {
+  var cubeColor = 0xD4AF37;
   var cube = new t.Mesh(
       new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
                          1, 1, 1),
       new t.MeshLambertMaterial(
-          { color: MEEPESH.cubeColor, ambient: MEEPESH.cubeColor })
+          { color: cubeColor, ambient: cubeColor })
   );
   cube.position.set(v.x * MEEPESH.unitSize, (v.y + 0.5) * MEEPESH.unitSize,
                     v.z * MEEPESH.unitSize);
@@ -119,13 +119,40 @@ MEEPESH.buildClick = function(event) {
 }
 
 MEEPESH.save = function(event) {
+  // z
   if (event.keyCode !== 122) return;
-  var objects = new Array();
+  MEEPESH.name = prompt("World name to save?", MEEPESH.name);
+  var data = new Array();
   // Don't include floor in serialized objects.
   for (i = 1; i < MEEPESH.objects.length; ++i) {
-    objects.push(MEEPESH.gridCoordinates(MEEPESH.objects[i].position));
+    data.push(MEEPESH.gridCoordinates(MEEPESH.objects[i].position));
   }
-  $.post("backend/save", { objects: JSON.stringify(objects) });
+  $.post("backend/save", { name: MEEPESH.name, data: JSON.stringify(data) });
+}
+
+MEEPESH.load = function(event) {
+  // x
+  if (event.keyCode != 120) return;
+  MEEPESH.name = prompt("World name to load?", MEEPESH.name);
+  $.ajax({
+      url: "backend/load", type: 'POST', async: false,
+      success: function(data) {
+        data = eval(data)
+        if (data.length > 0) {
+          // Remove existing objects from scene except floor.
+          for (i = 1; i < MEEPESH.objects.length; ++i) {
+            scene.remove(MEEPESH.objects[i])
+            MEEPESH.objects.remove(i);
+          }
+          // Add new objects to scene.
+          objects = eval(data);
+          for (i = 0; i < objects.length; ++i) {
+            MEEPESH.objects.push(MEEPESH.createCube(objects[i]));
+            scene.add(MEEPESH.objects[i + 1]);
+          }
+        }
+      },
+  });
 }
 
 MEEPESH.start = function() {
@@ -139,27 +166,13 @@ MEEPESH.start = function() {
 
   MEEPESH.unitSize = 20;
   MEEPESH.units = 1000;
-
-  MEEPESH.cubeColor = 0xD4AF37;
-
-  // Green grass floor
+  MEEPESH.name = "Default";
   MEEPESH.objects = new Array();
-  var geometry = new t.PlaneGeometry(
-      MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
-      MEEPESH.units, MEEPESH.units);
-  // Floors generally are on the xz plane rather than the yz plane. Rotate it
-  // there :).
-  geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
-  floorColor = 0x395D33;
-  var floor = new t.Mesh(
-      geometry, new t.MeshLambertMaterial(
-          { color: floorColor, ambient: floorColor })
-  );
+
+  // Floor.
+  var floor = MEEPESH.createFloor()
   scene.add(floor);
   MEEPESH.objects.push(floor);
-
-  // Existing cubes.
-  MEEPESH.load();
 
   // White ambient light.
   var light = new t.AmbientLight(0xFFFFFF);
