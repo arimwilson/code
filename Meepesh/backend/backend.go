@@ -2,7 +2,7 @@ package meepesh
 
 import (
   "appengine"; "appengine/datastore"; "appengine/user"; "bytes";
-  "compress/gzip"; "encoding/json"; i"ioutil"; "net/http"
+  "compress/gzip"; "encoding/json"; "io/ioutil"; "net/http"
 )
 
 func init() {
@@ -27,8 +27,8 @@ func getWorld(c appengine.Context, cur_user string, name string) (
   return key, world, err
 }
 
-func unzip([]byte bytes) ([]byte, error) {
-  buffer := bytes.NewBuffer(bytes)
+func unzip(compressed_bytes []byte) ([]byte, error) {
+  buffer := bytes.NewBuffer(compressed_bytes)
   reader, err := gzip.NewReader(buffer)
   if err != nil {
     return nil, err
@@ -68,10 +68,10 @@ func load(w http.ResponseWriter, r *http.Request) {
   encoder.Encode(string(data))
 }
 
-func zip([]byte bytes) ([]byte, error) {
+func zip(uncompressed_bytes []byte) ([]byte, error) {
   buffer := new(bytes.Buffer)
   writer := gzip.NewWriter(buffer)
-  _, err := writer.Write(bytes)
+  _, err := writer.Write(uncompressed_bytes)
   if err != nil {
     return nil, err
   }

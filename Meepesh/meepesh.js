@@ -72,7 +72,7 @@ MEEPESH.createFloor = function() {
   // Floors generally are on the xz plane rather than the yz plane. Rotate it
   // there :).
   geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
-  floorColor = 0x395D33;
+  var floorColor = 0x395D33;
   return new t.Mesh(
       geometry, new t.MeshLambertMaterial(
           { color: floorColor, ambient: floorColor })
@@ -136,6 +136,7 @@ MEEPESH.load = function(event) {
   MEEPESH.name = prompt("World name to load?", MEEPESH.name);
   $.ajax({
       url: "backend/load", type: 'POST', async: false,
+      data: { name: MEEPESH.name },
       success: function(data) {
         data = eval(data)
         if (data.length > 0) {
@@ -170,9 +171,8 @@ MEEPESH.start = function() {
   MEEPESH.objects = new Array();
 
   // Floor.
-  var floor = MEEPESH.createFloor()
-  scene.add(floor);
-  MEEPESH.objects.push(floor);
+  var floor = MEEPESH.createFloor();
+  scene.add(MEEPESH.objects[0]);
 
   // White ambient light.
   var light = new t.AmbientLight(0xFFFFFF);
