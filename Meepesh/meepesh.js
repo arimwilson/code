@@ -68,7 +68,7 @@ MEEPESH.gridCoordinates = function(v) {
 MEEPESH.createFloor = function() {
   var geometry = new t.PlaneGeometry(
       MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
-      MEEPESH.units, MEEPESH.units);
+      MEEPESH.unitSize, MEEPESH.unitSize);
   // Floors generally are on the xz plane rather than the yz plane. Rotate it
   // there :).
   geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
@@ -84,7 +84,7 @@ MEEPESH.createCube = function(v) {
   var cubeColor = 0xD4AF37;
   var cube = new t.Mesh(
       new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
-                         1, 1, 1),
+                         MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
       new t.MeshLambertMaterial(
           { color: cubeColor, ambient: cubeColor })
   );
@@ -172,7 +172,8 @@ MEEPESH.start = function() {
 
   // Floor.
   var floor = MEEPESH.createFloor();
-  scene.add(MEEPESH.objects[0]);
+  scene.add(floor);
+  MEEPESH.objects.push(floor);
 
   // White ambient light.
   var light = new t.AmbientLight(0xFFFFFF);
