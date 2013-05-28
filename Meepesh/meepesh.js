@@ -141,7 +141,7 @@ MEEPESH.load = function(event) {
         data = eval(data)
         if (data.length > 0) {
           // Remove existing objects from scene except floor.
-          for (i = 1; i < MEEPESH.objects.length; ++i) {
+          for (i = MEEPESH.objects.length - 1; i >= 1; --i) {
             scene.remove(MEEPESH.objects[i])
             MEEPESH.objects.remove(i);
           }
