@@ -81,13 +81,11 @@ MEEPESH.createFloor = function() {
 }
 
 // v should be in grid coordinates.
-MEEPESH.createCube = function(v) {
+MEEPESH.createCube = function(v, color) {
   var cube = new t.Mesh(
       new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
                          MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
-      new t.MeshLambertMaterial(
-          { color: "#" + MEEPESH.block_color.val(),
-            ambient: "#" + MEEPESH.block_color.val() })
+      new t.MeshLambertMaterial({ color: color, ambient: color })
   );
   cube.position.set(v.x * MEEPESH.unitSize, (v.y + 0.5) * MEEPESH.unitSize,
                     v.z * MEEPESH.unitSize);
@@ -103,7 +101,7 @@ MEEPESH.buildClick = function(event) {
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
       var cube = MEEPESH.createCube(MEEPESH.gridCoordinates(
-          intersects[0].point.sub(direction)));
+          intersects[0].point.sub(direction)), "#" + MEEPESH.block_color.val());
       scene.add(cube);
       MEEPESH.objects.push(cube);
     } else if (event.which === 3) { // right click
@@ -119,17 +117,30 @@ MEEPESH.buildClick = function(event) {
   }
 }
 
-// TODO(ariw): Need to save / load colors.
+MEEPESH.cube = function(cube) {
+  this.position = MEEPESH.gridCoordinates(cube.position);
+  this.color = cube.material.color.getHex();
+  return this;
+}
+
+// Convert rendered world into a simplified format suitable for later
+// retrieval.
+MEEPESH.world = function() {
+  var data = new Array();
+  // Don't include floor in serialized objects.
+  for (i = 1; i < MEEPESH.objects.length; ++i) {
+    data.push(new MEEPESH.cube(MEEPESH.objects[i]));
+  }
+  return data;
+}
+
 MEEPESH.save = function(event) {
   // z
   if (event.keyCode !== 122) return;
   MEEPESH.name = prompt("World name to save?", MEEPESH.name);
-  var data = new Array();
-  // Don't include floor in serialized objects.
-  for (i = 1; i < MEEPESH.objects.length; ++i) {
-    data.push(MEEPESH.gridCoordinates(MEEPESH.objects[i].position));
-  }
-  $.post("backend/save", { name: MEEPESH.name, data: JSON.stringify(data) });
+  $.post("backend/save", {
+      name: MEEPESH.name, data: JSON.stringify(MEEPESH.world())
+  });
 }
 
 MEEPESH.load = function(event) {
@@ -149,9 +160,10 @@ MEEPESH.load = function(event) {
             MEEPESH.objects.remove(i);
           }
           // Add new objects to scene.
-          objects = eval(data);
-          for (i = 0; i < objects.length; ++i) {
-            MEEPESH.objects.push(MEEPESH.createCube(objects[i]));
+          data = eval(data);
+          for (i = 0; i < data.length; ++i) {
+            MEEPESH.objects.push(MEEPESH.createCube(
+                data[i].position, data[i].color));
             scene.add(MEEPESH.objects[i + 1]);
           }
         }
