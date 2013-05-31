@@ -82,12 +82,12 @@ MEEPESH.createFloor = function() {
 
 // v should be in grid coordinates.
 MEEPESH.createCube = function(v) {
-  var cubeColor = 0xD4AF37;
   var cube = new t.Mesh(
       new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
                          MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
       new t.MeshLambertMaterial(
-          { color: cubeColor, ambient: cubeColor })
+          { color: "#" + MEEPESH.block_color.val(),
+            ambient: "#" + MEEPESH.block_color.val() })
   );
   cube.position.set(v.x * MEEPESH.unitSize, (v.y + 0.5) * MEEPESH.unitSize,
                     v.z * MEEPESH.unitSize);
@@ -119,6 +119,7 @@ MEEPESH.buildClick = function(event) {
   }
 }
 
+// TODO(ariw): Need to save / load colors.
 MEEPESH.save = function(event) {
   // z
   if (event.keyCode !== 122) return;
@@ -169,6 +170,7 @@ MEEPESH.start = function() {
 
   MEEPESH.blocker = $("#blocker");
   MEEPESH.menu = $("#menu");
+  MEEPESH.block_color = $("#block_color");
   MEEPESH.unitSize = 20;
   MEEPESH.units = 1000;
   MEEPESH.name = "Default";
@@ -211,8 +213,10 @@ MEEPESH.start = function() {
   MEEPESH.blocker.click(MEEPESH.pointerLockClick);
   MEEPESH.menu.click(function(event) { event.stopPropagation(); });
 
+  MEEPESH.block_color.get(0).color.fromString("D4AF37");
+
   // Get the window ready.
-  document.body.appendChild(renderer.domElement);
+  $(document.body).append(renderer.domElement);
   $(window).on('resize', onWindowResize);
 
   // Begin updating.
