@@ -35,16 +35,15 @@ MEEPESH.pointerLockChange = function(event) {
       document.webkitPointerLockElement === MEEPESH.element ||
       document.mozPointerLockElement === MEEPESH.element) {
     controls.enabled = true;
-    document.addEventListener('click', MEEPESH.buildClick, false);
-    document.addEventListener('keypress', MEEPESH.save, false);
-    document.addEventListener('keypress', MEEPESH.load, false);
+    $(document).click(MEEPESH.buildClick);
+    $(document).keypress(MEEPESH.save);
+    $(document).keypress(MEEPESH.load);
 
     MEEPESH.blocker.hide();
   } else {
     controls.enabled = false;
-    document.removeEventListener('click', MEEPESH.buildClick, false);
-    document.removeEventListener('keypress', MEEPESH.save, false);
-    document.removeEventListener('keypress', MEEPESH.load, false);
+    $(document).off('click');
+    $(document).off('keypress');
 
     MEEPESH.blocker.show();
   }
@@ -203,23 +202,18 @@ MEEPESH.start = function() {
   MEEPESH.element = document.body;
   // TODO(ariw): This breaks on Firefox since we don't requestFullscreen()
   // first.
-  document.addEventListener(
-      'pointerlockchange', MEEPESH.pointerLockChange, false);
-  document.addEventListener(
-      'webkitpointerlockchange', MEEPESH.pointerLockChange, false);
-  document.addEventListener(
-      'mozpointerlockchange', MEEPESH.pointerLockChange, false);
-  document.addEventListener(
-      'pointerlockerror', function(event) {}, false);
-  document.addEventListener(
-      'webkitpointerlockerror', function(event) {}, false);
-  document.addEventListener(
-      'mozpointerlockerror', function(event) {}, false);
+  $(document).on('pointerlockchange', MEEPESH.pointerLockChange);
+  $(document).on('webkitpointerlockchange', MEEPESH.pointerLockChange);
+  $(document).on('mozpointerlockchange', MEEPESH.pointerLockChange);
+  $(document).on('pointerlockerror', function(event) {});
+  $(document).on('webkitpointerlockerror', function(event) {});
+  $(document).on('mozpointerlockerror', function(event) {});
   MEEPESH.blocker.click(MEEPESH.pointerLockClick);
+  MEEPESH.menu.click(function(event) { event.stopPropagation(); });
 
   // Get the window ready.
   document.body.appendChild(renderer.domElement);
-  window.addEventListener('resize', onWindowResize, false);
+  $(window).on('resize', onWindowResize);
 
   // Begin updating.
   MEEPESH.update();
