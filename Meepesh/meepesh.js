@@ -39,12 +39,16 @@ MEEPESH.pointerLockChange = function(event) {
     document.addEventListener('click', MEEPESH.buildClick, false);
     document.addEventListener('keypress', MEEPESH.save, false);
     document.addEventListener('keypress', MEEPESH.load, false);
+
+    MEEPESH.blocker.hide();
   } else {
     controls.enabled = false;
     document.removeEventListener('click', MEEPESH.buildClick, false);
     document.removeEventListener('keypress', MEEPESH.save, false);
     document.removeEventListener('keypress', MEEPESH.load, false);
     document.addEventListener('click', MEEPESH.pointerLockClick, false);
+
+    MEEPESH.blocker.show();
   }
 }
 
@@ -138,6 +142,7 @@ MEEPESH.load = function(event) {
       url: "backend/load", type: 'POST', async: false,
       data: { name: MEEPESH.name },
       success: function(data) {
+        // TODO(ariw): This algorithm is slow as balls.
         data = eval(data)
         if (data.length > 0) {
           // Remove existing objects from scene except floor.
@@ -165,6 +170,8 @@ MEEPESH.start = function() {
   scene = new t.Scene();
   time = Date.now();
 
+  MEEPESH.blocker = $("#blocker");
+  MEEPESH.menu = $("#menu");
   MEEPESH.unitSize = 20;
   MEEPESH.units = 1000;
   MEEPESH.name = "Default";
@@ -192,7 +199,8 @@ MEEPESH.start = function() {
                         'mozPointerLockElement' in document ||
                         'webkitPointerLockElement' in document;
   if (!havePointerLock) {
-    alert("No pointer lock functionality detected!");
+    MEEPESH.menu.html("No pointer lock functionality detected!");
+    return;
   }
   MEEPESH.element = document.body;
   // TODO(ariw): This breaks on Firefox since we don't requestFullscreen()
