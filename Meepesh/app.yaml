@@ -13,9 +13,9 @@ handlers:
   static_files: favicon.ico
   upload: favicon.ico
 # Magic CSS.
-- url: /style.css
-  static_files: style.css
-  upload: style.css
+- url: /style.less
+  static_files: style.less
+  upload: style.less
 # Most of the required JavaScript to load.
 - url: /(.*\.js)
   static_files: \1

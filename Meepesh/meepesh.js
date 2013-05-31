@@ -35,7 +35,6 @@ MEEPESH.pointerLockChange = function(event) {
       document.webkitPointerLockElement === MEEPESH.element ||
       document.mozPointerLockElement === MEEPESH.element) {
     controls.enabled = true;
-    document.removeEventListener('click', MEEPESH.pointerLockClick, false);
     document.addEventListener('click', MEEPESH.buildClick, false);
     document.addEventListener('keypress', MEEPESH.save, false);
     document.addEventListener('keypress', MEEPESH.load, false);
@@ -46,7 +45,6 @@ MEEPESH.pointerLockChange = function(event) {
     document.removeEventListener('click', MEEPESH.buildClick, false);
     document.removeEventListener('keypress', MEEPESH.save, false);
     document.removeEventListener('keypress', MEEPESH.load, false);
-    document.addEventListener('click', MEEPESH.pointerLockClick, false);
 
     MEEPESH.blocker.show();
   }
@@ -217,7 +215,7 @@ MEEPESH.start = function() {
       'webkitpointerlockerror', function(event) {}, false);
   document.addEventListener(
       'mozpointerlockerror', function(event) {}, false);
-  document.addEventListener('click', MEEPESH.pointerLockClick, false);
+  MEEPESH.blocker.click(MEEPESH.pointerLockClick);
 
   // Get the window ready.
   document.body.appendChild(renderer.domElement);
