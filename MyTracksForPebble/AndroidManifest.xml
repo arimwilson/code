@@ -10,14 +10,14 @@
         android:icon="@drawable/icon"
         android:label="@string/app_name" >
         <receiver
-            android:name="pebblemytracks.MyTracksReceiver"
+            android:name="com.ariwilson.mytracksforpebble.MyTracksReceiver"
             android:exported="true" >
             <intent-filter>
                 <action android:name="com.google.android.apps.mytracks.TRACK_STARTED" />
             </intent-filter>
         </receiver>
 
-        <service android:name="pebblemytracks.PebbleSportsService" />
+        <service android:name="com.ariwilson.mytracksforpebble.PebbleSportsService" />
     </application>
 
     <uses-permission android:name="com.google.android.apps.mytracks.READ_TRACK_DATA" />
