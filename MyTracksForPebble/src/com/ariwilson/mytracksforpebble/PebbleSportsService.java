@@ -23,23 +23,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-
 public class PebbleSportsService extends Service {
   public static final long NOTIFY_INTERVAL = 2; // 2 seconds
 
-  // pebble stuff
+  // Pebble
   private PebbleKit.PebbleDataReceiver sportsDataHandler = null;
   private int sportsState = Constants.SPORTS_STATE_INIT;
 
-  // mytracks stuff
+  // MyTracks
   private MyTracksProviderUtils myTracksProviderUtils;
   private ITrackRecordingService myTracksService;
   private Intent intent;
 
-  // timer for repetitive updates of the pebble
+  // Timer for Pebble updates
   private ScheduledExecutorService scheduleTaskExecutor;
 
-  // connection to the MyTracks service
+  // Connection to the MyTracks service
   private ServiceConnection serviceConnection = new ServiceConnection() {
     @Override
     public void onServiceConnected(ComponentName className, IBinder service) {
@@ -104,9 +103,9 @@ public class PebbleSportsService extends Service {
           @Override
           public void run() {
             if (sportsState == Constants.SPORTS_STATE_RUNNING) {
-//              Log.i(TAG,"Running");
+//            Log.i(TAG,"Running");
             } else {
-//             Log.i(TAG,"Paused");
+//            Log.i(TAG,"Paused");
             }
           }
         });
@@ -115,7 +114,6 @@ public class PebbleSportsService extends Service {
     PebbleKit.registerReceivedDataHandler(this, sportsDataHandler);
 
     startWatchApp();
-
 
     // recreate new
     scheduleTaskExecutor= Executors.newScheduledThreadPool(5);
@@ -185,5 +183,4 @@ public class PebbleSportsService extends Service {
 
     PebbleKit.sendDataToPebble(getApplicationContext(), Constants.SPORTS_UUID, data);
   }
-
 }

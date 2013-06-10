@@ -7,7 +7,7 @@
     <uses-sdk android:minSdkVersion="7" />
 
     <application
-        android:icon="@drawable/icon"
+        android:icon="@drawable/pebblemytracks"
         android:label="@string/app_name" >
         <receiver
             android:name="com.ariwilson.mytracksforpebble.MyTracksReceiver"
