@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.android.apps.mytracks.samples.api"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk android:minSdkVersion="7" />
+
+    <application
+        android:icon="@drawable/icon"
+        android:label="@string/app_name" >
+        <receiver
+            android:name="pebblemytracks.MyTracksReceiver"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="com.google.android.apps.mytracks.TRACK_STARTED" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name="pebblemytracks.PebbleSportsService" />
+    </application>
+
+    <uses-permission android:name="com.google.android.apps.mytracks.READ_TRACK_DATA" />
+    <uses-permission android:name="com.google.android.apps.mytracks.WRITE_TRACK_DATA" />
+    <uses-permission android:name="com.google.android.apps.mytracks.TRACK_NOTIFICATIONS" />
+
+</manifest>
