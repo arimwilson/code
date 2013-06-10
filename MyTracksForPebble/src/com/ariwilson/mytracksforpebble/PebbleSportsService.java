@@ -1,4 +1,4 @@
-package pebblemytracks;
+package com.ariwilson.mytracksforpebble;
 
 import android.app.Service;
 import android.content.ComponentName;
@@ -16,7 +16,6 @@ import com.getpebble.android.kit.Constants;
 import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
 import com.google.android.apps.mytracks.content.MyTracksProviderUtils;
-import com.google.android.apps.mytracks.samples.api.R;
 import com.google.android.apps.mytracks.services.ITrackRecordingService;
 import com.google.android.apps.mytracks.stats.TripStatistics;
 
@@ -39,9 +38,9 @@ public class PebbleSportsService extends Service {
 
   // timer for repetitive updates of the pebble
   private ScheduledExecutorService scheduleTaskExecutor;
-  
-  // connection to the MyTracks service  
-  private ServiceConnection serviceConnection = new ServiceConnection() {  
+
+  // connection to the MyTracks service
+  private ServiceConnection serviceConnection = new ServiceConnection() {
     @Override
     public void onServiceConnected(ComponentName className, IBinder service) {
       myTracksService = ITrackRecordingService.Stub.asInterface(service);
@@ -50,7 +49,7 @@ public class PebbleSportsService extends Service {
     @Override
     public void onServiceDisconnected(ComponentName className) {
       myTracksService = null;
-      
+
       stopWatchApp();
 
       if ( scheduleTaskExecutor != null ) {
@@ -66,7 +65,7 @@ public class PebbleSportsService extends Service {
       // unbind and stop the MyTracks service
       if (myTracksService != null) {
         unbindService(serviceConnection);
-      }      
+      }
     }
   };
 
@@ -100,7 +99,7 @@ public class PebbleSportsService extends Service {
         sportsState = newState;
 
         PebbleKit.sendAckToPebble(context, transactionId);
-        
+
         handler.post(new Runnable() {
           @Override
           public void run() {
@@ -114,29 +113,29 @@ public class PebbleSportsService extends Service {
       }
     };
     PebbleKit.registerReceivedDataHandler(this, sportsDataHandler);
-    
+
     startWatchApp();
 
-    
+
     // recreate new
     scheduleTaskExecutor= Executors.newScheduledThreadPool(5);
- // This schedule a task to run every 10 minutes:
+    // This schedule a task to run every 10 minutes:
     scheduleTaskExecutor.scheduleAtFixedRate(new Runnable() {
-      public void run() {   
+      public void run() {
         if (myTracksService != null) {
           try {
-            if ( myTracksService.isRecording() ) {
-              if ( ! myTracksService.isPaused() ) {
+            if (myTracksService.isRecording() && !myTracksService.isPaused()) {
+              if (!myTracksService.isPaused()) {
                 Location loc = myTracksProviderUtils.getLastValidTrackPoint();
-                TripStatistics statistics = myTracksProviderUtils.getTrack(myTracksService.getRecordingTrackId()).getTripStatistics();                
+                TripStatistics statistics = myTracksProviderUtils.getTrack(myTracksService.getRecordingTrackId()).getTripStatistics();
                 float speed = 0;
-                if ( loc != null ) {
+                if (loc != null) {
                   speed = loc.getSpeed();
                 }
                 updateWatchApp(statistics.getTotalDistance(),statistics.getTotalTime(),speed);
               }
             }
-          } catch ( RemoteException e ) {
+          } catch (RemoteException e) {
           }
         }
       }
@@ -167,7 +166,7 @@ public class PebbleSportsService extends Service {
   // customize the sports application at a time on a first-come,
   // first-serve basis.
   public void customizeWatchApp(View view) {
-    final String customAppName = "My Sports App";
+    final String customAppName = "My Tracks";
     final Bitmap customIcon = BitmapFactory.decodeResource(getResources(), R.drawable.watch);
 
     PebbleKit.customizeWatchApp(
@@ -181,7 +180,7 @@ public class PebbleSportsService extends Service {
     PebbleDictionary data = new PebbleDictionary();
     data.addString(Constants.SPORTS_TIME_KEY, String.format("%04d", time));
     data.addString(Constants.SPORTS_DISTANCE_KEY, String.format("%02.1f", distance));
-    data.addString(Constants.SPORTS_PACE_KEY, String.format("%.1f",speed));
+    data.addString(Constants.SPORTS_DATA_KEY, String.format("%.1f",speed));
     data.addUint8(Constants.SPORTS_UNITS_KEY, (byte)Constants.SPORTS_UNITS_METRIC);
 
     PebbleKit.sendDataToPebble(getApplicationContext(), Constants.SPORTS_UUID, data);

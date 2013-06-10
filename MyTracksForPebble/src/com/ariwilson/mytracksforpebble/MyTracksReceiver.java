@@ -1,4 +1,4 @@
-package pebblemytracks;
+package com.ariwilson.mytracksforpebble;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
