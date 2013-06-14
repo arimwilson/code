@@ -1,10 +1,10 @@
 #include <stdlib.h>
-#include <time.h>
 
 #include "pebble_os.h"
 #include "pebble_app.h"
 #include "pebble_fonts.h"
 
+#include "common.h"
 
 #define MY_UUID { 0x51, 0x74, 0xB3, 0x1A, 0x71, 0xB4, 0x4F, 0x92, 0xA1, 0xF5, 0x0E, 0xCC, 0x5A, 0xB5, 0x1B, 0x52 }
 PBL_APP_INFO_SIMPLE(MY_UUID, "Falldown", "Ari Wilson", 1 /* App version */);
@@ -131,7 +131,9 @@ void handle_init(AppContextRef ctx) {
   window_set_background_color(&window, GColorBlack);
   window_stack_push(&window, true /* Animated */);
 
-  srand(time(NULL));
+  PblTm current_time;
+  get_time(&current_time);
+  srand(unix_time(&current_time));
   // Initialize the player circle.
   init_circle(&window.layer, (kWidth - kCircleRadius) / 2, 0, &circle);
 
