@@ -59,6 +59,7 @@ public class SeismoViewThread extends Thread {
         }
         synchronized (holder_) {
           Canvas canvas = holder_.lockCanvas();
+          if (canvas == null) continue;
           canvas.drawARGB(255, 255, 255, 255);
   
           scale_paint_.setStrokeWidth(canvas_width_ / 300f);

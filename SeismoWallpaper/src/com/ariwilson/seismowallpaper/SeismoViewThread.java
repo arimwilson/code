@@ -54,6 +54,7 @@ public class SeismoViewThread extends Thread {
         }
         synchronized (holder_) {
           Canvas canvas = holder_.lockCanvas();
+          if (canvas == null) continue;
           canvas.drawColor(background_color_);
   
           // Don't want to determine scale if no values written yet.
