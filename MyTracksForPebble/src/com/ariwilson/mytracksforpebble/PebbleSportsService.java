@@ -11,6 +11,7 @@ import android.location.Location;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 import android.view.View;
 import com.getpebble.android.kit.Constants;
 import com.getpebble.android.kit.PebbleKit;
@@ -24,6 +25,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class PebbleSportsService extends Service {
+  private static final String TAG = "PebbleSportsService";
+
   public static final long NOTIFY_INTERVAL = 2; // 2 seconds
 
   // Pebble
@@ -103,9 +106,9 @@ public class PebbleSportsService extends Service {
           @Override
           public void run() {
             if (sportsState == Constants.SPORTS_STATE_RUNNING) {
-//            Log.i(TAG,"Running");
+              Log.i(TAG,"Running");
             } else {
-//            Log.i(TAG,"Paused");
+              Log.i(TAG,"Paused");
             }
           }
         });
@@ -115,8 +118,7 @@ public class PebbleSportsService extends Service {
 
     startWatchApp();
 
-    // recreate new
-    scheduleTaskExecutor= Executors.newScheduledThreadPool(5);
+    scheduleTaskExecutor = Executors.newScheduledThreadPool(5);
     // This schedule a task to run every 10 minutes:
     scheduleTaskExecutor.scheduleAtFixedRate(new Runnable() {
       public void run() {
