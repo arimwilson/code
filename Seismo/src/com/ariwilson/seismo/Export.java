@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.MenuItem;
@@ -71,7 +72,9 @@ public class Export extends Activity {
           position));
       db_.close();
       try {
-        File temp_file = File.createTempFile("Seismo", ".csv");
+    	File path = Environment.getExternalStoragePublicDirectory(
+    	    Environment.DIRECTORY_DOWNLOADS);
+        File temp_file = File.createTempFile("Seismo", ".csv", path);
         FileOutputStream out = new FileOutputStream(temp_file);
         out.write(graphToCsv(graph).getBytes());
         out.close();
