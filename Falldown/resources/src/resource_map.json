@@ -1,1 +1,11 @@
-{"friendlyVersion": "VERSION", "versionDefName": "VERSION", "media": [{"type":"raw","defName":"DUMMY","file":"resource_map.json"}]}
+{
+  "friendlyVersion": "1.0",
+  "versionDefName": "FALLDOWN_RESOURCES",
+
+  "media": [
+    { "type": "png",
+      "defName":" IMAGE_ICON",
+      "file":"images/icon.png"
+    }
+  ]
+}

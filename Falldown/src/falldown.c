@@ -9,6 +9,7 @@ PBL_APP_INFO_SIMPLE(MY_UUID, "Falldown", "Ari Wilson", 1 /* App version */);
 
 const int16_t kWidth = 144;
 const int16_t kHeight = 168;
+const int16_t kStatusBarHeight = 16;
 Window window;
 
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
@@ -55,10 +56,8 @@ Circle circle;
 
 void circle_update_proc(Layer* layer, GContext* ctx) {
   graphics_context_set_fill_color(ctx, GColorWhite);
-  GPoint center = layer_get_frame(layer).origin;
-  center.x += kCircleRadius / 2;
-  center.y += kCircleRadius / 2;
-  graphics_fill_circle(ctx, center, kCircleRadius);
+  graphics_fill_circle(
+      ctx, GPoint(kCircleRadius / 2, kCircleRadius / 2), kCircleRadius);
 }
 
 void init_circle(Layer* parent_layer, int16_t x, int16_t y, Circle* circle) {
@@ -75,18 +74,19 @@ const int16_t kLineThickness = 3;
 const int16_t kLineSegments = 6;
 const int16_t kMaxHoles = 2;
 const int16_t kLineSegmentWidth = 24;  // kWidth / kLineSegments
-const int16_t kLineCount = 7;  // kHeight / (kLineThickness + kDistanceBetweenLines)
+// (kHeight - kStatusBarHeight) / (kLineThickness + kDistanceBetweenLines)
+const int16_t kLineCount = 6;
 typedef struct {
   int16_t y;  // location of this line on the screen.
   int16_t holes[2 /* kMaxHoles */];  // which segments have holes
   int16_t holes_size;
   Layer layer;
 } Line;
-Line lines[7 /* kLineCount */];
+Line lines[6 /* kLineCount */];
 
 void line_update_proc(Layer* layer, GContext* ctx) {
   graphics_context_set_fill_color(ctx, GColorWhite);
-  graphics_fill_rect(ctx, layer_get_frame(layer), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(0, 0, kWidth, kLineThickness), 0, GCornerNone);
 }
 
 void init_line(Layer* parent_layer, int16_t y, Line* line) {
@@ -100,26 +100,29 @@ void init_line(Layer* parent_layer, int16_t y, Line* line) {
   layer_add_child(parent_layer, &line->layer);
 }
 
-void init_lines(Layer* parent_layer, Line (*lines)[7 /* kLineCount */]) {
+void init_lines(Layer* parent_layer, Line (*lines)[6 /* kLineCount */]) {
   for (int16_t i = 1; i <= kLineCount; ++i) {
-    init_line(parent_layer, (kDistanceBetweenLines + kLineThickness) * i,
-              &((*lines)[i - 1]));
+    init_line(
+        parent_layer,
+        kStatusBarHeight + (kDistanceBetweenLines + kLineThickness) * i,
+        &((*lines)[i - 1]));
   }
 }
 
 void handle_init(AppContextRef ctx) {
   (void)ctx;
+  common_srand(common_time());
 
   window_init(&window, "Falldown");
   window_set_background_color(&window, GColorBlack);
   window_stack_push(&window, true /* Animated */);
 
-  common_srand(common_time());
+  Layer* root_layer = window_get_root_layer(&window);
   // Initialize the player circle.
-  init_circle(&window.layer, (kWidth - kCircleRadius) / 2, 0, &circle);
+  init_circle(root_layer, (kWidth - kCircleRadius) / 2, kStatusBarHeight, &circle);
 
   // Initialize the lines to fall down.
-  init_lines(&window.layer, &lines);
+  init_lines(root_layer, &lines);
 
   // Attach our desired button functionality
   window_set_click_config_provider(&window, (ClickConfigProvider)click_config_provider);
