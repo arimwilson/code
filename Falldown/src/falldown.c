@@ -9,6 +9,10 @@ PBL_APP_INFO(
     MY_UUID, "Falldown", "Ari Wilson", 1, 0 /* App version */,
     RESOURCE_ID_IMAGE_ICON, APP_INFO_STANDARD_APP);
 
+const bool kDebug = true;
+const int16_t kDebugTextSize = 14;
+TextLayer text_layer;
+
 const int16_t kWidth = 144;
 const int16_t kHeight = 168;
 const int16_t kStatusBarHeight = 16;
@@ -45,7 +49,7 @@ const int16_t kLineSegmentWidth = 24;  // kWidth / kLineSegments
 const int16_t kLineCount = 4;
 typedef struct {
   Layer layer;
-  int16_t y;  // location of this line on the screen.
+  int16_t y;  // location of this line on the screen
   int16_t holes[2 /* kMaxHoles */];  // which segments have holes
   int16_t holes_size;
 } Line;
@@ -88,6 +92,11 @@ void lines_init(Layer* circle_layer, Line (*lines)[4 /* kLineCount */]) {
         &((*lines)[i - 1]));
   }
 }
+
+bool line_circle_intersect(Line* line, Circle* circle) {
+  return circle->y + kCircleRadius >= line->y;
+}
+
 Window window;
 const int16_t kUpdateMs = 50;
 // Should be able to get across the screen in about 1s:
@@ -106,10 +115,13 @@ void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (circle.x - kCircleVelocity > 0) {
+  if (circle.x - kCircleVelocity >= 0) {
     circle.x -= kCircleVelocity;
     layer_set_frame(&circle.layer,
                     GRect(circle.x, circle.y, kCircleRadius, kCircleRadius));
+  }
+  if (kDebug) {
+    text_layer_set_text(&text_layer, "DOWN");
   }
 }
 
@@ -132,6 +144,14 @@ void handle_init(AppContextRef ctx) {
   window_stack_push(&window, true /* Animated */);
 
   Layer* root_layer = window_get_root_layer(&window);
+
+  if (kDebug) {
+    text_layer_init(&text_layer, GRect(0, kHeight - kDebugTextSize, kWidth, kDebugTextSize));
+    text_layer_set_background_color(&text_layer, GColorBlack);
+    text_layer_set_text_color(&text_layer, GColorWhite);
+    layer_add_child(root_layer, (Layer*)&text_layer);
+  }
+
   // Initialize the player circle.
   circle_init(root_layer, (kWidth - kCircleRadius) / 2, kStatusBarHeight, &circle);
 
@@ -141,17 +161,16 @@ void handle_init(AppContextRef ctx) {
   // Attach our desired button functionality
   window_set_click_config_provider(&window, (ClickConfigProvider)click_config_provider);
 
-  // Start updating the game..
+  // Start updating the game.
   app_timer_send_event(ctx, kUpdateMs, 0);
 }
 
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   (void)ctx;
 
-  // Update the player circle.
-  // TODO(ariw): Intersection testing.
-
   // Update the lines to fall down.
+  Line* top_line = NULL;
+  int16_t min_y = kHeight;
   for (int16_t i = 0; i < kLineCount; ++i) {
     lines[i].y--;
     if (lines[i].y < kStatusBarHeight) {
@@ -162,6 +181,15 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     }
     layer_set_frame(&lines[i].layer,
                     GRect(0, lines[i].y, kWidth, kLineThickness));
+    if (lines[i].y < min_y) {
+      top_line = &lines[i];
+      min_y = lines[i].y;
+    }
+  }
+
+  // Update the player circle.
+  if (!line_circle_intersect(top_line, &circle)) {
+    circle.y += 1;
   }
 
   app_timer_send_event(ctx, kUpdateMs, 0);
