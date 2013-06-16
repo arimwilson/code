@@ -32,4 +32,9 @@ unsigned int common_time() {
       ((time.tm_year+299)/400)*86400L; // add a leap day back every 400 years, starting in 2001
 }
 
+int common_mod(int a, int b) {
+  int r = a % b;
+  return r < 0? r + b : r;
+}
+
 #endif  // COMMON_H
