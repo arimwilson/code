@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "pebble_os.h"
 #include "pebble_app.h"
 #include "pebble_fonts.h"
@@ -80,11 +78,11 @@ const int16_t kLineSegmentWidth = 24;  // kWidth / kLineSegments
 const int16_t kLineCount = 7;  // kHeight / (kLineThickness + kDistanceBetweenLines)
 typedef struct {
   int16_t y;  // location of this line on the screen.
-  int16_t* holes;  // which segments have holes..
+  int16_t holes[2 /* kMaxHoles */];  // which segments have holes
   int16_t holes_size;
   Layer layer;
 } Line;
-Line *lines;
+Line lines[7 /* kLineCount */];
 
 void line_update_proc(Layer* layer, GContext* ctx) {
   graphics_context_set_fill_color(ctx, GColorWhite);
@@ -93,35 +91,20 @@ void line_update_proc(Layer* layer, GContext* ctx) {
 
 void init_line(Layer* parent_layer, int16_t y, Line* line) {
   line->y = y;
-  line->holes_size = rand() % kMaxHoles + 1;
-  line->holes = malloc(line->holes_size * sizeof(line->holes));
+  line->holes_size = common_rand() % kMaxHoles + 1;
   for (int16_t i = 0; i < line->holes_size; ++i) {
-    line->holes[i] = rand() % kLineSegments;
+    line->holes[i] = common_rand() % kLineSegments;
   }
   layer_init(&line->layer, GRect(0, y, kWidth, kLineThickness));
   layer_set_update_proc(&line->layer, (LayerUpdateProc)line_update_proc);
   layer_add_child(parent_layer, &line->layer);
 }
 
-void init_lines(Layer* parent_layer, Line** lines, int16_t lines_size) {
-  *lines = malloc(kLineCount * sizeof(lines));
-  for (int16_t i = 1; i <= lines_size; ++i) {
+void init_lines(Layer* parent_layer, Line (*lines)[7 /* kLineCount */]) {
+  for (int16_t i = 1; i <= kLineCount; ++i) {
     init_line(parent_layer, (kDistanceBetweenLines + kLineThickness) * i,
               &((*lines)[i - 1]));
   }
-}
-
-void delete_line(Line* line) {
-  free(line->holes);
-  line->holes = NULL;
-}
-
-void delete_lines(Line** lines, int16_t lines_size) {
-  for (int16_t i = 0; i < lines_size; ++i) {
-    delete_line(&(*lines)[i]);
-  }
-  free(*lines);
-  *lines = NULL;
 }
 
 void handle_init(AppContextRef ctx) {
@@ -131,14 +114,12 @@ void handle_init(AppContextRef ctx) {
   window_set_background_color(&window, GColorBlack);
   window_stack_push(&window, true /* Animated */);
 
-  PblTm current_time;
-  get_time(&current_time);
-  srand(unix_time(&current_time));
+  common_srand(common_time());
   // Initialize the player circle.
   init_circle(&window.layer, (kWidth - kCircleRadius) / 2, 0, &circle);
 
   // Initialize the lines to fall down.
-  init_lines(&window.layer, &lines, kLineCount);
+  init_lines(&window.layer, &lines);
 
   // Attach our desired button functionality
   window_set_click_config_provider(&window, (ClickConfigProvider)click_config_provider);
@@ -146,7 +127,6 @@ void handle_init(AppContextRef ctx) {
 
 void handle_deinit(AppContextRef ctx) {
   (void)ctx;
-  delete_lines(&lines, kLineCount);
 }
 
 void pbl_main(void *params) {
