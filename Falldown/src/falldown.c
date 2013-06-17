@@ -3,21 +3,41 @@
 #include "pebble_fonts.h"
 
 #include "common.h"
+#include "mini-printf.h"
 
 #define MY_UUID { 0x51, 0x74, 0xB3, 0x1A, 0x71, 0xB4, 0x4F, 0x92, 0xA1, 0xF5, 0x0E, 0xCC, 0x5A, 0xB5, 0x1B, 0x52 }
 PBL_APP_INFO(
     MY_UUID, "Falldown", "Ari Wilson", 1, 0 /* App version */,
     RESOURCE_ID_IMAGE_ICON, APP_INFO_STANDARD_APP);
 
-const bool kDebug = true;
-const int16_t kDebugTextSize = 14;
-TextLayer text_layer;
+const bool kDebug = false;
+const int16_t kTextSize = 14;
 
 const int16_t kWidth = 144;
 const int16_t kHeight = 168;
 const int16_t kStatusBarHeight = 16;
 
 const int16_t kCircleRadius = 8;
+
+const int16_t kDistanceBetweenLines = 30;
+const int16_t kLineThickness = 3;
+const int16_t kMaxHoles = 2;
+// TODO(ariw): Different size holes?
+const int16_t kLineSegments = 6;
+const int16_t kLineSegmentWidth = 24;  // kWidth / kLineSegments
+// ceil((kHeight - kStatusBarHeight) / (kLineThickness + kDistanceBetweenLines))
+const int16_t kLineCount = 5;
+
+const int16_t kUpdateMs = 50;
+// Should be able to get across the screen in about 1s:
+// kWidth / (1000 / kUpdateMs)
+const int16_t kCircleVelocity = 7;
+
+TextLayer text_layer;
+int score = 0;
+
+Window window;
+
 typedef struct {
   Layer layer;
   int16_t x;
@@ -40,20 +60,13 @@ void circle_init(Layer* parent_layer, int16_t x, int16_t y, Circle* circle) {
   layer_add_child(parent_layer, &circle->layer);
 }
 
-const int16_t kDistanceBetweenLines = 30;
-const int16_t kLineThickness = 3;
-const int16_t kLineSegments = 6;
-const int16_t kMaxHoles = 2;
-const int16_t kLineSegmentWidth = 24;  // kWidth / kLineSegments
-// (kHeight - kStatusBarHeight) / (kLineThickness + kDistanceBetweenLines)
-const int16_t kLineCount = 4;
 typedef struct {
   Layer layer;
   int16_t y;  // location of this line on the screen
   int16_t holes[2 /* kMaxHoles */];  // which segments have holes
   int16_t holes_size;
 } Line;
-Line lines[4 /* kLineCount */];
+Line lines[5 /* kLineCount */];
 
 void line_update_proc(Line* line, GContext* ctx) {
   graphics_context_set_fill_color(ctx, GColorWhite);
@@ -77,31 +90,62 @@ void line_generate(int16_t y, Line* line) {
   }
 }
 
-void line_init(Layer* circle_layer, int16_t y, Line* line) {
+void line_init(Layer* parent_layer, int16_t y, Line* line) {
   line_generate(y, line);
   layer_init(&line->layer, GRect(0, line->y, kWidth, kLineThickness));
   layer_set_update_proc(&line->layer, (LayerUpdateProc)line_update_proc);
-  layer_insert_below_sibling(&line->layer, circle_layer);
+  layer_add_child(parent_layer, &line->layer);
 }
 
-void lines_init(Layer* circle_layer, Line (*lines)[4 /* kLineCount */]) {
+void lines_init(Layer* parent_layer, Line (*lines)[5 /* kLineCount */]) {
   for (int16_t i = 1; i <= kLineCount; ++i) {
     line_init(
-        circle_layer,
-        kStatusBarHeight + (kDistanceBetweenLines + kLineThickness) * i,
+        parent_layer, (kDistanceBetweenLines + kLineThickness) * i,
         &((*lines)[i - 1]));
   }
 }
 
-bool line_circle_intersect(Line* line, Circle* circle) {
-  return circle->y + kCircleRadius >= line->y;
+bool lines_circle_intersect(Line (*lines)[5 /* kLineCount */], Circle* circle) {
+  for (int16_t i = 0; i < kLineCount; ++i) {
+    int16_t y = (*lines)[i].y;
+    // Intersections occur even if only part of a circle is stuck on a line.
+    // TODO(ariw): This logic allows you to get caught if you move into a line
+    // while passing through it. Fix this!
+    if ((circle->y + kCircleRadius >= y &&
+         circle->y + kCircleRadius < y + kLineThickness) ||
+        (circle->y >= y && circle->y < y + kLineThickness)) {
+      // TODO(ariw): This logic means that if two holes lie next to each other,
+      // you can't pass through by going partially in one hole and partially in
+      // the other.
+      for (int16_t j = 0; j < (*lines)[i].holes_size; ++j) {
+        int16_t hole = (*lines)[i].holes[j];
+        // Have to be entirely contained in order to pass through a hole.
+        if (circle->x >= hole * kLineSegmentWidth &&
+            circle->x + kCircleRadius < (hole + 1) * kLineSegmentWidth) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+  return false;
 }
 
-Window window;
-const int16_t kUpdateMs = 50;
-// Should be able to get across the screen in about 1s:
-// kWidth / (1000 / kUpdateMs)
-const int16_t kCircleVelocity = 7;
+// TODO(ariw): Merge this with the circle/line init functions.
+void reset() {
+  // Reset the score.
+  score = 0;
+
+  // Reset player circle.
+  circle.x = (kWidth - kCircleRadius) / 2;
+  circle.y = 0;
+
+  // Reset the lines to fall down.
+  for (int16_t i = 1; i <= kLineCount; ++i) {
+    line_generate((kDistanceBetweenLines + kLineThickness) * i, &lines[i - 1]);
+  }
+}
+
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
@@ -119,9 +163,6 @@ void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
     circle.x -= kCircleVelocity;
     layer_set_frame(&circle.layer,
                     GRect(circle.x, circle.y, kCircleRadius, kCircleRadius));
-  }
-  if (kDebug) {
-    text_layer_set_text(&text_layer, "DOWN");
   }
 }
 
@@ -145,21 +186,22 @@ void handle_init(AppContextRef ctx) {
 
   Layer* root_layer = window_get_root_layer(&window);
 
-  if (kDebug) {
-    text_layer_init(&text_layer, GRect(0, kHeight - kDebugTextSize, kWidth, kDebugTextSize));
-    text_layer_set_background_color(&text_layer, GColorBlack);
-    text_layer_set_text_color(&text_layer, GColorWhite);
-    layer_add_child(root_layer, (Layer*)&text_layer);
-  }
+  // Initialize the lines to fall down.
+  lines_init(root_layer, &lines);
+
+  // Initialize the score.
+  text_layer_init(&text_layer, GRect(0, 0, kWidth, kTextSize));
+  text_layer_set_text_alignment(&text_layer, GTextAlignmentRight);
+  text_layer_set_background_color(&text_layer, GColorClear);
+  text_layer_set_text_color(&text_layer, GColorWhite);
+  layer_add_child(root_layer, (Layer*)&text_layer);
 
   // Initialize the player circle.
-  circle_init(root_layer, (kWidth - kCircleRadius) / 2, kStatusBarHeight, &circle);
-
-  // Initialize the lines to fall down.
-  lines_init(&circle.layer, &lines);
+  circle_init(root_layer, (kWidth - kCircleRadius) / 2,  0, &circle);
 
   // Attach our desired button functionality
-  window_set_click_config_provider(&window, (ClickConfigProvider)click_config_provider);
+  window_set_click_config_provider(
+      &window, (ClickConfigProvider)click_config_provider);
 
   // Start updating the game.
   app_timer_send_event(ctx, kUpdateMs, 0);
@@ -168,28 +210,40 @@ void handle_init(AppContextRef ctx) {
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   (void)ctx;
 
+  // Update the score.
+  if (!kDebug) {
+    static char score_string[10];
+    snprintf(score_string, 10, "%d", score);
+    text_layer_set_text(&text_layer, score_string);
+  }
+
+  // Update the player circle.
+  if (circle.y < 0) {
+    // Game over!
+    reset();
+  } else if (lines_circle_intersect(&lines, &circle)) {
+    // Can't fall down yet, move up with the line.
+    circle.y--;
+  } else if (circle.y + kCircleRadius < kHeight - kStatusBarHeight) {
+    // Fall down!
+    circle.y++;
+  }
+  layer_set_frame(&circle.layer,
+                  GRect(circle.x, circle.y, kCircleRadius, kCircleRadius));
+
   // Update the lines to fall down.
-  Line* top_line = NULL;
-  int16_t min_y = kHeight;
   for (int16_t i = 0; i < kLineCount; ++i) {
+    // TODO(ariw): Should this eventually get faster?
     lines[i].y--;
-    if (lines[i].y < kStatusBarHeight) {
+    if (lines[i].y < 0) {
       line_generate(
           lines[common_mod(i - 1, kLineCount)].y + kDistanceBetweenLines +
               kLineThickness,
           &lines[i]);
+      score += 10;
     }
     layer_set_frame(&lines[i].layer,
                     GRect(0, lines[i].y, kWidth, kLineThickness));
-    if (lines[i].y < min_y) {
-      top_line = &lines[i];
-      min_y = lines[i].y;
-    }
-  }
-
-  // Update the player circle.
-  if (!line_circle_intersect(top_line, &circle)) {
-    circle.y += 1;
   }
 
   app_timer_send_event(ctx, kUpdateMs, 0);
