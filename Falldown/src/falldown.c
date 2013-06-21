@@ -28,10 +28,15 @@ const int16_t kLineSegmentWidth = 24;  // kWidth / kLineSegments
 // ceil((kHeight - kStatusBarHeight) / (kLineThickness + kDistanceBetweenLines))
 const int16_t kLineCount = 5;
 
-const int16_t kUpdateMs = 50;
-// Should be able to get across the screen in about 1s:
-// kWidth / (1000 / kUpdateMs)
-const int16_t kCircleVelocity = 7;
+const int16_t kUpdateMs = 33;
+// Should be able to get across the screen in kAcrossScreenMs:
+const int16_t kAcrossScreenMs = 1000;
+// ceil(kWidth / (kAcrossScreenMs / kUpdateMs))
+const float kCircleVelocity = 4.752;
+// Screen falls at a refresh rate of once every kDownScreenMs:
+const int16_t kDownScreenMs = 6000;
+// -(kHeight - kStatusBarHeight) / (kDownScreenMs / kUpdateMs)
+const float kLineVelocity = -0.627;
 
 TextLayer text_layer;
 int score = 0;
@@ -40,8 +45,8 @@ Window window;
 
 typedef struct {
   Layer layer;
-  int16_t x;
-  int16_t y;
+  float x;
+  float y;
 } Circle;
 Circle circle;
 
@@ -62,7 +67,7 @@ void circle_init(Layer* parent_layer, int16_t x, int16_t y, Circle* circle) {
 
 typedef struct {
   Layer layer;
-  int16_t y;  // location of this line on the screen
+  float y;  // location of this line on the screen
   int16_t holes[2 /* kMaxHoles */];  // which segments have holes
   int16_t holes_size;
 } Line;
@@ -151,8 +156,6 @@ void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)window;
   if (circle.x + kCircleRadius + kCircleVelocity < kWidth) {
     circle.x += kCircleVelocity;
-    layer_set_frame(&circle.layer,
-                    GRect(circle.x, circle.y, kCircleRadius, kCircleRadius));
   }
 }
 
@@ -161,8 +164,6 @@ void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)window;
   if (circle.x - kCircleVelocity >= 0) {
     circle.x -= kCircleVelocity;
-    layer_set_frame(&circle.layer,
-                    GRect(circle.x, circle.y, kCircleRadius, kCircleRadius));
   }
 }
 
@@ -223,18 +224,20 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     reset();
   } else if (lines_circle_intersect(&lines, &circle)) {
     // Can't fall down yet, move up with the line.
-    circle.y--;
-  } else if (circle.y + kCircleRadius < kHeight - kStatusBarHeight) {
+    circle.y += kLineVelocity;
+  } else if (circle.y + kCircleRadius + kLineVelocity <=
+                 kHeight - kStatusBarHeight) {
     // Fall down!
-    circle.y++;
+    circle.y -= kLineVelocity;
   }
   layer_set_frame(&circle.layer,
-                  GRect(circle.x, circle.y, kCircleRadius, kCircleRadius));
+                  GRect((int16_t)circle.x, (int16_t)circle.y, kCircleRadius,
+                        kCircleRadius));
 
   // Update the lines to fall down.
   for (int16_t i = 0; i < kLineCount; ++i) {
     // TODO(ariw): Should this eventually get faster?
-    lines[i].y--;
+    lines[i].y += kLineVelocity;
     if (lines[i].y < 0) {
       line_generate(
           lines[common_mod(i - 1, kLineCount)].y + kDistanceBetweenLines +
@@ -243,7 +246,7 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
       score += 10;
     }
     layer_set_frame(&lines[i].layer,
-                    GRect(0, lines[i].y, kWidth, kLineThickness));
+                    GRect(0, (int16_t)lines[i].y, kWidth, kLineThickness));
   }
 
   app_timer_send_event(ctx, kUpdateMs, 0);
