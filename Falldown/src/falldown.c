@@ -34,9 +34,13 @@ const int16_t kAcrossScreenMs = 1000;
 // ceil(kWidth / (kAcrossScreenMs / kUpdateMs))
 const float kCircleVelocity = 4.752;
 // Screen falls at a refresh rate of once every kDownScreenMs:
-const int16_t kDownScreenMs = 6000;
+const int16_t kDownScreenMs = 8000;
 // -(kHeight - kStatusBarHeight) / (kDownScreenMs / kUpdateMs)
-const float kLineVelocity = -0.627;
+const float kInitialLineVelocity = -0.627;
+
+// Every kVelocityIncreaseMs, multiply speed by kVelocityIncrease:
+const int16_t kVelocityIncreaseMs = 15000;
+const float kVelocityIncrease = 1.05;
 
 TextLayer text_layer;
 int score = 0;
@@ -119,37 +123,29 @@ bool lines_circle_intersect(Line (*lines)[5 /* kLineCount */], Circle* circle) {
     if ((circle->y + kCircleRadius >= y &&
          circle->y + kCircleRadius < y + kLineThickness) ||
         (circle->y >= y && circle->y < y + kLineThickness)) {
-      // TODO(ariw): This logic means that if two holes lie next to each other,
-      // you can't pass through by going partially in one hole and partially in
-      // the other.
+      bool hole_left = false;
+      bool hole_right = false;
       for (int16_t j = 0; j < (*lines)[i].holes_size; ++j) {
         int16_t hole = (*lines)[i].holes[j];
-        // Have to be entirely contained in order to pass through a hole.
-        if (circle->x >= hole * kLineSegmentWidth &&
-            circle->x + kCircleRadius < (hole + 1) * kLineSegmentWidth) {
-          return false;
+        int16_t hole_start_x = hole * kLineSegmentWidth;
+        int16_t hole_end_x = (hole + 1) * kLineSegmentWidth;
+        // Have to be entirely contained in order to pass through hole.
+        if (circle->x >= hole_start_x && circle->x < hole_end_x) {
+          hole_left = true;
+        }
+        float circle_end_x = circle->x + kCircleRadius;
+        if (circle_end_x >= hole_start_x && circle_end_x < hole_end_x) {
+          hole_right = true;
         }
       }
-      return true;
+      return !hole_left || !hole_right;
     }
   }
   return false;
 }
 
-// TODO(ariw): Merge this with the circle/line init functions.
-void reset() {
-  // Reset the score.
-  score = 0;
-
-  // Reset player circle.
-  circle.x = (kWidth - kCircleRadius) / 2;
-  circle.y = 0;
-
-  // Reset the lines to fall down.
-  for (int16_t i = 1; i <= kLineCount; ++i) {
-    line_generate((kDistanceBetweenLines + kLineThickness) * i, &lines[i - 1]);
-  }
-}
+int elapsed_time_ms;
+float line_velocity;
 
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
@@ -177,6 +173,26 @@ void click_config_provider(ClickConfig **config, Window *window) {
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = kUpdateMs;
 }
 
+// TODO(ariw): Merge this with the circle/line init functions.
+void reset() {
+  // Reset the score.
+  score = 0;
+
+  // Reset player circle.
+  circle.x = (kWidth - kCircleRadius) / 2;
+  circle.y = 0;
+
+  // Reset the lines to fall down.
+  for (int16_t i = 1; i <= kLineCount; ++i) {
+    line_generate((kDistanceBetweenLines + kLineThickness) * i, &lines[i - 1]);
+  }
+
+  // Reset our speed.
+  elapsed_time_ms = 0;
+  line_velocity = kInitialLineVelocity;
+}
+
+
 void handle_init(AppContextRef ctx) {
   (void)ctx;
   common_srand(common_time());
@@ -200,9 +216,13 @@ void handle_init(AppContextRef ctx) {
   // Initialize the player circle.
   circle_init(root_layer, (kWidth - kCircleRadius) / 2,  0, &circle);
 
+  elapsed_time_ms = 0;
+  line_velocity = kInitialLineVelocity;
+
   // Attach our desired button functionality
   window_set_click_config_provider(
       &window, (ClickConfigProvider)click_config_provider);
+
 
   // Start updating the game.
   app_timer_send_event(ctx, kUpdateMs, 0);
@@ -210,6 +230,8 @@ void handle_init(AppContextRef ctx) {
 
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   (void)ctx;
+
+  app_timer_send_event(ctx, kUpdateMs, 0);
 
   // Update the score.
   if (!kDebug) {
@@ -224,11 +246,11 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     reset();
   } else if (lines_circle_intersect(&lines, &circle)) {
     // Can't fall down yet, move up with the line.
-    circle.y += kLineVelocity;
-  } else if (circle.y + kCircleRadius + kLineVelocity <=
+    circle.y += line_velocity;
+  } else if (circle.y + kCircleRadius + line_velocity <=
                  kHeight - kStatusBarHeight) {
     // Fall down!
-    circle.y -= kLineVelocity;
+    circle.y -= line_velocity;
   }
   layer_set_frame(&circle.layer,
                   GRect((int16_t)circle.x, (int16_t)circle.y, kCircleRadius,
@@ -236,8 +258,7 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
 
   // Update the lines to fall down.
   for (int16_t i = 0; i < kLineCount; ++i) {
-    // TODO(ariw): Should this eventually get faster?
-    lines[i].y += kLineVelocity;
+    lines[i].y += line_velocity;
     if (lines[i].y < 0) {
       line_generate(
           lines[common_mod(i - 1, kLineCount)].y + kDistanceBetweenLines +
@@ -249,7 +270,11 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
                     GRect(0, (int16_t)lines[i].y, kWidth, kLineThickness));
   }
 
-  app_timer_send_event(ctx, kUpdateMs, 0);
+  // Increase our speed sometimes.
+  elapsed_time_ms += kUpdateMs;
+  if (elapsed_time_ms % kVelocityIncreaseMs < kUpdateMs) {
+    line_velocity *= kVelocityIncrease;
+  }
 }
 
 void pbl_main(void *params) {
