@@ -43,6 +43,7 @@ const int16_t kVelocityIncreaseMs = 15000;
 const float kVelocityIncrease = 1.05;
 
 TextLayer text_layer;
+// TODO(ariw): Persistent high scores via httpebble?
 int score = 0;
 
 Window window;
@@ -56,6 +57,7 @@ Circle circle;
 
 void circle_update_proc(Circle* circle, GContext* ctx) {
   graphics_context_set_fill_color(ctx, GColorWhite);
+  // TODO(ariw): Use an animated circle here instead of this function.
   graphics_fill_circle(
       ctx, GPoint(kCircleRadius / 2, kCircleRadius / 2), kCircleRadius);
 }
@@ -117,19 +119,28 @@ void lines_init(Layer* parent_layer, Line (*lines)[5 /* kLineCount */]) {
 bool lines_circle_intersect(Line (*lines)[5 /* kLineCount */], Circle* circle) {
   for (int16_t i = 0; i < kLineCount; ++i) {
     int16_t y = (*lines)[i].y;
-    // Intersections occur even if only part of a circle is stuck on a line.
+    // Determine whether the circle is passing through a line. If either the top
+    // or bottom of the circle is inside the line, the circle is intersecting
+    // the line.
     // TODO(ariw): This logic allows you to get caught if you move into a line
-    // while passing through it. Fix this!
+    // while passing through it.
+    // TODO(ariw): This logic fails sometimes if 2 * -line_velocity >
+    // max(kCircleRadius, kLineThickness), allowing the circle to pass
+    // completely through a line.
     if ((circle->y + kCircleRadius >= y &&
          circle->y + kCircleRadius < y + kLineThickness) ||
         (circle->y >= y && circle->y < y + kLineThickness)) {
+      // The circle is passing through a line. We need to check if our circle
+      // fits through any holes in that line.  Since kCircleRadius <
+      // kLineSegmentWidth, if the left side of our circle fits through a hole
+      // and the right side of our circle fits through a hole, the entire circle
+      // fits through a hole.
       bool hole_left = false;
       bool hole_right = false;
       for (int16_t j = 0; j < (*lines)[i].holes_size; ++j) {
         int16_t hole = (*lines)[i].holes[j];
         int16_t hole_start_x = hole * kLineSegmentWidth;
         int16_t hole_end_x = (hole + 1) * kLineSegmentWidth;
-        // Have to be entirely contained in order to pass through hole.
         if (circle->x >= hole_start_x && circle->x < hole_end_x) {
           hole_left = true;
         }
