@@ -116,19 +116,14 @@ void lines_init(Layer* parent_layer, Line (*lines)[5 /* kLineCount */]) {
   }
 }
 
-int16_t min_x = 0;
-int16_t max_x = 144;  // kWidth
-
 bool lines_circle_intersect(Line (*lines)[5 /* kLineCount */], Circle* circle) {
-  // TODO(ariw): This function is a weird place to have constraints on where the
-  // player circle can go. Maybe move this elsewhere?
-  min_x = 0;
-  max_x = kWidth;
   for (int16_t i = 0; i < kLineCount; ++i) {
     int16_t y = (*lines)[i].y;
     // Determine whether the circle is passing through a line. If either the top
     // or bottom of the circle is inside the line, the circle is intersecting
     // the line.
+    // TODO(ariw): This logic allows you to get caught if you move into a line
+    // while passing through it.
     // TODO(ariw): This logic fails sometimes if 2 * -line_velocity >
     // max(kCircleRadius, kLineThickness), allowing the circle to pass
     // completely through a line.
@@ -142,25 +137,17 @@ bool lines_circle_intersect(Line (*lines)[5 /* kLineCount */], Circle* circle) {
       // fits through a hole.
       bool hole_left = false;
       bool hole_right = false;
-      int16_t min_hole_x;
-      int16_t max_hole_x;
       for (int16_t j = 0; j < (*lines)[i].holes_size; ++j) {
         int16_t hole = (*lines)[i].holes[j];
         int16_t hole_start_x = hole * kLineSegmentWidth;
         int16_t hole_end_x = (hole + 1) * kLineSegmentWidth;
         if (circle->x >= hole_start_x && circle->x < hole_end_x) {
-          min_hole_x = hole_start_x;
           hole_left = true;
         }
         float circle_end_x = circle->x + kCircleRadius;
         if (circle_end_x >= hole_start_x && circle_end_x < hole_end_x) {
-          max_hole_x = hole_end_x;
           hole_right = true;
         }
-      }
-      if (hole_left && hole_right) {
-        min_x = min_hole_x;
-        max_x = max_hole_x;
       }
       return !hole_left || !hole_right;
     }
@@ -174,7 +161,7 @@ float line_velocity = -0.627;  // kInitialLineVelocity
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (circle.x + kCircleRadius + kCircleVelocity < max_x) {
+  if (circle.x + kCircleRadius + kCircleVelocity < kWidth) {
     circle.x += kCircleVelocity;
   }
 }
@@ -182,7 +169,7 @@ void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (circle.x - kCircleVelocity >= min_x) {
+  if (circle.x - kCircleVelocity >= 0) {
     circle.x -= kCircleVelocity;
   }
 }
@@ -210,10 +197,6 @@ void reset() {
   for (int16_t i = 1; i <= kLineCount; ++i) {
     line_generate((kDistanceBetweenLines + kLineThickness) * i, &lines[i - 1]);
   }
-
-  // Reset our circle constraints.
-  min_x = 0;
-  max_x = kWidth;
 
   // Reset our speed.
   elapsed_time_ms = 0;
@@ -243,6 +226,9 @@ void handle_init(AppContextRef ctx) {
 
   // Initialize the player circle.
   circle_init(root_layer, (kWidth - kCircleRadius) / 2,  0, &circle);
+
+  elapsed_time_ms = 0;
+  line_velocity = kInitialLineVelocity;
 
   // Attach our desired button functionality
   window_set_click_config_provider(
