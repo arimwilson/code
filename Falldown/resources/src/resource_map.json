@@ -4,8 +4,12 @@
 
   "media": [
     { "type": "png",
-      "defName":" IMAGE_ICON",
-      "file":"images/icon.png"
+      "defName": "IMAGE_ICON",
+      "file": "images/icon.png"
+    },
+    { "type": "png-trans",
+      "defName": "IMAGE_CIRCLE",
+      "file": "images/circle.png"
     }
   ]
 }

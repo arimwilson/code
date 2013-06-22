@@ -31,14 +31,16 @@ const int16_t kLineCount = 5;
 const int16_t kUpdateMs = 33;
 // Should be able to get across the screen in kAcrossScreenMs:
 const int16_t kAcrossScreenMs = 1000;
-// ceil(kWidth / (kAcrossScreenMs / kUpdateMs))
-const float kCircleVelocity = 4.752;
-// Screen falls at a refresh rate of once every kDownScreenMs:
+// kWidth / (kAcrossScreenMs / kUpdateMs)
+const float kCircleXVelocity = 4.752;
+// Falling speed of circle.
+const float kCircleYVelocity = 1;
+
+// Lines move up one full screen size once every kDownScreenMs:
 const int16_t kDownScreenMs = 8000;
 // -(kHeight - kStatusBarHeight) / (kDownScreenMs / kUpdateMs)
 const float kInitialLineVelocity = -0.627;
-
-// Every kVelocityIncreaseMs, multiply speed by kVelocityIncrease:
+// Every kVelocityIncreaseMs, multiply line velocity by kVelocityIncrease:
 const int16_t kVelocityIncreaseMs = 15000;
 const float kVelocityIncrease = 1.05;
 
@@ -63,12 +65,19 @@ void circle_update_proc(Circle* circle, GContext* ctx) {
 }
 
 void circle_init(Layer* parent_layer, int16_t x, int16_t y, Circle* circle) {
-  circle->x = x;
-  circle->y = y;
   layer_init(&circle->layer, GRect(
         circle->x, circle->y, kCircleRadius, kCircleRadius));
   layer_set_update_proc(&circle->layer, (LayerUpdateProc)circle_update_proc);
   layer_add_child(parent_layer, &circle->layer);
+  circle->x = x;
+  circle->y = y;
+  rotbmp_pair_init_container(
+      RESOURCE_ID_IMAGE_CIRCLE_WHITE, RESOURCE_ID_IMAGE_CIRCLE_BLACK,
+      &circle->image);
+}
+
+void circle_deinit(Circle* circle) {
+  rotbmp_pair_deinit_container(&circle->image);
 }
 
 typedef struct {
@@ -116,7 +125,12 @@ void lines_init(Layer* parent_layer, Line (*lines)[5 /* kLineCount */]) {
   }
 }
 
-bool lines_circle_intersect(Line (*lines)[5 /* kLineCount */], Circle* circle) {
+// Where a circle intersects any line at or before the next move.
+// relative_velocity represents the per update pixel velocity between the lines
+// and the circle. Returns the y coordinate of the intersecting line or -1 if
+// there was no intersection.
+int16_t lines_circle_intersect(
+    float relative_velocity, Line (*lines)[5 /* kLineCount */], Circle* circle) {
   for (int16_t i = 0; i < kLineCount; ++i) {
     int16_t y = (*lines)[i].y;
     // Determine whether the circle is passing through a line. If either the top
@@ -124,11 +138,8 @@ bool lines_circle_intersect(Line (*lines)[5 /* kLineCount */], Circle* circle) {
     // the line.
     // TODO(ariw): This logic allows you to get caught if you move into a line
     // while passing through it.
-    // TODO(ariw): This logic fails sometimes if 2 * -line_velocity >
-    // max(kCircleRadius, kLineThickness), allowing the circle to pass
-    // completely through a line.
-    if ((circle->y + kCircleRadius >= y &&
-         circle->y + kCircleRadius < y + kLineThickness) ||
+    if ((circle->y + kCircleRadius + relative_velocity >= y &&
+         circle->y + kCircleRadius + relative_velocity < y + kLineThickness) ||
         (circle->y >= y && circle->y < y + kLineThickness)) {
       // The circle is passing through a line. We need to check if our circle
       // fits through any holes in that line.  Since kCircleRadius <
@@ -149,10 +160,10 @@ bool lines_circle_intersect(Line (*lines)[5 /* kLineCount */], Circle* circle) {
           hole_right = true;
         }
       }
-      return !hole_left || !hole_right;
+      return ((!hole_left || !hole_right)? y: -1);
     }
   }
-  return false;
+  return -1;
 }
 
 int elapsed_time_ms = 0;
@@ -161,16 +172,16 @@ float line_velocity = -0.627;  // kInitialLineVelocity
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (circle.x + kCircleRadius + kCircleVelocity < kWidth) {
-    circle.x += kCircleVelocity;
+  if (circle.x + kCircleRadius + kCircleXVelocity < kWidth) {
+    circle.x += kCircleXVelocity;
   }
 }
 
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (circle.x - kCircleVelocity >= 0) {
-    circle.x -= kCircleVelocity;
+  if (circle.x - kCircleXVelocity >= 0) {
+    circle.x -= kCircleXVelocity;
   }
 }
 
@@ -193,7 +204,7 @@ void reset() {
   circle.x = (kWidth - kCircleRadius) / 2;
   circle.y = 0;
 
-  // Reset the lines to fall down.
+  // Reset the lines.
   for (int16_t i = 1; i <= kLineCount; ++i) {
     line_generate((kDistanceBetweenLines + kLineThickness) * i, &lines[i - 1]);
   }
@@ -227,9 +238,6 @@ void handle_init(AppContextRef ctx) {
   // Initialize the player circle.
   circle_init(root_layer, (kWidth - kCircleRadius) / 2,  0, &circle);
 
-  elapsed_time_ms = 0;
-  line_velocity = kInitialLineVelocity;
-
   // Attach our desired button functionality
   window_set_click_config_provider(
       &window, (ClickConfigProvider)click_config_provider);
@@ -237,6 +245,12 @@ void handle_init(AppContextRef ctx) {
 
   // Start updating the game.
   app_timer_send_event(ctx, kUpdateMs, 0);
+}
+
+void handle_deinit(AppContextRef ctx) {
+  (void)ctx;
+
+  circle_deinit(&circle);
 }
 
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
@@ -252,22 +266,24 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   }
 
   // Update the player circle.
+  int16_t y = lines_circle_intersect(kCircleYVelocity - line_velocity, &lines,
+                                     &circle);
   if (circle.y < 0) {
     // Game over!
     reset();
-  } else if (lines_circle_intersect(&lines, &circle)) {
+  } else if (y != -1) {
     // Can't fall down yet, move up with the line.
-    circle.y += line_velocity;
+    circle.y = y - kCircleRadius + line_velocity;
   } else if (circle.y + kCircleRadius + line_velocity <=
                  kHeight - kStatusBarHeight) {
     // Fall down!
-    circle.y -= line_velocity;
+    circle.y += kCircleYVelocity;
   }
   layer_set_frame(&circle.layer,
                   GRect((int16_t)circle.x, (int16_t)circle.y, kCircleRadius,
                         kCircleRadius));
 
-  // Update the lines to fall down.
+  // Update the lines as they move upward.
   for (int16_t i = 0; i < kLineCount; ++i) {
     lines[i].y += line_velocity;
     if (lines[i].y < 0) {
@@ -291,6 +307,7 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
 void pbl_main(void *params) {
   PebbleAppHandlers handlers = {
     .init_handler = &handle_init,
+    .deinit_handler = &handle_deinit,
     .timer_handler = &handle_timer,
   };
   app_event_loop(params, &handlers);
