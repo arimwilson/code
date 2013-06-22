@@ -20,7 +20,7 @@ const int16_t kStatusBarHeight = 16;
 const int16_t kCircleRadius = 8;
 
 const int16_t kDistanceBetweenLines = 30;
-const int16_t kLineThickness = 3;
+const int16_t kLineThickness = 4;
 const int16_t kMaxHoles = 2;
 // TODO(ariw): Different size holes?
 const int16_t kLineSegments = 6;
@@ -31,8 +31,9 @@ const int16_t kLineCount = 5;
 const int16_t kUpdateMs = 33;
 // Should be able to get across the screen in kAcrossScreenMs:
 const int16_t kAcrossScreenMs = 1000;
-// ceil(kWidth / (kAcrossScreenMs / kUpdateMs))
-const float kCircleVelocity = 4.752;
+// kWidth / (kAcrossScreenMs / kUpdateMs)
+const float kCircleXVelocity = 4.752;
+const int16_t kCircleYVelocity = 1;
 // Screen falls at a refresh rate of once every kDownScreenMs:
 const int16_t kDownScreenMs = 8000;
 // -(kHeight - kStatusBarHeight) / (kDownScreenMs / kUpdateMs)
@@ -116,22 +117,22 @@ void lines_init(Layer* parent_layer, Line (*lines)[5 /* kLineCount */]) {
   }
 }
 
-bool lines_circle_intersect(Line (*lines)[5 /* kLineCount */], Circle* circle) {
+// This function is used to decide whether to let the circle pass through a
+// line, by looking at the bottom of a circle compared to a line. Since
+// kCircleXVelocity * (kLineThickness / (kCircleYVelocity - line_velocity)) <
+// kLineSegmentWidth, a circle can never be passing through a hole in a line on
+// one update and intersect the same line on the next update.
+bool lines_bottom_circle_intersect(
+    Line (*lines)[5 /* kLineCount */], Circle* circle) {
   for (int16_t i = 0; i < kLineCount; ++i) {
     int16_t y = (*lines)[i].y;
-    // Determine whether the circle is passing through a line. If either the top
-    // or bottom of the circle is inside the line, the circle is intersecting
-    // the line.
-    // TODO(ariw): This logic allows you to get caught if you move into a line
-    // while passing through it.
+    // Determine whether the bottom of a circle is passing through a line.
     // TODO(ariw): This logic fails sometimes if 2 * -line_velocity >
-    // max(kCircleRadius, kLineThickness), allowing the circle to pass
-    // completely through a line.
-    if ((circle->y + kCircleRadius >= y &&
-         circle->y + kCircleRadius < y + kLineThickness) ||
-        (circle->y >= y && circle->y < y + kLineThickness)) {
-      // The circle is passing through a line. We need to check if our circle
-      // fits through any holes in that line.  Since kCircleRadius <
+    // kLineThickness, allowing the circle to pass completely through a line.
+    if (circle->y + kCircleRadius >= y &&
+        circle->y + kCircleRadius < y + kLineThickness) {
+      // The bottom of the circle is passing through a line. We need to check if
+      // our circle fits through any holes in that line.  Since kCircleRadius <
       // kLineSegmentWidth, if the left side of our circle fits through a hole
       // and the right side of our circle fits through a hole, the entire circle
       // fits through a hole.
@@ -161,16 +162,16 @@ float line_velocity;
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (circle.x + kCircleRadius + kCircleVelocity < kWidth) {
-    circle.x += kCircleVelocity;
+  if (circle.x + kCircleRadius + kCircleXVelocity < kWidth) {
+    circle.x += kCircleXVelocity;
   }
 }
 
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (circle.x - kCircleVelocity >= 0) {
-    circle.x -= kCircleVelocity;
+  if (circle.x - kCircleXVelocity >= 0) {
+    circle.x -= kCircleXVelocity;
   }
 }
 
@@ -255,13 +256,13 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   if (circle.y < 0) {
     // Game over!
     reset();
-  } else if (lines_circle_intersect(&lines, &circle)) {
+  } else if (lines_bottom_circle_intersect(&lines, &circle)) {
     // Can't fall down yet, move up with the line.
     circle.y += line_velocity;
   } else if (circle.y + kCircleRadius + line_velocity <=
                  kHeight - kStatusBarHeight) {
     // Fall down!
-    circle.y -= line_velocity;
+    circle.y -= kCircleYVelocity;
   }
   layer_set_frame(&circle.layer,
                   GRect((int16_t)circle.x, (int16_t)circle.y, kCircleRadius,
