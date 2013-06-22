@@ -71,13 +71,6 @@ void circle_init(Layer* parent_layer, int16_t x, int16_t y, Circle* circle) {
   layer_add_child(parent_layer, &circle->layer);
   circle->x = x;
   circle->y = y;
-  rotbmp_pair_init_container(
-      RESOURCE_ID_IMAGE_CIRCLE_WHITE, RESOURCE_ID_IMAGE_CIRCLE_BLACK,
-      &circle->image);
-}
-
-void circle_deinit(Circle* circle) {
-  rotbmp_pair_deinit_container(&circle->image);
 }
 
 typedef struct {
@@ -247,12 +240,6 @@ void handle_init(AppContextRef ctx) {
   app_timer_send_event(ctx, kUpdateMs, 0);
 }
 
-void handle_deinit(AppContextRef ctx) {
-  (void)ctx;
-
-  circle_deinit(&circle);
-}
-
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   (void)ctx;
 
@@ -307,7 +294,6 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
 void pbl_main(void *params) {
   PebbleAppHandlers handlers = {
     .init_handler = &handle_init,
-    .deinit_handler = &handle_deinit,
     .timer_handler = &handle_timer,
   };
   app_event_loop(params, &handlers);
