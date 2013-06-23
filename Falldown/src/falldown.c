@@ -11,51 +11,55 @@ PBL_APP_INFO(
     RESOURCE_ID_IMAGE_ICON, APP_INFO_STANDARD_APP);
 
 const bool kDebug = false;
-const int16_t kTextSize = 14;
+const int kTextSize = 14;
 
-const int16_t kWidth = 144;
-const int16_t kHeight = 168;
-const int16_t kStatusBarHeight = 16;
+const int kWidth = 144;
+const int kHeight = 168;
+const int kStatusBarHeight = 16;
 
-const int16_t kCircleRadius = 8;
+// How often to update game state.
+const int kUpdateMs = 33;
 
-const int16_t kDistanceBetweenLines = 30;
-const int16_t kLineThickness = 3;
-const int16_t kMaxHoles = 2;
-// TODO(ariw): Different size holes?
-const int16_t kLineSegments = 6;
-const int16_t kLineSegmentWidth = 24;  // kWidth / kLineSegments
-// ceil((kHeight - kStatusBarHeight) / (kLineThickness + kDistanceBetweenLines))
-const int16_t kLineCount = 5;
-
-const int16_t kUpdateMs = 33;
+// Player circle constants.
+const int kCircleRadius = 8;
 // Should be able to get across the screen in kAcrossScreenMs:
-const int16_t kAcrossScreenMs = 1000;
+const int kAcrossScreenMs = 1000;
 // kWidth / (kAcrossScreenMs / kUpdateMs)
 const float kCircleXVelocity = 4.752;
 // Falling speed of circle.
 const float kCircleYVelocity = 1;
 
+// Line constants.
+const int kDistanceBetweenLines = 30;
+const int kLineThickness = 3;
+const int kMaxHoles = 2;
+// TODO(ariw): Different size holes?
+const int kLineSegments = 6;
+const int kLineSegmentWidth = 24;  // kWidth / kLineSegments
+// ceil((kHeight - kStatusBarHeight) / (kLineThickness + kDistanceBetweenLines))
+const int kLineCount = 5;
 // Lines move up one full screen size once every kDownScreenMs:
-const int16_t kDownScreenMs = 8000;
+const int kDownScreenMs = 8000;
 // -(kHeight - kStatusBarHeight) / (kDownScreenMs / kUpdateMs)
 const float kInitialLineVelocity = -0.627;
 // Every kVelocityIncreaseMs, multiply line velocity by kVelocityIncrease:
-const int16_t kVelocityIncreaseMs = 15000;
+const int kVelocityIncreaseMs = 15000;
 const float kVelocityIncrease = 1.05;
+
+Window window;
 
 TextLayer text_layer;
 // TODO(ariw): Persistent high scores via httpebble?
 int score = 0;
 
-Window window;
-
+// Player circle data and functions.
 typedef struct {
   Layer layer;
   float x;
   float y;
 } Circle;
 Circle circle;
+float circle_x_velocity = 0;
 
 void circle_update_proc(Circle* circle, GContext* ctx) {
   graphics_context_set_fill_color(ctx, GColorWhite);
@@ -64,7 +68,7 @@ void circle_update_proc(Circle* circle, GContext* ctx) {
       ctx, GPoint(kCircleRadius / 2, kCircleRadius / 2), kCircleRadius);
 }
 
-void circle_init(Layer* parent_layer, int16_t x, int16_t y, Circle* circle) {
+void circle_init(Layer* parent_layer, int x, int y, Circle* circle) {
   layer_init(&circle->layer, GRect(
         circle->x, circle->y, kCircleRadius, kCircleRadius));
   layer_set_update_proc(&circle->layer, (LayerUpdateProc)circle_update_proc);
@@ -73,19 +77,22 @@ void circle_init(Layer* parent_layer, int16_t x, int16_t y, Circle* circle) {
   circle->y = y;
 }
 
+// Lines data and functions.
 typedef struct {
   Layer layer;
   float y;  // location of this line on the screen
-  int16_t holes[2 /* kMaxHoles */];  // which segments have holes
-  int16_t holes_size;
+  int holes[2 /* kMaxHoles */];  // which segments have holes
+  int holes_size;
 } Line;
 Line lines[5 /* kLineCount */];
+int elapsed_time_ms = 0;
+float lines_velocity = -0.627;  // kInitialLineVelocity
 
 void line_update_proc(Line* line, GContext* ctx) {
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_rect(ctx, GRect(0, 0, kWidth, kLineThickness), 0, GCornerNone);
   graphics_context_set_fill_color(ctx, GColorBlack);
-  for (int16_t i = 0; i < line->holes_size; ++i) {
+  for (int i = 0; i < line->holes_size; ++i) {
     graphics_fill_rect(
         ctx,
         GRect(line->holes[i] * kLineSegmentWidth, 0, kLineSegmentWidth,
@@ -95,15 +102,15 @@ void line_update_proc(Line* line, GContext* ctx) {
   }
 }
 
-void line_generate(int16_t y, Line* line) {
+void line_generate(int y, Line* line) {
   line->y = y;
   line->holes_size = common_rand() % kMaxHoles + 1;
-  for (int16_t i = 0; i < line->holes_size; ++i) {
-    line->holes[i] = common_rand() % kLineSegments;
-  }
+  line->holes_size = 2;
+  common_shuffle_integers(line->holes_size, (int*)line->holes);
+  common_insertion_sort((int*)line->holes, line->holes_size);
 }
 
-void line_init(Layer* parent_layer, int16_t y, Line* line) {
+void line_init(Layer* parent_layer, int y, Line* line) {
   line_generate(y, line);
   layer_init(&line->layer, GRect(0, line->y, kWidth, kLineThickness));
   layer_set_update_proc(&line->layer, (LayerUpdateProc)line_update_proc);
@@ -111,21 +118,24 @@ void line_init(Layer* parent_layer, int16_t y, Line* line) {
 }
 
 void lines_init(Layer* parent_layer, Line (*lines)[5 /* kLineCount */]) {
-  for (int16_t i = 1; i <= kLineCount; ++i) {
+  for (int i = 1; i <= kLineCount; ++i) {
     line_init(
         parent_layer, (kDistanceBetweenLines + kLineThickness) * i,
         &((*lines)[i - 1]));
   }
 }
 
-// Where a circle intersects any line at or before the next move.
+// Whether a circle intersects any line at or before the next move.
 // relative_velocity represents the per update pixel velocity between the lines
-// and the circle. Returns the y coordinate of the intersecting line or -1 if
-// there was no intersection.
-int16_t lines_circle_intersect(
-    float relative_velocity, Line (*lines)[5 /* kLineCount */], Circle* circle) {
-  for (int16_t i = 0; i < kLineCount; ++i) {
-    int16_t y = (*lines)[i].y;
+// and the circle. If an intersecting line exists, return its y coordinate.
+// Return the enclosing x coordinates for the circle.
+bool lines_circle_intersect(
+    float relative_velocity, Line (*lines)[5 /* kLineCount */], Circle* circle,
+    int* line_x, int* circle_min_x, int* circle_max_x) {
+  *circle_min_x = 0;
+  *circle_max_x = kWidth;
+  for (int i = 0; i < kLineCount; ++i) {
+    int y = (*lines)[i].y;
     // Determine whether the circle is passing through a line. If either the top
     // or bottom of the circle is inside the line, the circle is intersecting
     // the line.
@@ -141,10 +151,10 @@ int16_t lines_circle_intersect(
       // fits through a hole.
       bool hole_left = false;
       bool hole_right = false;
-      for (int16_t j = 0; j < (*lines)[i].holes_size; ++j) {
-        int16_t hole = (*lines)[i].holes[j];
-        int16_t hole_start_x = hole * kLineSegmentWidth;
-        int16_t hole_end_x = (hole + 1) * kLineSegmentWidth;
+      for (int j = 0; j < (*lines)[i].holes_size; ++j) {
+        int hole = (*lines)[i].holes[j];
+        int hole_start_x = hole * kLineSegmentWidth;
+        int hole_end_x = (hole + 1) * kLineSegmentWidth;
         if (circle->x >= hole_start_x && circle->x < hole_end_x) {
           hole_left = true;
         }
@@ -153,29 +163,24 @@ int16_t lines_circle_intersect(
           hole_right = true;
         }
       }
-      return ((!hole_left || !hole_right)? y: -1);
+      if (!hole_left || !hole_right) *line_x = y;
+      return !hole_left || !hole_right;
     }
   }
-  return -1;
+  return false;
 }
 
-int elapsed_time_ms = 0;
-float line_velocity = -0.627;  // kInitialLineVelocity
-
+// Input handlers.
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (circle.x + kCircleRadius + kCircleXVelocity < kWidth) {
-    circle.x += kCircleXVelocity;
-  }
+  circle_x_velocity = kCircleXVelocity;
 }
 
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (circle.x - kCircleXVelocity >= 0) {
-    circle.x -= kCircleXVelocity;
-  }
+  circle_x_velocity = -kCircleXVelocity;
 }
 
 void click_config_provider(ClickConfig **config, Window *window) {
@@ -196,15 +201,16 @@ void reset() {
   // Reset player circle.
   circle.x = (kWidth - kCircleRadius) / 2;
   circle.y = 0;
+  circle_x_velocity = 0;
 
   // Reset the lines.
-  for (int16_t i = 1; i <= kLineCount; ++i) {
+  for (int i = 1; i <= kLineCount; ++i) {
     line_generate((kDistanceBetweenLines + kLineThickness) * i, &lines[i - 1]);
   }
 
   // Reset our speed.
   elapsed_time_ms = 0;
-  line_velocity = kInitialLineVelocity;
+  lines_velocity = kInitialLineVelocity;
 }
 
 
@@ -253,26 +259,32 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   }
 
   // Update the player circle.
-  int16_t y = lines_circle_intersect(kCircleYVelocity - line_velocity, &lines,
-                                     &circle);
+  int line_y, circle_min_x, circle_max_x;
   if (circle.y < 0) {
     // Game over!
     reset();
-  } else if (y != -1) {
+  } else if (lines_circle_intersect(
+      kCircleYVelocity - lines_velocity, &lines, &circle, &line_y,
+      &circle_min_x, &circle_max_x)) {
     // Can't fall down yet, move up with the line.
-    circle.y = y - kCircleRadius + line_velocity;
-  } else if (circle.y + kCircleRadius + line_velocity <=
+    circle.y = line_y - kCircleRadius + lines_velocity;
+  } else if (circle.y + kCircleRadius + lines_velocity <=
                  kHeight - kStatusBarHeight) {
     // Fall down!
     circle.y += kCircleYVelocity;
   }
+  if (circle.x + circle_x_velocity >= circle_min_x &&
+      circle.x + kCircleRadius + circle_x_velocity < circle_max_x) {
+    circle.x += circle_x_velocity;
+  }
+  circle_x_velocity = 0;
   layer_set_frame(&circle.layer,
-                  GRect((int16_t)circle.x, (int16_t)circle.y, kCircleRadius,
+                  GRect((int)circle.x, (int)circle.y, kCircleRadius,
                         kCircleRadius));
 
   // Update the lines as they move upward.
-  for (int16_t i = 0; i < kLineCount; ++i) {
-    lines[i].y += line_velocity;
+  for (int i = 0; i < kLineCount; ++i) {
+    lines[i].y += lines_velocity;
     if (lines[i].y < 0) {
       line_generate(
           lines[common_mod(i - 1, kLineCount)].y + kDistanceBetweenLines +
@@ -281,13 +293,13 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
       score += 10;
     }
     layer_set_frame(&lines[i].layer,
-                    GRect(0, (int16_t)lines[i].y, kWidth, kLineThickness));
+                    GRect(0, (int)lines[i].y, kWidth, kLineThickness));
   }
 
   // Increase our speed sometimes.
   elapsed_time_ms += kUpdateMs;
   if (elapsed_time_ms % kVelocityIncreaseMs < kUpdateMs) {
-    line_velocity *= kVelocityIncrease;
+    lines_velocity *= kVelocityIncrease;
   }
 }
 
