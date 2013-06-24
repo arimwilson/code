@@ -249,12 +249,15 @@ void handle_init(AppContextRef ctx) {
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   (void)ctx;
 
-  app_timer_send_event(ctx, kUpdateMs, 0);
-
   // Check to see if game is over yet.
   if (circle.y < 0) {
     reset();
+    // Don't update the screen for a bit to let the user see their score after
+    // a game over.
+    app_timer_send_event(ctx, 3000, 0);
+    return;
   }
+  app_timer_send_event(ctx, kUpdateMs, 0);
 
   // Update the text.
   if (!kDebug) {
