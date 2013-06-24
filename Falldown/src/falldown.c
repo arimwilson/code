@@ -138,7 +138,8 @@ void lines_circle_intersect(
     // Determine whether the circle is passing through a line. If either the top
     // or bottom of the circle is inside the line, the circle is intersecting
     // the line.
-    if ((circle->y >= y && circle->y < y + kLineThickness) ||
+    if ((circle->y + relative_y_velocity >= y &&
+         circle->y + relative_y_velocity < y + kLineThickness) ||
         (circle->y + kCircleRadius + relative_y_velocity >= y &&
          circle->y + kCircleRadius + relative_y_velocity <
              y + kLineThickness)) {
@@ -151,15 +152,15 @@ void lines_circle_intersect(
       // larger holes and see if the circle fits through any of them.
       for (int j = 0; j < holes_size; ++j) {
         int hole_start_x = holes[j] * kLineSegmentWidth;
-        while (j < holes_size - 1 && holes[j] + 1 == holes[j + 1]) ++j;
+        // while (j < holes_size - 1 && holes[j] + 1 == holes[j + 1]) ++j;
         int hole_end_x = (holes[j] + 1) * kLineSegmentWidth;
         if (circle->x >= hole_start_x &&
             circle->x + kCircleRadius < hole_end_x) {
             if (circle->x + relative_x_velocity < hole_start_x ||
                 circle->x + kCircleRadius + relative_x_velocity >= hole_end_x) {
-            *intersects_x = true;
+            // *intersects_x = true;
           }
-          *intersects_y = false;
+          // *intersects_y = false;
         }
       }
     }
