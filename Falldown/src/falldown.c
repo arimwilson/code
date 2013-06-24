@@ -21,7 +21,7 @@ const int kStatusBarHeight = 16;
 const int kUpdateMs = 33;
 
 // Player circle constants.
-const int kCircleRadius = 8;
+const int kCircleRadius = 12;
 // Should be able to get across the screen in kAcrossScreenMs:
 const int kAcrossScreenMs = 1000;
 // kWidth / (kAcrossScreenMs / kUpdateMs)
@@ -62,8 +62,8 @@ Circle circle;
 float circle_x_velocity = 0;
 
 void circle_update_proc(Circle* circle, GContext* ctx) {
-  graphics_context_set_fill_color(ctx, GColorWhite);
   // TODO(ariw): Use an animated circle here instead of this function.
+  graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_circle(
       ctx, GPoint(kCircleRadius / 2, kCircleRadius / 2), kCircleRadius);
 }
@@ -105,7 +105,6 @@ void line_update_proc(Line* line, GContext* ctx) {
 void line_generate(int y, Line* line) {
   line->y = y;
   line->holes_size = common_rand() % kMaxHoles + 1;
-  line->holes_size = 2;
   common_shuffle_integers(line->holes_size, (int*)line->holes);
   common_insertion_sort((int*)line->holes, line->holes_size);
 }
@@ -125,49 +124,46 @@ void lines_init(Layer* parent_layer, Line (*lines)[5 /* kLineCount */]) {
   }
 }
 
-// Whether a circle intersects any line at or before the next move.
-// relative_velocity represents the per update pixel velocity between the lines
-// and the circle. If an intersecting line exists, return its y coordinate.
-// Return the enclosing x coordinates for the circle.
-bool lines_circle_intersect(
-    float relative_velocity, Line (*lines)[5 /* kLineCount */], Circle* circle,
-    int* line_x, int* circle_min_x, int* circle_max_x) {
-  *circle_min_x = 0;
-  *circle_max_x = kWidth;
+// Whether a circle intersects any line during the next move and whether this is
+// due to its x velocity or y velocity (considered independently).
+// relative_{x,y}_velocity represents the per update pixel {x,y} velocity
+// between the lines and the circle.
+void lines_circle_intersect(
+    float relative_x_velocity, float relative_y_velocity, Line **lines,
+    Circle* circle, bool* intersects_x, bool* intersects_y) {
+  *intersects_x = false;
+  *intersects_y = false;
   for (int i = 0; i < kLineCount; ++i) {
     int y = (*lines)[i].y;
     // Determine whether the circle is passing through a line. If either the top
     // or bottom of the circle is inside the line, the circle is intersecting
     // the line.
-    // TODO(ariw): This logic allows you to get caught if you move into a line
-    // while passing through it.
-    if ((circle->y + kCircleRadius + relative_velocity >= y &&
-         circle->y + kCircleRadius + relative_velocity < y + kLineThickness) ||
-        (circle->y >= y && circle->y < y + kLineThickness)) {
+    if ((circle->y >= y && circle->y < y + kLineThickness) ||
+        (circle->y + kCircleRadius + relative_y_velocity >= y &&
+         circle->y + kCircleRadius + relative_y_velocity <
+             y + kLineThickness)) {
+      int* holes = (int*)((*lines)[i]).holes;
+      int holes_size = (*lines)[i].holes_size;
+      *intersects_y = true;
       // The circle is passing through a line. We need to check if our circle
-      // fits through any holes in that line.  Since kCircleRadius <
-      // kLineSegmentWidth, if the left side of our circle fits through a hole
-      // and the right side of our circle fits through a hole, the entire circle
-      // fits through a hole.
-      bool hole_left = false;
-      bool hole_right = false;
-      for (int j = 0; j < (*lines)[i].holes_size; ++j) {
-        int hole = (*lines)[i].holes[j];
-        int hole_start_x = hole * kLineSegmentWidth;
-        int hole_end_x = (hole + 1) * kLineSegmentWidth;
-        if (circle->x >= hole_start_x && circle->x < hole_end_x) {
-          hole_left = true;
-        }
-        float circle_end_x = circle->x + kCircleRadius;
-        if (circle_end_x >= hole_start_x && circle_end_x < hole_end_x) {
-          hole_right = true;
+      // fits through any holes in that line. Since holes are stored in
+      // ascending order, we can simultaneously establish the boundaries of
+      // larger holes and see if the circle fits through any of them.
+      for (int j = 0; j < holes_size; ++j) {
+        int hole_start_x = holes[j] * kLineSegmentWidth;
+        while (j < holes_size - 1 && holes[j] + 1 == holes[j + 1]) ++j;
+        int hole_end_x = (holes[j] + 1) * kLineSegmentWidth;
+        if (circle->x >= hole_start_x &&
+            circle->x + kCircleRadius < hole_end_x) {
+            if (circle->x + relative_x_velocity < hole_start_x ||
+                circle->x + kCircleRadius + relative_x_velocity >= hole_end_x) {
+            *intersects_x = true;
+          }
+          *intersects_y = false;
         }
       }
-      if (!hole_left || !hole_right) *line_x = y;
-      return !hole_left || !hole_right;
     }
   }
-  return false;
 }
 
 // Input handlers.
@@ -204,8 +200,9 @@ void reset() {
   circle_x_velocity = 0;
 
   // Reset the lines.
-  for (int i = 1; i <= kLineCount; ++i) {
-    line_generate((kDistanceBetweenLines + kLineThickness) * i, &lines[i - 1]);
+  for (int i = 0; i < kLineCount; ++i) {
+    line_generate(
+        (kDistanceBetweenLines + kLineThickness) * (i + 1), &lines[i]);
   }
 
   // Reset our speed.
@@ -251,6 +248,11 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
 
   app_timer_send_event(ctx, kUpdateMs, 0);
 
+  // Check to see if game is over yet.
+  if (circle.y < 0) {
+    reset();
+  }
+
   // Update the score.
   if (!kDebug) {
     static char score_string[10];
@@ -259,25 +261,26 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   }
 
   // Update the player circle.
-  int line_y, circle_min_x, circle_max_x;
-  if (circle.y < 0) {
-    // Game over!
-    reset();
-  } else if (lines_circle_intersect(
-      kCircleYVelocity - lines_velocity, &lines, &circle, &line_y,
-      &circle_min_x, &circle_max_x)) {
-    // Can't fall down yet, move up with the line.
-    circle.y = line_y - kCircleRadius + lines_velocity;
-  } else if (circle.y + kCircleRadius + lines_velocity <=
-                 kHeight - kStatusBarHeight) {
-    // Fall down!
-    circle.y += kCircleYVelocity;
-  }
-  if (circle.x + circle_x_velocity >= circle_min_x &&
-      circle.x + kCircleRadius + circle_x_velocity < circle_max_x) {
+  bool intersects_x = false, intersects_y = false;
+  lines_circle_intersect(
+      circle_x_velocity, kCircleYVelocity - lines_velocity, ((Line**)(&lines)),
+      &circle, &intersects_x, &intersects_y);
+  if (!intersects_x &&
+      circle.x + circle_x_velocity >= 0 &&
+      circle.x + kCircleRadius + circle_x_velocity < kWidth) {
     circle.x += circle_x_velocity;
   }
   circle_x_velocity = 0;
+  if (!intersects_y &&
+      circle.y + kCircleRadius + kCircleYVelocity <=
+          kHeight - kStatusBarHeight) {
+    // Fall down!
+    circle.y += kCircleYVelocity;
+  }
+  if (intersects_y) {
+    // Can't fall down yet, move up with the line.
+    circle.y -= lines_velocity;
+  }
   layer_set_frame(&circle.layer,
                   GRect((int)circle.x, (int)circle.y, kCircleRadius,
                         kCircleRadius));
