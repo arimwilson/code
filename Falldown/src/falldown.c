@@ -12,6 +12,7 @@ PBL_APP_INFO(
 
 const bool kDebug = false;
 const int kTextSize = 14;
+const int kTextLength = 12;
 
 const int kWidth = 144;
 const int kHeight = 168;
@@ -21,7 +22,7 @@ const int kStatusBarHeight = 16;
 const int kUpdateMs = 33;
 
 // Player circle constants.
-const int kCircleRadius = 12;
+const int kCircleRadius = 8;
 // Should be able to get across the screen in kAcrossScreenMs:
 const int kAcrossScreenMs = 1000;
 // kWidth / (kAcrossScreenMs / kUpdateMs)
@@ -49,6 +50,7 @@ const float kVelocityIncrease = 1.05;
 Window window;
 
 TextLayer text_layer;
+char text[12 /* kTextLength */];
 // TODO(ariw): Persistent high scores via httpebble?
 int score = 0;
 
@@ -84,7 +86,8 @@ typedef struct {
   int holes[2 /* kMaxHoles */];  // which segments have holes
   int holes_size;
 } Line;
-Line lines[5 /* kLineCount */];
+typedef Line Lines[5 /* kLineCount */];
+Lines lines;
 int elapsed_time_ms = 0;
 float lines_velocity = -0.627;  // kInitialLineVelocity
 
@@ -116,11 +119,11 @@ void line_init(Layer* parent_layer, int y, Line* line) {
   layer_add_child(parent_layer, &line->layer);
 }
 
-void lines_init(Layer* parent_layer, Line (*lines)[5 /* kLineCount */]) {
-  for (int i = 1; i <= kLineCount; ++i) {
+void lines_init(Layer* parent_layer, Lines* lines) {
+  for (int i = 0; i < kLineCount; ++i) {
     line_init(
-        parent_layer, (kDistanceBetweenLines + kLineThickness) * i,
-        &((*lines)[i - 1]));
+        parent_layer, (kDistanceBetweenLines + kLineThickness) * (i + 1),
+        &((*lines)[i]));
   }
 }
 
@@ -129,38 +132,38 @@ void lines_init(Layer* parent_layer, Line (*lines)[5 /* kLineCount */]) {
 // relative_{x,y}_velocity represents the per update pixel {x,y} velocity
 // between the lines and the circle.
 void lines_circle_intersect(
-    float relative_x_velocity, float relative_y_velocity, Line **lines,
+    float relative_x_velocity, float relative_y_velocity, Lines* lines,
     Circle* circle, bool* intersects_x, bool* intersects_y) {
   *intersects_x = false;
   *intersects_y = false;
   for (int i = 0; i < kLineCount; ++i) {
-    int y = (*lines)[i].y;
-    // Determine whether the circle is passing through a line. If either the top
-    // or bottom of the circle is inside the line, the circle is intersecting
-    // the line.
-    if ((circle->y + relative_y_velocity >= y &&
-         circle->y + relative_y_velocity < y + kLineThickness) ||
-        (circle->y + kCircleRadius + relative_y_velocity >= y &&
-         circle->y + kCircleRadius + relative_y_velocity <
-             y + kLineThickness)) {
-      int* holes = (int*)((*lines)[i]).holes;
-      int holes_size = (*lines)[i].holes_size;
+    Line* line = &((*lines)[i]);
+    int y = line->y;
+    // Determine whether the circle is passing through a line. This happens only
+    // if before the move, the top of the circle is either in or above the line
+    // and, after the move, the bottom of the circle is either in or below the
+    // line.
+    if (circle->y < y + kLineThickness &&
+        circle->y + kCircleRadius + relative_y_velocity >= y) {
       *intersects_y = true;
       // The circle is passing through a line. We need to check if our circle
       // fits through any holes in that line. Since holes are stored in
       // ascending order, we can simultaneously establish the boundaries of
       // larger holes and see if the circle fits through any of them.
-      for (int j = 0; j < holes_size; ++j) {
-        int hole_start_x = holes[j] * kLineSegmentWidth;
-        // while (j < holes_size - 1 && holes[j] + 1 == holes[j + 1]) ++j;
-        int hole_end_x = (holes[j] + 1) * kLineSegmentWidth;
+      for (int j = 0; j < line->holes_size; ++j) {
+        int hole_start_x = line->holes[j] * kLineSegmentWidth;
+        while (j < line->holes_size - 1 &&
+               line->holes[j] + 1 == line->holes[j + 1]) {
+          ++j;
+        }
+        int hole_end_x = (line->holes[j] + 1) * kLineSegmentWidth;
         if (circle->x >= hole_start_x &&
             circle->x + kCircleRadius < hole_end_x) {
-            if (circle->x + relative_x_velocity < hole_start_x ||
-                circle->x + kCircleRadius + relative_x_velocity >= hole_end_x) {
-            // *intersects_x = true;
+          if (circle->x + relative_x_velocity < hole_start_x ||
+              circle->x + kCircleRadius + relative_x_velocity >= hole_end_x) {
+            *intersects_x = true;
           }
-          // *intersects_y = false;
+          *intersects_y = false;
         }
       }
     }
@@ -211,7 +214,6 @@ void reset() {
   lines_velocity = kInitialLineVelocity;
 }
 
-
 void handle_init(AppContextRef ctx) {
   (void)ctx;
   common_srand(common_time());
@@ -254,17 +256,16 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     reset();
   }
 
-  // Update the score.
+  // Update the text.
   if (!kDebug) {
-    static char score_string[10];
-    snprintf(score_string, 10, "%d", score);
-    text_layer_set_text(&text_layer, score_string);
+    snprintf(text, kTextLength, "%d", score);
   }
+  text_layer_set_text(&text_layer, text);
 
   // Update the player circle.
   bool intersects_x = false, intersects_y = false;
   lines_circle_intersect(
-      circle_x_velocity, kCircleYVelocity - lines_velocity, ((Line**)(&lines)),
+      circle_x_velocity, kCircleYVelocity - lines_velocity, &lines,
       &circle, &intersects_x, &intersects_y);
   if (!intersects_x &&
       circle.x + circle_x_velocity >= 0 &&
@@ -280,7 +281,7 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   }
   if (intersects_y) {
     // Can't fall down yet, move up with the line.
-    circle.y -= lines_velocity;
+    circle.y += lines_velocity;
   }
   layer_set_frame(&circle.layer,
                   GRect((int)circle.x, (int)circle.y, kCircleRadius,
