@@ -67,7 +67,7 @@ void circle_update_proc(Circle* circle, GContext* ctx) {
   // TODO(ariw): Use an animated circle here instead of this function.
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_circle(
-      ctx, GPoint(kCircleRadius, kCircleRadius), kCircleRadius);
+      ctx, GPoint(kCircleRadius, kCircleRadius), kCircleRadius - 1);
 }
 
 void circle_init(Layer* parent_layer, int x, int y, Circle* circle) {
