@@ -122,7 +122,7 @@ void line_init(Layer* parent_layer, int y, Line* line) {
 void lines_init(Layer* parent_layer, Lines* lines) {
   for (int i = 0; i < kLineCount; ++i) {
     line_init(
-        parent_layer, (kDistanceBetweenLines + kLineThickness) * (i + 1),
+        parent_layer, (kDistanceBetweenLines + kLineThickness) * (i + 2),
         &((*lines)[i]));
   }
 }
@@ -206,7 +206,7 @@ void reset() {
   // Reset the lines.
   for (int i = 0; i < kLineCount; ++i) {
     line_generate(
-        (kDistanceBetweenLines + kLineThickness) * (i + 1), &lines[i]);
+        (kDistanceBetweenLines + kLineThickness) * (i + 2), &lines[i]);
   }
 
   // Reset our speed.
