@@ -22,7 +22,7 @@ const int kStatusBarHeight = 16;
 const int kUpdateMs = 33;
 
 // Player circle constants.
-const int kCircleRadius = 8;
+const int kCircleRadius = 4;
 // Should be able to get across the screen in kAcrossScreenMs:
 const int kAcrossScreenMs = 1000;
 // kWidth / (kAcrossScreenMs / kUpdateMs)
@@ -67,12 +67,12 @@ void circle_update_proc(Circle* circle, GContext* ctx) {
   // TODO(ariw): Use an animated circle here instead of this function.
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_circle(
-      ctx, GPoint(kCircleRadius / 2, kCircleRadius / 2), kCircleRadius);
+      ctx, GPoint(kCircleRadius, kCircleRadius), kCircleRadius);
 }
 
 void circle_init(Layer* parent_layer, int x, int y, Circle* circle) {
   layer_init(&circle->layer, GRect(
-        circle->x, circle->y, kCircleRadius, kCircleRadius));
+        circle->x, circle->y, kCircleRadius * 2, kCircleRadius * 2));
   layer_set_update_proc(&circle->layer, (LayerUpdateProc)circle_update_proc);
   layer_add_child(parent_layer, &circle->layer);
   circle->x = x;
@@ -144,7 +144,7 @@ void lines_circle_intersect(
     // and, after the move, the bottom of the circle is either in or below the
     // line.
     if (circle->y < y + kLineThickness &&
-        circle->y + kCircleRadius + relative_y_velocity >= y) {
+        circle->y + kCircleRadius * 2 + relative_y_velocity >= y) {
       *intersects_y = true;
       // The circle is passing through a line. We need to check if our circle
       // fits through any holes in that line. Since holes are stored in
@@ -158,9 +158,10 @@ void lines_circle_intersect(
         }
         int hole_end_x = (line->holes[j] + 1) * kLineSegmentWidth;
         if (circle->x >= hole_start_x &&
-            circle->x + kCircleRadius < hole_end_x) {
+            circle->x + kCircleRadius * 2 < hole_end_x) {
           if (circle->x + relative_x_velocity < hole_start_x ||
-              circle->x + kCircleRadius + relative_x_velocity >= hole_end_x) {
+              circle->x + kCircleRadius * 2 + relative_x_velocity >=
+                  hole_end_x) {
             *intersects_x = true;
           }
           *intersects_y = false;
@@ -199,7 +200,7 @@ void reset() {
   score = 0;
 
   // Reset player circle.
-  circle.x = (kWidth - kCircleRadius) / 2;
+  circle.x = kWidth / 2 - kCircleRadius;
   circle.y = 0;
   circle_x_velocity = 0;
 
@@ -235,7 +236,7 @@ void handle_init(AppContextRef ctx) {
   layer_add_child(root_layer, (Layer*)&text_layer);
 
   // Initialize the player circle.
-  circle_init(root_layer, (kWidth - kCircleRadius) / 2,  0, &circle);
+  circle_init(root_layer, kWidth / 2 - kCircleRadius,  0, &circle);
 
   // Attach our desired button functionality
   window_set_click_config_provider(
@@ -272,12 +273,12 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
       &circle, &intersects_x, &intersects_y);
   if (!intersects_x &&
       circle.x + circle_x_velocity >= 0 &&
-      circle.x + kCircleRadius + circle_x_velocity < kWidth) {
+      circle.x + kCircleRadius * 2 + circle_x_velocity < kWidth) {
     circle.x += circle_x_velocity;
   }
   circle_x_velocity = 0;
   if (!intersects_y &&
-      circle.y + kCircleRadius + kCircleYVelocity <=
+      circle.y + kCircleRadius * 2 + kCircleYVelocity <=
           kHeight - kStatusBarHeight) {
     // Fall down!
     circle.y += kCircleYVelocity;
@@ -287,8 +288,8 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     circle.y += lines_velocity;
   }
   layer_set_frame(&circle.layer,
-                  GRect((int)circle.x, (int)circle.y, kCircleRadius,
-                        kCircleRadius));
+                  GRect((int)circle.x, (int)circle.y, kCircleRadius * 2,
+                        kCircleRadius * 2));
 
   // Update the lines as they move upward.
   for (int i = 0; i < kLineCount; ++i) {
