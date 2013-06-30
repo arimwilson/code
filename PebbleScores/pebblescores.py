@@ -13,7 +13,7 @@ class Game(db.Model):
 
 class User(db.Model):
   name = db.StringProperty(required = True)
-  last_ip_address = db.StringProperty(required = True)
+  ip_address = db.StringProperty(required = True)
 
 class HighScore(db.Model):
   game = db.ReferenceProperty(Game, required = True)
@@ -45,9 +45,16 @@ def getGame(game):
 class SubmitHandler(webapp.RequestHandler):
   def post(self):
     game = getGame(self.request.get("game"))
-    user = getUser(self.request.get("username"))
+    if not game or game.key != self.request.get("key"):
+      self.error(403)
+      return
+    username = self.request.get("username")
+    user = getUser(username)
     if not user:
-      pass
+      user = User(name = username, last_ip_address=self.request.remote_addr)
+      user.put()
+    highscore = HighScore(
+        game = game, user = user, score = self.request.get("score"))
 
 class ListHandler(webapp.RequestHandler):
   def get(self):
