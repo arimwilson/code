@@ -89,12 +89,13 @@ class ListHandler(webapp.RequestHandler):
   def get(self):
     # Get the top 20 scores by game.
     query = HighScore.all()
-    query.filter("game =", self.request.get("game"))
+    game = self.request.get("game")
+    query.filter("game =", game)
     query.order("-score")
     highscores = query.fetch(20)
     highscores_html = [highscoreHtml(highscore) for highscore in highscores]
     self.response.out.write(
-        _HTML_TEMPLATE % {"game": highscore.game,
+        _HTML_TEMPLATE % {"game": game,
                           "list": "".join(highscores_html)})
 
 app = webapp.WSGIApplication([
