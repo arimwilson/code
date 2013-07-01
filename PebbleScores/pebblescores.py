@@ -10,15 +10,15 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 class Game(db.Model):
   name = db.StringProperty(required = True)
-  key = db.BlobProperty(required = True)
+  mac_key = db.BlobProperty(required = True)
 
 class User(db.Model):
   name = db.StringProperty(required = True)
   ip_address = db.StringProperty(required = True)
 
 class HighScore(db.Model):
-  game = db.ReferenceProperty(Game, required = True)
-  user = db.ReferenceProperty(User, required = True)
+  game = db.StringProperty(required = True)
+  user = db.StringProperty(required = True)
   score = db.IntegerProperty(required = True)
   created = db.DateTimeProperty(required = True, auto_now_add = True)
 
@@ -43,16 +43,17 @@ def getUser(name):
 def getGame(game):
   return getEntities("Game", "name", game)
 
-def getMac(request, key):
+def getMac(request, mac_key):
   # TODO(ariw): HMAC instead of MD5?
-  message = request.get("game") + request.get("username") +
-            str(request.get("score") + key
+  message = (request.get("game") + request.get("username") +
+             str(request.get("score") + mac_key))
   return md5.new(message).hexdigest()
 
 class SubmitHandler(webapp.RequestHandler):
   def post(self):
     game = getGame(self.request.get("game"))
-    if not game or getMac(self.request, game.key) != self.request.get("mac"):
+    if (not game or
+        getMac(self.request, game.mac_key) != self.request.get("mac")):
       self.error(403)
       return
     username = self.request.get("username")
@@ -61,12 +62,11 @@ class SubmitHandler(webapp.RequestHandler):
       user = User(name = username, ip_address=self.request.remote_addr)
       user.put()
     highscore = HighScore(
-        game = game, user = user, score = self.request.get("score"))
+        game = game.name, user = user.name, score = self.request.get("score"))
     highscore.put()
 
 _HIGHSCORE_HTML_TEMPLATE = """
-  <li><b>%(highscore)s</b> - %(username)s
-  """
+  <li><b>%(highscore)s</b> - %(username)s"""
 
 def highscoreHtml(highscore):
   return _HIGHSCORE_HTML_TEMPLATE % {
@@ -88,9 +88,8 @@ _HTML_TEMPLATE = """
 class ListHandler(webapp.RequestHandler):
   def get(self):
     # Get the top 20 scores by game.
-    game = getGame(self.request.get("game"))
-    query = HighScore.All()
-    query.filter("game =", game)
+    query = HighScore.all()
+    query.filter("game =", self.request.get("game"))
     query.order("-score")
     highscores = query.fetch(20)
     highscores_html = [highscoreHtml(highscore) for highscore in highscores]
