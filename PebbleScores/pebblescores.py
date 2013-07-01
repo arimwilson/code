@@ -70,7 +70,7 @@ _HIGHSCORE_HTML_TEMPLATE = """
 
 def highscoreHtml(highscore):
   return _HIGHSCORE_HTML_TEMPLATE % {
-      "highscore": highscore.score, "username": highscore.user.name}
+      "highscore": highscore.score, "username": highscore.user}
 
 _HTML_TEMPLATE = """
   <!DOCTYPE HTML>
@@ -94,7 +94,8 @@ class ListHandler(webapp.RequestHandler):
     highscores = query.fetch(20)
     highscores_html = [highscoreHtml(highscore) for highscore in highscores]
     self.response.out.write(
-        _HTML_TEMPLATE % {"game": game.name, "list": "".join(highscores_html)})
+        _HTML_TEMPLATE % {"game": highscore.game,
+                          "list": "".join(highscores_html)})
 
 app = webapp.WSGIApplication([
     ('/submit', SubmitHandler),
