@@ -1,6 +1,7 @@
 # TODO(ariw): Some sort of registration interface so others can add their own
 # games?
 
+import md5
 import webapp2 as webapp
 
 from google.appengine.api import memcache
@@ -42,24 +43,59 @@ def getUser(name):
 def getGame(game):
   return getEntities("Game", "name", game)
 
+def getMac(request, key):
+  # TODO(ariw): HMAC instead of MD5?
+  message = request.get("game") + request.get("username") +
+            str(request.get("score") + key
+  return md5.new(message).hexdigest()
+
 class SubmitHandler(webapp.RequestHandler):
   def post(self):
     game = getGame(self.request.get("game"))
-    if not game or game.key != self.request.get("key"):
+    if not game or getMac(self.request, game.key) != self.request.get("mac"):
       self.error(403)
       return
     username = self.request.get("username")
     user = getUser(username)
     if not user:
-      user = User(name = username, last_ip_address=self.request.remote_addr)
+      user = User(name = username, ip_address=self.request.remote_addr)
       user.put()
     highscore = HighScore(
         game = game, user = user, score = self.request.get("score"))
+    highscore.put()
+
+_HIGHSCORE_HTML_TEMPLATE = """
+  <li><b>%(highscore)s</b> - %(username)s
+  """
+
+def highscoreHtml(highscore):
+  return _HIGHSCORE_HTML_TEMPLATE % {
+      "highscore": highscore.score, "username": highscore.user.name}
+
+_HTML_TEMPLATE = """
+  <!DOCTYPE HTML>
+  <html lang="en">
+  <head>
+  <title>%(game)s Scores</title>
+  </head>
+  <body>
+  <ol>
+  %(list)s
+  </ol>
+  </body>
+  </html>"""
 
 class ListHandler(webapp.RequestHandler):
   def get(self):
     # Get the top 20 scores by game.
     game = getGame(self.request.get("game"))
+    query = HighScore.All()
+    query.filter("game =", game)
+    query.order("-score")
+    highscores = query.fetch(20)
+    highscores_html = [highscoreHtml(highscore) for highscore in highscores]
+    self.response.out.write(
+        _HTML_TEMPLATE % {"game": game.name, "list": "".join(highscores_html)})
 
 app = webapp.WSGIApplication([
     ('/submit', SubmitHandler),
