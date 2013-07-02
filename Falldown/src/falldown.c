@@ -195,6 +195,24 @@ void click_config_provider(ClickConfig **config, Window *window) {
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = kUpdateMs;
 }
 
+void send_score() {
+  static const char* kGameName = "Falldown";
+  const int kMacSize = 33;  // 16-byte md5 in hex and terminating \0.
+  char mac[kMacSize];
+  const uint32_t dict_size = dict_calc_buffer_size(
+      4,
+      strlen(kGameName) + 1,
+      kMacSize,
+      ,  // TODO(ariw): Pebble username?
+      sizeof(score));
+
+  static int num_score_message = 0;
+  http_out_get(
+      "http://pebblescores.appspot.com/submit",
+      num_score_message++,
+      );  // TODO(ariw): DictionaryIterator**?
+}
+
 // TODO(ariw): Merge this with the circle/line init functions.
 void reset() {
   // Reset the score.
@@ -256,12 +274,7 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
 
   // Check to see if game is over yet.
   if (circle.y < 0) {
-    // Send score to PebbleScores.
-    static int num__score_message = 0;
-    http_out_get(
-        "http://pebblescores.appspot.com/submit",
-        num_score_message++,
-        );  // TODO(ariw): DictionaryIterator**?
+    send_score();
     reset();
     // Don't update the screen for a bit to let the user see their score after
     // a game over.

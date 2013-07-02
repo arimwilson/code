@@ -1,8 +1,8 @@
 # TODO(ariw): Some sort of registration interface so others can add their own
 # games?
 
+import hashlib
 import json
-import md5
 import webapp2 as webapp
 
 from google.appengine.api import memcache
@@ -49,7 +49,7 @@ def getMac(request, mac_key):
   # TODO(ariw): HMAC instead of MD5?
   message = (request.get("game") + request.get("username") +
              str(request.get("score") + mac_key))
-  return md5.new(message).hexdigest()
+  return hashlib.md5(message).hexdigest()
 
 class SubmitHandler(webapp.RequestHandler):
   def post(self):
