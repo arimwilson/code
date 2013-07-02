@@ -1,6 +1,7 @@
 # TODO(ariw): Some sort of registration interface so others can add their own
 # games?
 
+import json
 import md5
 import webapp2 as webapp
 
@@ -51,18 +52,19 @@ def getMac(request, mac_key):
 
 class SubmitHandler(webapp.RequestHandler):
   def post(self):
-    game = getGame(self.request.get("game"))
+    request = json.loads(self.request.body)
+    game = getGame(request["game"])
     if (not game or
-        getMac(self.request, game.mac_key) != self.request.get("mac")):
+        getMac(self.request, game.mac_key) != request["mac"]):
       self.error(403)
       return
-    username = self.request.get("username")
+    username = request["username"]
     user = getUser(username)
     if not user:
       user = User(name = username, ip_address=self.request.remote_addr)
       user.put()
     highscore = HighScore(
-        game = game.name, user = user.name, score = self.request.get("score"))
+        game = game.name, user = user.name, score = request["score"])
     highscore.put()
 
 _HIGHSCORE_HTML_TEMPLATE = """

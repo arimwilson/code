@@ -6,7 +6,7 @@
 #include "http.h"
 #include "mini-printf.h"
 
-#define MY_UUID { 0x51, 0x74, 0xB3, 0x1A, 0x71, 0xB4, 0x4F, 0x92, 0xA1, 0xF5, 0x0E, 0xCC, 0x5A, 0xB5, 0x1B, 0x52 }
+#define MY_UUID HTTP_UUID
 PBL_APP_INFO(
     MY_UUID, "Falldown", "Ari Wilson", 1, 0 /* App version */,
     RESOURCE_ID_IMAGE_ICON, APP_INFO_STANDARD_APP);
