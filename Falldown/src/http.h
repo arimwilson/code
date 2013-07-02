@@ -1,6 +1,4 @@
-
-<!-- saved from url=(0062)https://raw.github.com/Katharine/httpebble-watch/master/http.h -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body><pre style="word-wrap: break-word; white-space: pre-wrap;">/*
+/*
  * httpebble header
  * Copyright (C) 2013 Katharine Berry
  * 
@@ -109,4 +107,3 @@ HTTPResult http_cookie_set_int8(uint32_t request_id, uint32_t key, int8_t value)
 HTTPResult http_cookie_set_uint8(uint32_t request_id, uint32_t key, uint8_t value);
 
 #endif
-</pre></body></html>

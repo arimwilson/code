@@ -1,6 +1,4 @@
-
-<!-- saved from url=(0062)https://raw.github.com/Katharine/httpebble-watch/master/http.c -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body><pre style="word-wrap: break-word; white-space: pre-wrap;">/*
+/*
  * httpebble stuff
  * Copyright (C) 2013 Katharine Berry
  * 
@@ -30,13 +28,13 @@
 #define HTTP_COOKIE_KEY 0xFFFC
 #define HTTP_CONNECT_KEY 0xFFFB
 #define HTTP_USE_GET_KEY 0xFFFA
-    
+
 #define HTTP_APP_ID_KEY 0xFFF2
 #define HTTP_COOKIE_STORE_KEY 0xFFF0
 #define HTTP_COOKIE_LOAD_KEY 0xFFF1
 #define HTTP_COOKIE_FSYNC_KEY 0xFFF3
 #define HTTP_COOKIE_DELETE_KEY 0xFFF4
-    
+
 #define HTTP_TIME_KEY 0xFFF5
 #define HTTP_UTC_OFFSET_KEY 0xFFF6
 #define HTTP_IS_DST_KEY 0xFFF7
@@ -194,7 +192,7 @@ static void app_received_location(uint32_t accuracy_int, DictionaryIterator *ite
     float accuracy = floatFromUint32(accuracy_int);
     float latitude = 0.f;
     float longitude = 0.f;
-    float altitude = 0.f;   
+    float altitude = 0.f;
 
     Tuple* tuple = dict_read_first(iter);
     if(!tuple) return;
@@ -213,7 +211,7 @@ static void app_received_location(uint32_t accuracy_int, DictionaryIterator *ite
             break;
         }
     } while((tuple = dict_read_next(iter)));
-    http_callbacks.location(latitude, longitude, altitude, accuracy, context);  
+    http_callbacks.location(latitude, longitude, altitude, accuracy, context);
 }
 
 static void app_received(DictionaryIterator* received, void* context) {
@@ -272,7 +270,7 @@ static void app_received(DictionaryIterator* received, void* context) {
         app_received_cookie_fsync_response(tuple-&gt;value-&gt;uint8, context);
         return;
     }
-    
+
     // Delete response
     tuple = dict_find(received, HTTP_COOKIE_DELETE_KEY);
     if(tuple) {
@@ -490,4 +488,3 @@ HTTPResult http_cookie_set_int8(uint32_t request_id, uint32_t key, int8_t value)
 HTTPResult http_cookie_set_uint8(uint32_t request_id, uint32_t key, uint8_t value) {
     return http_cookie_set_int(request_id, key, &amp;value, 1, false);
 }
-</pre></body></html>

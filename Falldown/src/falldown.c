@@ -226,6 +226,9 @@ void handle_init(AppContextRef ctx) {
 
   Layer* root_layer = window_get_root_layer(&window);
 
+  // Initialize HTTPebble.
+  http_set_app_id(532013811);
+
   // Initialize the lines to fall down.
   lines_init(root_layer, &lines);
 
@@ -253,6 +256,12 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
 
   // Check to see if game is over yet.
   if (circle.y < 0) {
+    // Send score to PebbleScores.
+    static int num__score_message = 0;
+    http_out_get(
+        "http://pebblescores.appspot.com/submit",
+        num_score_message++,
+        );  // TODO(ariw): DictionaryIterator**?
     reset();
     // Don't update the screen for a bit to let the user see their score after
     // a game over.
@@ -317,6 +326,13 @@ void pbl_main(void *params) {
   PebbleAppHandlers handlers = {
     .init_handler = &handle_init,
     .timer_handler = &handle_timer,
+    .messaging_info = {
+      .buffer_sizes = {
+        // TODO(ariw): Are these too big?
+        .inbound = 256,
+        .outbound = 256,
+      }
+    },
   };
   app_event_loop(params, &handlers);
 }

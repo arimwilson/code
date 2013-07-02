@@ -18,6 +18,7 @@ class User(db.Model):
   ip_address = db.StringProperty(required = True)
 
 class HighScore(db.Model):
+  # TODO(ariw): Should game and user be reference properties?
   game = db.StringProperty(required = True)
   user = db.StringProperty(required = True)
   score = db.IntegerProperty(required = True)
