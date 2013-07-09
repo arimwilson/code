@@ -108,7 +108,7 @@ void line_update_proc(Line* line, GContext* ctx) {
 
 void line_generate(int y, Line* line) {
   line->y = y;
-  line->holes_size = common_rand() % kMaxHoles + 1;
+  line->holes_size = rand() % kMaxHoles + 1;
   common_shuffle_integers(line->holes_size, (int*)line->holes);
   common_insertion_sort((int*)line->holes, line->holes_size);
 }
@@ -236,7 +236,7 @@ void reset() {
 
 void handle_init(AppContextRef ctx) {
   (void)ctx;
-  common_srand(common_time());
+  srand(time());
 
   window_init(&window, "Falldown");
   window_set_background_color(&window, GColorBlack);
