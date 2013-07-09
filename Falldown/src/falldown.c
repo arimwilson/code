@@ -328,6 +328,8 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   }
 
   // Increase our speed sometimes.
+  // TODO(ariw): Update this by actual elapsed number of ms so game time matches
+  // real time.
   elapsed_time_ms += kUpdateMs;
   if (elapsed_time_ms % kVelocityIncreaseMs < kUpdateMs) {
     lines_velocity *= kVelocityIncrease;
