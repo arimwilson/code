@@ -4,7 +4,6 @@
 
 #include "common.h"
 #include "http.h"
-#include "mini-printf.h"
 
 #define MY_UUID HTTP_UUID
 PBL_APP_INFO(
