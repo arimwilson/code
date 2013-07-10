@@ -3,6 +3,7 @@
 
 import hashlib
 import json
+import logging
 import webapp2 as webapp
 
 from google.appengine.api import memcache
@@ -47,19 +48,22 @@ def getGame(game):
 
 def getMac(request, mac_key):
   # TODO(ariw): HMAC instead of MD5?
-  message = (request.get("game") + request.get("username") +
-             str(request.get("score") + mac_key))
+  message = (request.get("game") + str(request.get("score") + mac_key))
   return hashlib.md5(message).hexdigest()
 
 class SubmitHandler(webapp.RequestHandler):
   def post(self):
+    logging.info("HEADERS: " + str(self.request.headers))
+    logging.info("BODY: " + str(self.request.body))
+    # TODO(ariw): RESTORE!
+    """
     request = json.loads(self.request.body)
     game = getGame(request["game"])
     if (not game or
         getMac(self.request, game.mac_key) != request["mac"]):
       self.error(403)
       return
-    username = request["username"]
+    username = self.request.headers["X-PEBBLE-ID"]
     user = getUser(username)
     if not user:
       user = User(name = username, ip_address=self.request.remote_addr)
@@ -67,6 +71,7 @@ class SubmitHandler(webapp.RequestHandler):
     highscore = HighScore(
         game = game.name, user = user.name, score = request["score"])
     highscore.put()
+    """
 
 _HIGHSCORE_HTML_TEMPLATE = """
   <li><b>%(highscore)s</b> - %(username)s"""

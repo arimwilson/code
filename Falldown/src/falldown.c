@@ -4,11 +4,14 @@
 
 #include "common.h"
 #include "http.h"
+#include "mac_key.h"  // for kMacKey
 
 #define MY_UUID HTTP_UUID
 PBL_APP_INFO(
     MY_UUID, "Falldown", "Ari Wilson", 1, 0 /* App version */,
     RESOURCE_ID_IMAGE_ICON, APP_INFO_STANDARD_APP);
+
+extern const int kMacKey;
 
 const bool kDebug = false;
 const int kTextSize = 14;
@@ -51,7 +54,6 @@ Window window;
 
 TextLayer text_layer;
 char text[12 /* kTextLength */];
-// TODO(ariw): Persistent high scores via httpebble?
 int score = 0;
 
 // Player circle data and functions.
@@ -194,22 +196,24 @@ void click_config_provider(ClickConfig **config, Window *window) {
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = kUpdateMs;
 }
 
+void get_mac(const char* game_name, char* mac) {
+  // TODO(ariw): md5 with kMacKey. Need to also prevent replay attacks...
+}
+
 void send_score() {
   static const char* kGameName = "Falldown";
   const int kMacSize = 33;  // 16-byte md5 in hex and terminating \0.
   char mac[kMacSize];
-  const uint32_t dict_size = dict_calc_buffer_size(
-      4,
-      strlen(kGameName) + 1,
-      kMacSize,
-      ,  // TODO(ariw): Pebble username?
-      sizeof(score));
-
+  DictionaryIterator* body;
   static int num_score_message = 0;
   http_out_get(
       "http://pebblescores.appspot.com/submit",
       num_score_message++,
-      );  // TODO(ariw): DictionaryIterator**?
+      &body);
+  dict_write_cstring(body, 1, kGameName);
+  dict_write_cstring(body, 2, mac);
+  dict_write_int(body, 3, (void*)score, sizeof(score), true);
+  http_out_send();
 }
 
 // TODO(ariw): Merge this with the circle/line init functions.
@@ -235,7 +239,7 @@ void reset() {
 
 void handle_init(AppContextRef ctx) {
   (void)ctx;
-  srand(time());
+  srand(time(NULL));
 
   window_init(&window, "Falldown");
   window_set_background_color(&window, GColorBlack);
