@@ -7,6 +7,8 @@
 #include "http.h"
 #include "mac_key.h"  // for kMacKey / kMacKeyLength
 
+// TODO(ariw): Need to have separate versions of this UUID for iOS / Android.
+// This allows Android to have multiple HTTPebble apps.
 #define MY_UUID HTTP_UUID
 PBL_APP_INFO(
     MY_UUID, "Falldown", "Ari Wilson", 1, 0 /* App version */,
