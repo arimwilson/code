@@ -47,10 +47,10 @@ def getUser(name):
 def getGame(game):
   return getEntities("Game", "name", game)
 
-def getMac(request, mac_key):
+def getMac(game, score, mac_key):
   # TODO(ariw): Probably want to have a nonce (or use a timestamp) to prevent
   # replay attacks...
-  message = "%s%d" % (request.get("game"), request.get("score"))
+  message = "%s%d" % (game, score)
   return hmac.new(message, mac_key, hashlib.sha256).hexdigest()
 
 class SubmitHandler(webapp.RequestHandler):
@@ -62,7 +62,8 @@ class SubmitHandler(webapp.RequestHandler):
     request = json.loads(self.request.body)
     game = getGame(request["game"])
     if (not game or
-        getMac(self.request, game.mac_key) != request["mac"]):
+        getMac(game.name, request["score"], game.mac_key) !=
+            request["mac"]):
       self.error(403)
       return
     username = self.request.headers["X-PEBBLE-ID"]

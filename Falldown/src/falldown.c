@@ -225,8 +225,8 @@ void send_score() {
       num_score_message++,
       &body);
   dict_write_cstring(body, 1, kGameName);
-  dict_write_cstring(body, 2, mac);
-  dict_write_int(body, 3, (void*)score, sizeof(score), true);
+  dict_write_int(body, 2, (void*)score, sizeof(score), true);
+  dict_write_cstring(body, 3, mac);
   http_out_send();
 }
 
