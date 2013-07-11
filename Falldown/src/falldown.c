@@ -201,7 +201,7 @@ void click_config_provider(ClickConfig **config, Window *window) {
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = kUpdateMs;
 }
 
-void get_mac(const char* game_name, int score, char* mac, int mac_length) {
+void get_mac(const char* game_name, int score, char* mac) {
   char message[kBufferSize];
   int message_length = snprintf(message, kBufferSize, "%s%d", game_name, score);
   char binary_mac[SHA256_DIGEST_SIZE];
@@ -209,17 +209,15 @@ void get_mac(const char* game_name, int score, char* mac, int mac_length) {
       (unsigned char*)kMacKey, kMacKeyLength, (unsigned char*)message,
       message_length, (unsigned char*)binary_mac, SHA256_DIGEST_SIZE);
   // Convert binary MAC to hexdigest.
-  int i;
-  for (i = 0; i < SHA256_DIGEST_SIZE; ++i) {
+  for (int i = 0; i < SHA256_DIGEST_SIZE; ++i) {
     snprintf(mac + i * 2, 3, "%02x", binary_mac[i]);
   }
 }
 
 void send_score() {
   static const char* kGameName = "Falldown";
-  const int kMacSize = 65;  // 32-byte md5 in hex and terminating \0.
-  char mac[kMacSize];
-  get_mac(kGameName, score, (char*)mac, kMacSize);
+  char mac[SHA256_DIGEST_SIZE * 2 + 1];  // sha256 in hex and terminating \0.
+  get_mac(kGameName, score, (char*)mac);
   DictionaryIterator* body;
   static int num_score_message = 0;
   http_out_get(
