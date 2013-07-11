@@ -32,7 +32,7 @@ def getEntitiesCacheKey(model, property, filter):
 # Get a list of entities of type model with property=filter from either memcache
 # or the datastore, updating memcache if we have to go to the datastore.
 def getEntities(model, property, filter):
-  cache_key = getEntitesCacheKey(model, property, filter)
+  cache_key = getEntitiesCacheKey(model, property, filter)
   entities = memcache.get(cache_key)
   if entities:
     return entities
