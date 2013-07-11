@@ -17,6 +17,7 @@ class Game(db.Model):
 class User(db.Model):
   name = db.StringProperty(required = True)
   ip_address = db.StringProperty(required = True)
+  num_zero_games = db.IntegerProperty()
 
 class HighScore(db.Model):
   # TODO(ariw): Should game and user be reference properties?
@@ -61,19 +62,26 @@ def getMac(game, score, mac_key):
 class SubmitHandler(webapp.RequestHandler):
   def post(self):
     request = json.loads(self.request.body)
-    game = getGame(request["1"])
-    if (not game or
-        getMac(str(game.name), request["2"], game.mac_key) !=
-            request["3"]):
-      self.error(403)
-      return
     username = self.request.headers["X-PEBBLE-ID"]
     user = getUser(username)
     if not user:
-      user = User(name = username, ip_address=self.request.remote_addr)
+      user = User(name = username, ip_address=self.request.remote_addr,
+                  num_zero_games = 0)
       user.put()
+    score = request["2"]
+    # Don't store a highscore entry if the score was 0.
+    if score == 0:
+      user.num_zero_games += 1
+      user.put()
+      return
+
+    game = getGame(request["1"])
+    if (not game or
+        getMac(str(game.name), score, game.mac_key) != request["3"]):
+      self.error(403)
+      return
     highscore = HighScore(
-        game = game.name, user = user.name, score = request["2"])
+        game = game.name, user = user.name, score = score)
     highscore.put()
 
 _HIGHSCORE_HTML_TEMPLATE = """
