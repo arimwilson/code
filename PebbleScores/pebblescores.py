@@ -4,7 +4,6 @@
 import hashlib
 import hmac
 import json
-import logging
 import webapp2 as webapp
 
 from google.appengine.api import memcache
@@ -13,7 +12,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 class Game(db.Model):
   name = db.StringProperty(required = True)
-  mac_key = db.TextProperty(required = True)
+  mac_key = db.BlobProperty(required = True)
 
 class User(db.Model):
   name = db.StringProperty(required = True)
@@ -41,29 +40,31 @@ def getEntities(model, property, filter):
   memcache.add(cache_key, entities)
   return entities
 
-def getUser(name):
-  return getEntities("User", "name", user)
+def getUser(username):
+  users = getEntities("User", "name", username)
+  if not users:
+    return
+  return users[0]
 
 def getGame(game):
-  return getEntities("Game", "name", game)
+  games = getEntities("Game", "name", game)
+  if not games:
+    return
+  return games[0]
 
 def getMac(game, score, mac_key):
   # TODO(ariw): Probably want to have a nonce (or use a timestamp) to prevent
   # replay attacks...
   message = "%s%d" % (game, score)
-  return hmac.new(message, mac_key, hashlib.sha256).hexdigest()
+  return hmac.new(mac_key, message, hashlib.sha256).hexdigest()
 
 class SubmitHandler(webapp.RequestHandler):
   def post(self):
-    logging.info("HEADERS: " + str(self.request.headers))
-    logging.info("BODY: " + str(self.request.body))
-    # TODO(ariw): RESTORE!
-    """
     request = json.loads(self.request.body)
-    game = getGame(request["game"])
+    game = getGame(request["1"])
     if (not game or
-        getMac(game.name, request["score"], game.mac_key) !=
-            request["mac"]):
+        getMac(str(game.name), request["2"], game.mac_key) !=
+            request["3"]):
       self.error(403)
       return
     username = self.request.headers["X-PEBBLE-ID"]
@@ -72,9 +73,8 @@ class SubmitHandler(webapp.RequestHandler):
       user = User(name = username, ip_address=self.request.remote_addr)
       user.put()
     highscore = HighScore(
-        game = game.name, user = user.name, score = request["score"])
+        game = game.name, user = user.name, score = request["2"])
     highscore.put()
-    """
 
 _HIGHSCORE_HTML_TEMPLATE = """
   <li><b>%(highscore)s</b> - %(username)s"""
@@ -98,12 +98,12 @@ _HTML_TEMPLATE = """
 
 class ListHandler(webapp.RequestHandler):
   def get(self):
-    # Get the top 20 scores by game.
+    # Get the top 100 scores by game.
     query = HighScore.all()
     game = self.request.get("game")
     query.filter("game =", game)
     query.order("-score")
-    highscores = query.fetch(20)
+    highscores = query.fetch(100)
     highscores_html = [highscoreHtml(highscore) for highscore in highscores]
     self.response.out.write(
         _HTML_TEMPLATE % {"game": game,

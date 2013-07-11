@@ -13,7 +13,7 @@ PBL_APP_INFO(
     RESOURCE_ID_IMAGE_ICON, APP_INFO_STANDARD_APP);
 
 extern const char* kMacKey;
-extern const unsigned int kMacKeyLength;
+extern const int kMacKeyLength;
 
 // Size of temporary buffers.
 const int kBufferSize = 256;
@@ -174,6 +174,7 @@ void lines_circle_intersect(
           *intersects_y = false;
         }
       }
+      return;  // Circle can't be in more than one line since lines don't touch.
     }
   }
 }
@@ -214,7 +215,7 @@ void get_mac(const char* game_name, int score, char* mac) {
   }
 }
 
-void send_score() {
+void send_score(int score) {
   static const char* kGameName = "Falldown";
   char mac[SHA256_DIGEST_SIZE * 2 + 1];  // sha256 in hex and terminating \0.
   get_mac(kGameName, score, (char*)mac);
@@ -225,7 +226,7 @@ void send_score() {
       num_score_message++,
       &body);
   dict_write_cstring(body, 1, kGameName);
-  dict_write_int(body, 2, (void*)score, sizeof(score), true);
+  dict_write_int32(body, 2, (int32_t)score);
   dict_write_cstring(body, 3, mac);
   http_out_send();
 }
@@ -291,7 +292,7 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
 
   // Check to see if game is over yet.
   if (circle.y < 0) {
-    send_score();
+    send_score(score);
     reset();
     // Don't update the screen for a bit to let the user see their score after
     // a game over.
@@ -335,7 +336,6 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   for (int i = 0; i < kLineCount; ++i) {
     lines[i].y += lines_velocity;
     if (lines[i].y < 0) {
-#include "hmac_sha2.h"
       line_generate(
           lines[common_mod(i - 1, kLineCount)].y + kDistanceBetweenLines +
               kLineThickness,
