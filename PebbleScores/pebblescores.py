@@ -26,10 +26,13 @@ class HighScore(db.Model):
   score = db.IntegerProperty(required = True)
   created = db.DateTimeProperty(required = True, auto_now_add = True)
 
+def getEntitiesCacheKey(model, property, filter):
+  return "%s,%s:%s" % (model, property, filter)
+
 # Get a list of entities of type model with property=filter from either memcache
 # or the datastore, updating memcache if we have to go to the datastore.
 def getEntities(model, property, filter):
-  cache_key = "%s,%s:%s" % (model, property, filter)
+  cache_key = getEntitesCacheKey(model, property, filter)
   entities = memcache.get(cache_key)
   if entities:
     return entities
@@ -72,6 +75,8 @@ class SubmitHandler(webapp.RequestHandler):
     # Don't store a highscore entry if the score was 0.
     if score == 0:
       user.num_zero_games += 1
+      # Have to invalidate user cache since we're changing the underlying user.
+      memcache.delete(getEntitiesCacheKey("User", "name", username))
       user.put()
       return
 
