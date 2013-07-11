@@ -3,15 +3,20 @@
 #include "pebble_fonts.h"
 
 #include "common.h"
+#include "hmac_sha2.h"
 #include "http.h"
-#include "mac_key.h"  // for kMacKey
+#include "mac_key.h"  // for kMacKey / kMacKeyLength
 
 #define MY_UUID HTTP_UUID
 PBL_APP_INFO(
     MY_UUID, "Falldown", "Ari Wilson", 1, 0 /* App version */,
     RESOURCE_ID_IMAGE_ICON, APP_INFO_STANDARD_APP);
 
-extern const int kMacKey;
+extern const char* kMacKey;
+extern const unsigned int kMacKeyLength;
+
+// Size of temporary buffers.
+const int kBufferSize = 256;
 
 const bool kDebug = false;
 const int kTextSize = 14;
@@ -196,14 +201,25 @@ void click_config_provider(ClickConfig **config, Window *window) {
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = kUpdateMs;
 }
 
-void get_mac(const char* game_name, char* mac) {
-  // TODO(ariw): md5 with kMacKey. Need to also prevent replay attacks...
+void get_mac(const char* game_name, int score, char* mac, int mac_length) {
+  char message[kBufferSize];
+  int message_length = snprintf(message, kBufferSize, "%s%d", game_name, score);
+  char binary_mac[SHA256_DIGEST_SIZE];
+  hmac_sha256(
+      (unsigned char*)kMacKey, kMacKeyLength, (unsigned char*)message,
+      message_length, (unsigned char*)binary_mac, SHA256_DIGEST_SIZE);
+  // Convert binary MAC to hexdigest.
+  int i;
+  for (i = 0; i < SHA256_DIGEST_SIZE; ++i) {
+    snprintf(mac + i * 2, 3, "%02x", binary_mac[i]);
+  }
 }
 
 void send_score() {
   static const char* kGameName = "Falldown";
-  const int kMacSize = 33;  // 16-byte md5 in hex and terminating \0.
+  const int kMacSize = 65;  // 32-byte md5 in hex and terminating \0.
   char mac[kMacSize];
+  get_mac(kGameName, score, (char*)mac, kMacSize);
   DictionaryIterator* body;
   static int num_score_message = 0;
   http_out_get(
@@ -321,6 +337,7 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   for (int i = 0; i < kLineCount; ++i) {
     lines[i].y += lines_velocity;
     if (lines[i].y < 0) {
+#include "hmac_sha2.h"
       line_generate(
           lines[common_mod(i - 1, kLineCount)].y + kDistanceBetweenLines +
               kLineThickness,
@@ -347,8 +364,8 @@ void pbl_main(void *params) {
     .messaging_info = {
       .buffer_sizes = {
         // TODO(ariw): Are these too big?
-        .inbound = 256,
-        .outbound = 256,
+        .inbound = kBufferSize,
+        .outbound = kBufferSize,
       }
     },
   };

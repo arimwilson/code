@@ -2,6 +2,7 @@
 # games?
 
 import hashlib
+import hmac
 import json
 import logging
 import webapp2 as webapp
@@ -12,7 +13,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 class Game(db.Model):
   name = db.StringProperty(required = True)
-  mac_key = db.BlobProperty(required = True)
+  mac_key = db.TextProperty(required = True)
 
 class User(db.Model):
   name = db.StringProperty(required = True)
@@ -47,9 +48,10 @@ def getGame(game):
   return getEntities("Game", "name", game)
 
 def getMac(request, mac_key):
-  # TODO(ariw): HMAC instead of MD5?
-  message = (request.get("game") + str(request.get("score") + mac_key))
-  return hashlib.md5(message).hexdigest()
+  # TODO(ariw): Probably want to have a nonce (or use a timestamp) to prevent
+  # replay attacks...
+  message = "%s%d" % (request.get("game"), request.get("score"))
+  return hmac.new(message, mac_key, hashlib.sha256).hexdigest()
 
 class SubmitHandler(webapp.RequestHandler):
   def post(self):
