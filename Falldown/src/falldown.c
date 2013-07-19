@@ -204,6 +204,29 @@ void click_config_provider(ClickConfig **config, Window *window) {
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = kUpdateMs;
 }
 
+AccelData average_accel(const PebbleAccelEvent* accel) {
+  AccelData average = { 0, 0, 0 };
+  AccelData accel_data[32];
+  accel_service_read_data(accel_data, event->accel.count);
+
+  for (int i = 0; i < accel->count; i++) {
+    average.x += accel_data[i].x;
+    average.y += accel_data[i].y;
+    average.z += accel_data[i].z;
+  }
+  average.x /= accel->count;
+  average.y /= accel->count;
+  average.z /= accel->count;
+
+  return average;
+}
+
+void handle_accel(PebbleEvent* event) {
+  AccelData accel = average_accel(&event->accel);
+  // TODO(ariw): HARD WORK GOES HERE (of eliminating spurious acceleration
+  // including gravity, determining velocity using only noisy acceleration).
+}
+
 void get_mac(const char* game_name, int score, char* mac) {
   char message[kBufferSize];
   int message_length = snprintf(message, kBufferSize, "%s%d", game_name, score);
@@ -284,6 +307,14 @@ void handle_init(AppContextRef ctx) {
   window_set_click_config_provider(
       &window, (ClickConfigProvider)click_config_provider);
 
+  // Attach our desired acceleration provider.
+  AccelServiceSetting accel_settings = {
+    .sampling_rate = ACCEL_SAMPLING_50HZ,
+    // Try to update approximately once every kUpdateMs.
+    .samples_per_update = 2,
+  }
+  accel_service_update_settings(&accel_settings);
+  app_event_service_subscribe(ctx, PEBBLE_ACCEL_EVENT, &handle_accel);
 
   // Start updating the game.
   app_timer_send_event(ctx, kUpdateMs, 0);
