@@ -235,30 +235,25 @@ $(document).ready(function() {
     $("#gen_pw").show();
   });
 
-  $("#import_csv_button").click(function() {
-    $("#options").hide();
-    $("#import_csv").show();
-  });
-
-  $("#import_button").click(function() {
-    data = $("#import_csv > form > textarea").val();
-    if (!data) {
-      alert("CSV is empty.");
-      return;
+  $("#import_csv_file").change(function(event) {
+    file = event.target.files[0];
+    reader = new FileReader();
+    reader.onload = function(event) {
+      data = event.target.result;
+      if (!data) {
+        alert("CSV is empty.");
+        return;
+      }
+      $("#options").hide();
+      $("#edit").show();
+      editor(data);
     }
-    $("#import_csv").hide();
-    $("#edit").show();
-    editor(data);
+    reader.readAsText(file);
   });
 
-  $("#export_csv_button").click(function() {
-    input = $("#data").find(".org,textarea");
-    $("#export_csv_data").remove();
-    $("#export_csv").prepend("<div id='export_csv_data'>" +
-                             create_csv(input).replace(/\n/g, "<br>") +
-                             "</div>");
-    $("#options").hide();
-    $("#export_csv").show();
+  $("#export_csv_file").click(function() {
+    passwords = create_csv($("#data").find(".org,textarea"));
+    location.href = "data:text/csv;base64," + btoa(passwords);
   });
 
   $("#delete_account_button").click(function() {
