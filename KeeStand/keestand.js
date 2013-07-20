@@ -133,6 +133,10 @@ function salt_error(xhr, text_status, error_thrown) {
 function create_csv(input) {
   data = "";
   for (i = 0; i < input.length; i += 4) {
+    // N.B.: We escape here just to avoid messing up section construction during
+    // import/load.
+    // TODO(ariw): Since we export this directly to CSV files, probably want to
+    // use a real CSV format here rather than escape().
     data += escape(input[i].innerHTML) + "," +
             escape(input[i + 1].value) + "," +
             escape(input[i + 2].value) + "," +
@@ -259,7 +263,6 @@ $(document).ready(function() {
 
   $("#export_csv_file").click(function() {
     passwords = create_csv($("#data").find(".org,textarea"));
-    // TODO(ariw): Probably want to export non-escaped version of this file...
     location.href = "data:text/csv;base64," + btoa(passwords);
   });
 
