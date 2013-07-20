@@ -68,8 +68,6 @@ function add_input(input) {
   return output;
 }
 
-// TODO(ariw): Come up with a less hacky way to indicate whether to run atob
-// than the bool base64 here...
 function editor(data) {
   $("#data").accordion("destroy").empty();
   data = data.split("\n");
@@ -261,6 +259,7 @@ $(document).ready(function() {
 
   $("#export_csv_file").click(function() {
     passwords = create_csv($("#data").find(".org,textarea"));
+    // TODO(ariw): Probably want to export non-escaped version of this file...
     location.href = "data:text/csv;base64," + btoa(passwords);
   });
 
