@@ -3,7 +3,16 @@ var username_ = "";
 var password_ = "";
 var salt_ = "";
 var password_hash_ = "";
-var version_ = 1;
+// Version 1 plain-text encoding:
+// escape(organization1) + "," + escape(username1) + "," + ... + "\n" +
+// ...
+// Version 2 plain-text encoding:
+// btoa(organization1 + "," + username1 + "," + ... + "\n" +
+//      ...)
+//
+// We silently convert version 1 passwords to version 2 passwords when saving
+// them.
+var version_ = 2;
 var local_storage_ = false;
 var stop_ = false;
 
@@ -68,13 +77,20 @@ function add_input(input) {
   return output;
 }
 
-function editor(data) {
+// TODO(ariw): Come up with a less hacky way to indicate whether to run atob
+// than the bool base64 here...
+function editor(data, base64) {
   $("#data").accordion("destroy").empty();
+  if (base64 && version_ == 2) {
+    data = atob(data);
+  }
   data = data.split("\n");
   for (i = 0; i < data.length - 1; ++i) {
     data[i] = data[i].split(",");
-    for (j = 0; j < data[i].length; ++j) {
-      data[i][j] = unescape(data[i][j]);
+    if (version_ == 1) {
+      for (j = 0; j < data[i].length; ++j) {
+        data[i][j] = unescape(data[i][j]);
+      }
     }
     $("#data").append(add_input(data[i]));
   }
@@ -107,12 +123,12 @@ function salt_success(data) {
            }
            if (data &&
                (!local_storage_ || last_modified >= last_modified_local)) {
-             editor(decrypt(data["passwords"]));
              version_ = data["version"];
+             editor(decrypt(data["passwords"]), true);
              save_local(data["passwords"], last_modified);
            } else if (local_storage_) {
-             editor(decrypt(localStorage["passwords"]));
              version_ = parseInt(localStorage["version"])
+             editor(decrypt(localStorage["passwords"]), true);
              save(localStorage["passwords"]);
            }
          }, "json");
@@ -124,19 +140,20 @@ function salt_error(xhr, text_status, error_thrown) {
     password_hash_ = localStorage["password_hash"];
     $("#login").hide();
     $("#edit").show();
-    editor(decrypt(localStorage["passwords"]));
+    version_ = parseInt(localStorage["version"])
+    editor(decrypt(localStorage["passwords"]), true);
   }
 }
 
 function create_csv(input) {
   data = "";
   for (i = 0; i < input.length; i += 4) {
-    data += escape(input[i].innerHTML) + "," +
-            escape(input[i + 1].value) + "," +
-            escape(input[i + 2].value) + "," +
-            escape(input[i + 3].value) + "\n";
+    data += input[i].innerHTML + "," +
+            input[i + 1].value + "," +
+            input[i + 2].value + "," +
+            input[i + 3].value + "\n";
   }
-  return data;
+  return btoa(data);
 }
 
 function encrypt(data) {
@@ -152,12 +169,12 @@ function save_local(passwords, last_modified) {
   localStorage["password_hash"] = password_hash_;
   localStorage["passwords"] = passwords;
   localStorage["last_modified"] = last_modified.toUTCString();
-  localStorage["version"] = version_;
+  localStorage["version"] = 2;
 }
 
 function save(passwords) {
   // TODO(ariw): Notify when successful.
-  $.post("script/save", { passwords: passwords, version: version_ });
+  $.post("script/save", { passwords: passwords, version: 2 });
 }
 
 function get_random_num(lower, upper) {
@@ -218,7 +235,6 @@ $(document).ready(function() {
     $("#edit").hide();
     $("#gen_pw").hide();
     $("#import_csv").hide();
-    $("#export_csv").hide();
     $("#options").show();
   });
 
@@ -235,6 +251,11 @@ $(document).ready(function() {
     $("#gen_pw").show();
   });
 
+  $("#import_csv_button").click(function() {
+    $("#options").hide();
+    $("#import_csv").show();
+  });
+
   $("#import_csv_file").change(function(event) {
     file = event.target.files[0];
     reader = new FileReader();
@@ -244,9 +265,9 @@ $(document).ready(function() {
         alert("CSV is empty.");
         return;
       }
-      $("#options").hide();
+      $("#import_csv").hide();
       $("#edit").show();
-      editor(data);
+      editor(data, false);
     }
     reader.readAsText(file);
   });
