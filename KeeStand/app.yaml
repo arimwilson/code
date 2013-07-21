@@ -16,6 +16,10 @@ handlers:
   static_files: sjcl.js
   upload: sjcl.js
   secure: always
+- url: /ucsv-1.1.0-min.js
+  static_files: ucsv-1.1.0-min.js
+  upload: ucsv-1.1.0-min.js
+  secure: always
 - url: /keestand.js
   static_files: keestand.js
   upload: keestand.js

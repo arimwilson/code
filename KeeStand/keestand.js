@@ -3,7 +3,16 @@ var username_ = "";
 var password_ = "";
 var salt_ = "";
 var password_hash_ = "";
-var version_ = 1;
+// Version 1 serialized form:
+// encrypt(escape(organization1) + "," + escape(username1) + "," + ... + "\n" +
+// ...)
+// Version 2 serialized form:
+// encrypt(arrayToCsv([[organization1, username1, ",", ...],
+// ...])
+//
+// We silently convert version 1 passwords to version 2 passwords when saving
+// them.
+var version_ = 2;
 var local_storage_ = false;
 var stop_ = false;
 
@@ -21,10 +30,24 @@ function assert(exp, message) {
   }
 }
 
-
 function decrypt(data) {
   assert(password_, "password_ is null.");
   return sjcl.decrypt(password_, data);
+}
+
+function deserialize(data) {
+  if (version_ == 1) {
+    data = data.split("\n");
+    for (i = 0; i < data.length - 1; ++i) {
+      data[i] = data[i].split(",");
+      for (j = 0; j < data[i].length; ++j) {
+        data[i][j] = unescape(data[i][j]);
+      }
+    }
+    return data;
+  } else if (version_ == 2) {
+    return CSV.csvToArray(data);
+  }
 }
 
 function create_accordion(active) {
@@ -70,12 +93,7 @@ function add_input(input) {
 
 function editor(data) {
   $("#data").accordion("destroy").empty();
-  data = data.split("\n");
   for (i = 0; i < data.length - 1; ++i) {
-    data[i] = data[i].split(",");
-    for (j = 0; j < data[i].length; ++j) {
-      data[i][j] = unescape(data[i][j]);
-    }
     $("#data").append(add_input(data[i]));
   }
   create_accordion(false);
@@ -108,11 +126,11 @@ function salt_success(data) {
            if (data &&
                (!local_storage_ || last_modified >= last_modified_local)) {
              version_ = data["version"];
-             editor(decrypt(data["passwords"]));
+             editor(deserialize(decrypt(data["passwords"])));
              save_local(data["passwords"], last_modified);
            } else if (local_storage_) {
              version_ = parseInt(localStorage["version"])
-             editor(decrypt(localStorage["passwords"]));
+             editor(deserialize(decrypt(localStorage["passwords"])));
              save(localStorage["passwords"]);
            }
          }, "json");
@@ -125,29 +143,23 @@ function salt_error(xhr, text_status, error_thrown) {
     $("#login").hide();
     $("#edit").show();
     version_ = parseInt(localStorage["version"])
-    editor(decrypt(localStorage["passwords"]));
+    editor(deserialize(decrypt(localStorage["passwords"])));
     save(localStorage["passwords"]);
   }
-}
-
-function create_csv(input) {
-  data = "";
-  for (i = 0; i < input.length; i += 4) {
-    // N.B.: We escape here just to avoid messing up section construction during
-    // import/load.
-    // TODO(ariw): Since we export this directly to CSV files, probably want to
-    // use a real CSV format here rather than escape().
-    data += escape(input[i].innerHTML) + "," +
-            escape(input[i + 1].value) + "," +
-            escape(input[i + 2].value) + "," +
-            escape(input[i + 3].value) + "\n";
-  }
-  return data;
 }
 
 function encrypt(data) {
   assert(password_, "password_ is null.");
   return sjcl.encrypt(password_, data);
+}
+
+function serialize(input) {
+  data = [];
+  for (i = 0; i < input.length; i += 4) {
+    data.push([input[i].innerHTML, input[i + 1].value, input[i + 2].value,
+               input[i + 3].value]);
+  }
+  return CSV.arrayToCsv(data);
 }
 
 function save_local(passwords, last_modified) {
@@ -158,12 +170,12 @@ function save_local(passwords, last_modified) {
   localStorage["password_hash"] = password_hash_;
   localStorage["passwords"] = passwords;
   localStorage["last_modified"] = last_modified.toUTCString();
-  localStorage["version"] = 1;
+  localStorage["version"] = 2;
 }
 
 function save(passwords) {
   // TODO(ariw): Notify when successful.
-  $.post("script/save", { passwords: passwords, version: 1 });
+  $.post("script/save", { passwords: passwords, version: 2 });
 }
 
 function get_random_num(lower, upper) {
@@ -215,7 +227,7 @@ $(document).ready(function() {
   });
 
   $("#save_button").click(function() {
-    passwords = encrypt(create_csv($("#data").find(".org,textarea")));
+    passwords = encrypt(serialize($("#data").find(".org,textarea")));
     save_local(passwords, new Date());
     save(passwords);
   });
@@ -256,13 +268,13 @@ $(document).ready(function() {
       }
       $("#import_csv").hide();
       $("#edit").show();
-      editor(data);
+      editor(deserialize(data));
     }
     reader.readAsText(file);
   });
 
   $("#export_csv_file").click(function() {
-    passwords = create_csv($("#data").find(".org,textarea"));
+    passwords = serialize($("#data").find(".org,textarea"));
     location.href = "data:text/csv;base64," + btoa(passwords);
   });
 
