@@ -3,16 +3,6 @@ var username_ = "";
 var password_ = "";
 var salt_ = "";
 var password_hash_ = "";
-// Version 1 serialized form:
-// encrypt(escape(organization1) + "," + escape(username1) + "," + ... + "\n" +
-// ...)
-// Version 2 serialized form:
-// encrypt(arrayToCsv([[organization1, username1, ",", ...],
-// ...])
-//
-// We silently convert version 1 passwords to version 2 passwords when saving
-// them.
-var version_ = 2;
 var local_storage_ = false;
 var stop_ = false;
 
@@ -35,17 +25,25 @@ function decrypt(data) {
   return sjcl.decrypt(password_, data);
 }
 
-function deserialize(data) {
-  if (version_ == 1) {
-    data = data.split("\n");
-    for (i = 0; i < data.length - 1; ++i) {
+// Version 1 serialized form:
+// encrypt(escape(organization1) + "," + escape(username1) + "," + ... + "\n" +
+// ...)
+// Version 2 serialized form:
+// encrypt(arrayToCsv([[organization1, username1, ...], ...]))
+//
+// We silently convert version 1 passwords to version 2 passwords when saving
+// them.
+function deserialize(data, version) {
+  if (version == 1) {
+    data = data.split("\n").slice(0, -1);
+    for (i = 0; i < data.length; ++i) {
       data[i] = data[i].split(",");
       for (j = 0; j < data[i].length; ++j) {
         data[i][j] = unescape(data[i][j]);
       }
     }
     return data;
-  } else if (version_ == 2) {
+  } else if (version == 2) {
     return CSV.csvToArray(data);
   }
 }
@@ -100,7 +98,7 @@ function editor(data) {
 }
 
 function password_hash(password, salt) {
-  hash = sjcl.hash.sha256.hash(password + salt);
+  var hash = sjcl.hash.sha256.hash(password + salt);
   // TODO(ariw): Is 1000 right here? I wish I could use bcrypt...
   for (i = 1; i < 1000; ++i)
     hash = sjcl.hash.sha256.hash(hash);
@@ -125,12 +123,12 @@ function salt_success(data) {
            }
            if (data &&
                (!local_storage_ || last_modified >= last_modified_local)) {
-             version_ = data["version"];
-             editor(deserialize(decrypt(data["passwords"])));
+             var version = data["version"];
+             editor(deserialize(decrypt(data["passwords"]), version));
              save_local(data["passwords"], last_modified);
            } else if (local_storage_) {
-             version_ = parseInt(localStorage["version"])
-             editor(deserialize(decrypt(localStorage["passwords"])));
+             var version = parseInt(localStorage["version"])
+             editor(deserialize(decrypt(localStorage["passwords"]), version));
              save(localStorage["passwords"]);
            }
          }, "json");
@@ -142,8 +140,8 @@ function salt_error(xhr, text_status, error_thrown) {
     password_hash_ = localStorage["password_hash"];
     $("#login").hide();
     $("#edit").show();
-    version_ = parseInt(localStorage["version"])
-    editor(deserialize(decrypt(localStorage["passwords"])));
+    var version = parseInt(localStorage["version"])
+    editor(deserialize(decrypt(localStorage["passwords"]), version));
     save(localStorage["passwords"]);
   }
 }
