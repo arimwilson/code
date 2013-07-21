@@ -34,6 +34,7 @@ function decrypt(data) {
 // We silently convert version 1 passwords to version 2 passwords when saving
 // them.
 function deserialize(data, version) {
+  assert(version == 1 || version == 2);
   if (version == 1) {
     data = data.split("\n").slice(0, -1);
     for (i = 0; i < data.length; ++i) {
@@ -266,7 +267,7 @@ $(document).ready(function() {
       }
       $("#import_csv").hide();
       $("#edit").show();
-      editor(deserialize(data));
+      editor(deserialize(data, 2));
     }
     reader.readAsText(file);
   });

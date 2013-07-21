@@ -166,12 +166,12 @@ def SaveDatastore(user, password_chunks, old_password_chunks):
 # Perform most of the work of SaveHandler. Broken out into its own function
 # since we also need to save in ChangePasswordHandler :).
 def Save(user, request):
-  passwords = Encode(self.request.get("passwords"))
+  passwords = Encode(request.get("passwords"))
   # Can store at least 10 ** 6 bytes in one entity property.
   password_chunks = Split(passwords, 10 ** 6)
   old_password_chunks = [chunk for chunk in user.passwordchunk_set]
-  if self.request.get("version"):
-    user.version = int(self.request.get("version"))
+  if request.get("version"):
+    user.version = int(request.get("version"))
   db.run_in_transaction(SaveDatastore, user, password_chunks,
                         old_password_chunks)
 
