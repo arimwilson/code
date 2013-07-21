@@ -175,7 +175,6 @@ def Save(user, request):
   db.run_in_transaction(SaveDatastore, user, password_chunks,
                         old_password_chunks)
 
-
 class SaveHandler(webapp.RequestHandler):
   def post(self):
     success, user = AuthorizedUser(self.request.cookies)
