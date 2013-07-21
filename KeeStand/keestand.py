@@ -10,7 +10,6 @@ import time
 import webapp2 as webapp
 
 from google.appengine.ext import db
-from google.appengine.ext.webapp.util import run_wsgi_app
 
 class User(db.Model):
   # Used to upgrade legacy user authentication / encryption methods if code
@@ -39,7 +38,7 @@ class SaltHandler(webapp.RequestHandler):
     query = User.all()
     query.filter("username =", username)
     user = query.get()
-    if user:
+    if not bool(self.request.get("new")) and user:
       self.response.out.write(base64.standard_b64encode(user.salt))
     else:
       self.response.out.write(base64.standard_b64encode(os.urandom(16)))
@@ -57,6 +56,38 @@ def Decode(string):
   # of them.
   output = output.replace("\\", "")
   return output
+
+def SetUserCookie(response, username, password_hash):
+  response.headers.add_header(
+      "Set-Cookie",
+      str("session=%s.%s" % (
+          base64.standard_b64encode(username), password_hash)))
+
+def AuthorizedUser(cookies):
+  session = cookies.get("session", "").split(".")
+  username = base64.standard_b64decode(session[0])
+  password_hash = session[1]
+  query = User.all()
+  query.filter("username =", username)
+  query.filter("password_hash =",
+               db.ByteString(base64.standard_b64decode(password_hash)))
+  user = query.get()
+  if not user:
+    logging.error("Should never get here! Data received but username (%s) or "
+                  "password_hash (%s) is wrong!" % (username, password_hash))
+  return user <> None, user
+
+# Convert JSON to gzipped pickled Python dictionary.
+def Encode(string):
+  # SJCL produces invalid JSON which we hack around here.
+  string = re.sub(r"([\{,])(.*?):", "\\1\"\\2\":", string)
+  dictionary = json.loads(string)
+  for (key, value) in dictionary.iteritems():
+    dictionary[key] = base64.standard_b64decode(value)
+  pickled = pickle.dumps(dictionary, 2)
+  output = StringIO.StringIO()
+  gzip.GzipFile(fileobj=output, mode="wb").write(pickled)
+  return output.getvalue()
 
 class LoginHandler(webapp.RequestHandler):
   def post(self):
@@ -83,15 +114,12 @@ class LoginHandler(webapp.RequestHandler):
       salt = self.request.get("salt")
       assert salt
       user = User(
-          version = 1, username = username,
+          version = 2, username = username,
           salt = db.Blob(base64.standard_b64decode(salt)),
           password_hash = db.ByteString(
               base64.standard_b64decode(password_hash)))
       user.put()
-    self.response.headers.add_header(
-        "Set-Cookie",
-        str("session=%s.%s" % (
-            base64.standard_b64encode(username), password_hash)))
+    SetUserCookie(self.response, username, password_hash)
 
 def AuthorizedUser(cookies):
   session = cookies.get("session", "").split(".")
@@ -127,7 +155,7 @@ def Split(string, n):
   return split
 
 # Save new password file and update user as one datastore transaction.
-def Save(user, password_chunks, old_password_chunks):
+def SaveDatastore(user, password_chunks, old_password_chunks):
   for index, chunk in enumerate(password_chunks):
     PasswordChunk(parent = user, user = user, index = index,
                   chunk = db.Blob(chunk)).put()
@@ -135,19 +163,41 @@ def Save(user, password_chunks, old_password_chunks):
   # Update last_modified and version.
   user.put()
 
+# Perform most of the work of SaveHandler. Broken out into its own function
+# since we also need to save in ChangePasswordHandler :).
+def Save(user, request):
+  passwords = Encode(self.request.get("passwords"))
+  # Can store at least 10 ** 6 bytes in one entity property.
+  password_chunks = Split(passwords, 10 ** 6)
+  old_password_chunks = [chunk for chunk in user.passwordchunk_set]
+  if self.request.get("version"):
+    user.version = int(self.request.get("version"))
+  db.run_in_transaction(SaveDatastore, user, password_chunks,
+                        old_password_chunks)
+
+
 class SaveHandler(webapp.RequestHandler):
   def post(self):
     success, user = AuthorizedUser(self.request.cookies)
     if not success:
       self.error(401)
       return
-    passwords = Encode(self.request.get("passwords"))
-    # Can store at least 10 ** 6 bytes in one entity property.
-    password_chunks = Split(passwords, 10 ** 6)
-    old_password_chunks = [chunk for chunk in user.passwordchunk_set]
-    if self.request.get("version"):
-      user.version = int(self.request.get("version"))
-    db.run_in_transaction(Save, user, password_chunks, old_password_chunks)
+    Save(user, self.request)
+
+class ChangePasswordHandler(webapp.RequestHandler):
+  def post(self):
+    success, user = AuthorizedUser(self.request.cookies)
+    if not success:
+      self.error(401)
+      return
+    # We need to store the new salt, password_hash, and encrypted passwords.
+    salt = self.request.get("salt")
+    assert salt
+    user.salt = db.Blob(base64.standard_b64decode(salt))
+    password_hash = self.request.get("password_hash")
+    user.password_hash = db.ByteString(base64.standard_b64decode(password_hash))
+    Save(user, self.request)
+    SetUserCookie(self.response, user.username, password_hash)
 
 def DeleteAccount(password_chunks, user):
   db.delete([chunk for chunk in password_chunks] + [user])
@@ -165,6 +215,7 @@ app = webapp.WSGIApplication([
     ('/script/salt', SaltHandler),
     ('/script/login', LoginHandler),
     ('/script/save', SaveHandler),
+    ('/script/changepassword', ChangePasswordHandler),
     ('/script/deleteaccount', DeleteAccountHandler),
   ])
 
