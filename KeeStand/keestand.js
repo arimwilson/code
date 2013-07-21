@@ -93,7 +93,7 @@ function add_input(input) {
 
 function editor(data) {
   $("#data").accordion("destroy").empty();
-  for (i = 0; i < data.length - 1; ++i) {
+  for (i = 0; i < data.length; ++i) {
     $("#data").append(add_input(data[i]));
   }
   create_accordion(false);
