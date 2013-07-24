@@ -115,10 +115,15 @@ function salt_success(data) {
           success: login_successful, error: login_error, dataType: "json"});
 }
 
-function salt_error(xhr, text_status, error_thrown) {
+function salt_error() {
   if (local_storage_) {
     salt_ = localStorage["salt"];
-    password_hash_ = localStorage["password_hash"];
+    password_hash_ = password_hash(password_, salt_);
+    var actual_password_hash = localStorage["password_hash"];
+    if (password_hash_ != actual_password_hash_) {
+      login_error();
+      return;
+    }
     $("#login").hide();
     $("#edit").show();
     var version = parseInt(localStorage["version"])
@@ -150,7 +155,7 @@ function login_successful(data) {
   }
 }
 
-function login_error(xhr, text_status, error_thrown) {
+function login_error() {
   $("#login_error").text("Password incorrect or username already taken.");
 }
 
