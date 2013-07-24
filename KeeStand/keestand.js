@@ -109,30 +109,10 @@ function password_hash(password, salt) {
 function salt_success(data) {
   salt_ = data;
   password_hash_ = password_hash(password_, salt_);
-  $.post("script/login",
-         { username: username_, password_hash: password_hash_, salt: salt_ },
-         function(data) {
-           $("#login").hide();
-           $("#edit").show();
-           // Determine whether or not to use local storage based on last
-           // modification date.
-           if (local_storage_) {
-             last_modified_local = new Date(localStorage["last_modified"]);
-           }
-           if (data) {
-             last_modified = new Date(1000 * data["last_modified"]);
-           }
-           if (data &&
-               (!local_storage_ || last_modified >= last_modified_local)) {
-             var version = data["version"];
-             editor(deserialize(decrypt(data["passwords"]), version));
-             save_local(data["passwords"], last_modified);
-           } else if (local_storage_) {
-             var version = parseInt(localStorage["version"])
-             editor(deserialize(decrypt(localStorage["passwords"]), version));
-             save(localStorage["passwords"]);
-           }
-         }, "json");
+  $.ajax({type: "POST", url: "script/login",
+          data: { username: username_, password_hash: password_hash_,
+                 salt: salt_ },
+          success: login_successful, error: login_error, dataType: "json"});
 }
 
 function salt_error(xhr, text_status, error_thrown) {
@@ -145,6 +125,33 @@ function salt_error(xhr, text_status, error_thrown) {
     editor(deserialize(decrypt(localStorage["passwords"]), version));
     save(localStorage["passwords"]);
   }
+}
+
+function login_successful(data) {
+  $("#login").hide();
+  $("#edit").show();
+  // Determine whether or not to use local storage based on last
+  // modification date.
+  if (local_storage_) {
+    last_modified_local = new Date(localStorage["last_modified"]);
+  }
+  if (data) {
+    last_modified = new Date(1000 * data["last_modified"]);
+  }
+  if (data &&
+      (!local_storage_ || last_modified >= last_modified_local)) {
+    var version = data["version"];
+    editor(deserialize(decrypt(data["passwords"]), version));
+    save_local(data["passwords"], last_modified);
+  } else if (local_storage_) {
+    var version = parseInt(localStorage["version"])
+    editor(deserialize(decrypt(localStorage["passwords"]), version));
+    save(localStorage["passwords"]);
+  }
+}
+
+function login_error(xhr, text_status, error_thrown) {
+  $("#login_error").text("Password incorrect or username already taken.");
 }
 
 function encrypt(data) {
