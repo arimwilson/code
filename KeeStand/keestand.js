@@ -208,9 +208,13 @@ function generate_password(length) {
 }
 
 $(document).ready(function() {
-  // Display last used username, as a convenience.
-  if (localStorage.getItem("username"))
+  // Display last used username and focus on input boxes, as a convenience.
+  if (localStorage.getItem("username")) {
     $("#username").val(localStorage["username"]);
+    $("#password").focus();
+  } else {
+    $("#username").focus();
+  }
 
   // TODO(ariw): Validation on password length/content.
   $("#login_button").click(function() {
