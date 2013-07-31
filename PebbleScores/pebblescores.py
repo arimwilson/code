@@ -1,9 +1,11 @@
 # TODO(ariw): Some sort of registration interface so others can add their own
 # games?
 
+import base64
 import hashlib
 import hmac
 import json
+import os
 import webapp2 as webapp
 
 from google.appengine.api import memcache
@@ -26,6 +28,13 @@ class HighScore(db.Model):
   score = db.IntegerProperty(required = True)
   created = db.DateTimeProperty(required = True, auto_now_add = True)
 
+class NonceHandler(webapp.RequestHandler):
+  def post(self):
+    nonce = base64.standard_b64encode(os.urandom(16))
+    client = memcache.Client()
+    client.set(nonce, True)
+    self.response.out.write(nonce)
+
 def getEntitiesCacheKey(model, property, filter):
   return "%s,%s:%s" % (model, property, filter)
 
@@ -33,7 +42,8 @@ def getEntitiesCacheKey(model, property, filter):
 # or the datastore, updating memcache if we have to go to the datastore.
 def getEntities(model, property, filter):
   cache_key = getEntitiesCacheKey(model, property, filter)
-  entities = memcache.get(cache_key)
+  client = memcache.Client()
+  entities = client.get(cache_key)
   if entities:
     return entities
   query = eval(model).all()
@@ -41,7 +51,7 @@ def getEntities(model, property, filter):
   entities = [entity for entity in query]
   if not entities:
     return entities
-  memcache.add(cache_key, entities)
+  client.add(cache_key, entities)
   return entities
 
 def getUser(username):
@@ -56,13 +66,18 @@ def getGame(game):
     return
   return games[0]
 
-def getMac(game, score, mac_key):
-  # TODO(ariw): Probably want to have a nonce (or use a timestamp) to prevent
-  # replay attacks...
-  message = "%s%d" % (game, score)
+def validateNonce(nonce):
+  client = memcache.Client()
+  validated_nonce = client.gets(nonce)
+  return validated_nonce and client.cas(nonce, False)
+
+def getMac(game, score, nonce, mac_key):
+  message = "%s%d%s" % (game, score, nonce)
   return hmac.new(mac_key, message, hashlib.sha256).hexdigest()
 
 class SubmitHandler(webapp.RequestHandler):
+  # Get the user, get the game, verify the nonce, verify the hash, store the
+  # score :).
   def post(self):
     request = json.loads(self.request.body)
     username = self.request.headers["X-PEBBLE-ID"]
@@ -81,8 +96,10 @@ class SubmitHandler(webapp.RequestHandler):
       return
 
     game = getGame(request["1"])
+    nonce = request["3"]
     if (not game or
-        getMac(str(game.name), score, game.mac_key) != request["3"]):
+        not validateNonce(nonce) or
+        getMac(str(game.name), score, nonce, game.mac_key) != request["4"]):
       self.error(403)
       return
     highscore = HighScore(
@@ -123,6 +140,7 @@ class ListHandler(webapp.RequestHandler):
                           "list": "".join(highscores_html)})
 
 app = webapp.WSGIApplication([
+    ('/nonce', NonceHandler),
     ('/submit', SubmitHandler),
     ('/list', ListHandler),
   ])
