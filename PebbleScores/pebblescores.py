@@ -96,10 +96,12 @@ class SubmitHandler(webapp.RequestHandler):
       return
 
     game = getGame(request["1"])
-    nonce = request["3"]
+    # TODO(ariw): Nonce is not in legacy Falldown client code. This security
+    # hole should be removed soon.
+    nonce = request.get("4", None)
     if (not game or
-        not validateNonce(nonce) or
-        getMac(str(game.name), score, nonce, game.mac_key) != request["4"]):
+        (nonce and not validateNonce(nonce))
+        getMac(str(game.name), score, nonce, game.mac_key) != request["3"]):
       self.error(403)
       return
     highscore = HighScore(
