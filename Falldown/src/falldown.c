@@ -204,6 +204,7 @@ void click_config_provider(ClickConfig **config, Window *window) {
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = kUpdateMs;
 }
 
+/*
 AccelData average_accel(const PebbleAccelEvent* accel) {
   AccelData average = { 0, 0, 0 };
   AccelData accel_data[32];
@@ -226,10 +227,12 @@ void handle_accel(PebbleEvent* event) {
   // TODO(ariw): HARD WORK GOES HERE (of eliminating spurious acceleration
   // including gravity, determining velocity using only noisy acceleration).
 }
+*/
 
-void get_mac(const char* game_name, int score, char* mac) {
+void get_mac(const char* game_name, int score, const char* nonce, char* mac) {
   char message[kBufferSize];
-  int message_length = snprintf(message, kBufferSize, "%s%d", game_name, score);
+  int message_length = snprintf(
+      message, kBufferSize, "%s%d%s", game_name, score, nonce);
   char binary_mac[SHA256_DIGEST_SIZE];
   hmac_sha256(
       (unsigned char*)kMacKey, kMacKeyLength, (unsigned char*)message,
@@ -240,19 +243,30 @@ void get_mac(const char* game_name, int score, char* mac) {
   }
 }
 
-void send_score(int score) {
+void http_success(
+    int32_t cookie, int http_status, DictionaryIterator* received,
+    void* context) {
+  // Are we in a nonce callback or a score callback?
+  if (cookie < 0) return;
+  int score = cookie;
+  char* nonce = dict_find(received, 1)->value->cstring;
   static const char* kGameName = "Falldown";
   char mac[SHA256_DIGEST_SIZE * 2 + 1];  // sha256 in hex and terminating \0.
-  get_mac(kGameName, score, (char*)mac);
+  get_mac(kGameName, score, nonce, (char*)mac);
   DictionaryIterator* body;
-  static int num_score_message = 0;
   http_out_get(
-      "http://pebblescores.appspot.com/submit",
-      num_score_message++,
-      &body);
+      "http://pebblescores.appspot.com/submit", -1, &body);
   dict_write_cstring(body, 1, kGameName);
   dict_write_int32(body, 2, (int32_t)score);
   dict_write_cstring(body, 3, mac);
+  dict_write_cstring(body, 4, nonce);
+  http_out_send();
+}
+
+void send_score(int score) {
+  DictionaryIterator* body;
+  http_out_get(
+      "http://pebblescores.appspot.com/nonce", score, &body);
   http_out_send();
 }
 
@@ -289,6 +303,10 @@ void handle_init(AppContextRef ctx) {
 
   // Initialize HTTPebble.
   http_set_app_id(532013811);
+  HTTPCallbacks http_callbacks = {
+    .success = http_success,
+  };
+  http_register_callbacks(http_callbacks, (void*)NULL);
 
   // Initialize the lines to fall down.
   lines_init(root_layer, &lines);
@@ -307,6 +325,7 @@ void handle_init(AppContextRef ctx) {
   window_set_click_config_provider(
       &window, (ClickConfigProvider)click_config_provider);
 
+  /*
   // Attach our desired acceleration provider.
   AccelServiceSetting accel_settings = {
     .sampling_rate = ACCEL_SAMPLING_50HZ,
@@ -315,6 +334,7 @@ void handle_init(AppContextRef ctx) {
   }
   accel_service_update_settings(&accel_settings);
   app_event_service_subscribe(ctx, PEBBLE_ACCEL_EVENT, &handle_accel);
+  */
 
   // Start updating the game.
   app_timer_send_event(ctx, kUpdateMs, 0);
