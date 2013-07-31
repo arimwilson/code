@@ -5,6 +5,7 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 import os
 import webapp2 as webapp
 
@@ -99,9 +100,18 @@ class SubmitHandler(webapp.RequestHandler):
     # TODO(ariw): Nonce is not in legacy Falldown client code. This security
     # hole should be removed soon.
     nonce = request.get("4", None)
-    if (not game or
-        (nonce and not validateNonce(nonce))
-        getMac(str(game.name), score, nonce, game.mac_key) != request["3"]):
+    if not game:
+      logging.error("Game %s not found." % request["1"])
+      self.error(403)
+      return
+    if nonce and not validateNonce(nonce):
+      logging.error("Nonce %s not found." % nonce)
+      self.error(403)
+      return
+    mac = getMac(str(game.name), score, nonce, game.mac_key)
+    if  mac != request["3"]:
+      logging.error(
+          "Server MAC %s did not equal request MAC %s." % (mac, request["3"]))
       self.error(403)
       return
     highscore = HighScore(
