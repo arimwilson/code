@@ -33,7 +33,7 @@ class NonceHandler(webapp.RequestHandler):
     nonce = base64.standard_b64encode(os.urandom(16))
     client = memcache.Client()
     client.set(nonce, True)
-    self.response.out.write(nonce)
+    self.response.out.write(json.dumps({"1": nonce}))
 
 def getEntitiesCacheKey(model, property, filter):
   return "%s,%s:%s" % (model, property, filter)
