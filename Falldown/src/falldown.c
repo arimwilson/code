@@ -229,10 +229,15 @@ void handle_accel(PebbleEvent* event) {
 }
 */
 
-void get_mac(const char* game_name, int score, const char* nonce, char* mac) {
+void get_mac(const char* game, int score, const char* nonce, char* mac) {
   char message[kBufferSize];
-  int message_length = snprintf(
-      message, kBufferSize, "%s%d%s", game_name, score, nonce);
+  int message_length;
+  if (nonce) {
+    message_length = snprintf(
+        message, kBufferSize, "%s%d%s", game, score, nonce);
+  } else {
+    message_length = snprintf(message, kBufferSize, "%s%d", game, score);
+  }
   char binary_mac[SHA256_DIGEST_SIZE];
   hmac_sha256(
       (unsigned char*)kMacKey, kMacKeyLength, (unsigned char*)message,

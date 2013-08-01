@@ -77,7 +77,10 @@ def validateNonce(nonce):
   return validated_nonce and client.cas(nonce, False, 1)
 
 def getMac(game, score, nonce, mac_key):
-  message = "%s%d%s" % (game, score, nonce)
+  if nonce:
+    message = "%s%d%s" % (game, score, nonce)
+  else:
+    message = "%s%d" % (game, score)
   return hmac.new(mac_key, message, hashlib.sha256).hexdigest()
 
 class SubmitHandler(webapp.RequestHandler):
@@ -91,15 +94,6 @@ class SubmitHandler(webapp.RequestHandler):
       user = User(name = username, ip_address=self.request.remote_addr,
                   num_zero_games = 0)
       user.put()
-    score = request["2"]
-    # Don't store a highscore entry if the score was 0.
-    if score == 0:
-      user.num_zero_games += 1
-      # Have to invalidate user cache since we're changing the underlying user.
-      memcache.delete(getEntitiesCacheKey("User", "name", username))
-      user.put()
-      return
-
     game = getGame(request["1"])
     # TODO(ariw): Nonce is not in legacy Falldown client code. This security
     # hole should be removed soon.
@@ -112,11 +106,20 @@ class SubmitHandler(webapp.RequestHandler):
       logging.error("Nonce %s not found." % nonce)
       self.error(403)
       return
+    score = request["2"]
     mac = getMac(str(game.name), score, nonce, game.mac_key)
     if  mac != request["3"]:
       logging.error(
           "Server MAC %s did not equal request MAC %s." % (mac, request["3"]))
       self.error(403)
+      return
+
+    # Don't store a highscore entry if the score was 0.
+    if score == 0:
+      user.num_zero_games += 1
+      # Have to invalidate user cache since we're changing the underlying user.
+      memcache.delete(getEntitiesCacheKey("User", "name", username))
+      user.put()
       return
     highscore = HighScore(
         game = game.name, user = user.name, score = score)
