@@ -32,6 +32,8 @@ class HighScore(db.Model):
 class NonceHandler(webapp.RequestHandler):
   def post(self):
     nonce = base64.standard_b64encode(os.urandom(16))
+    # Use memcache to transiently store the nonce until the client sends us
+    # their score.
     client = memcache.Client()
     client.set(nonce, True)
     self.response.out.write(json.dumps({"1": nonce}))
@@ -70,7 +72,9 @@ def getGame(game):
 def validateNonce(nonce):
   client = memcache.Client()
   validated_nonce = client.gets(nonce)
-  return validated_nonce and client.cas(nonce, False)
+  # We compare-and-set the nonce to False here to prevent it from being reused
+  # by other score submissions.
+  return validated_nonce and client.cas(nonce, False, 1)
 
 def getMac(game, score, nonce, mac_key):
   message = "%s%d%s" % (game, score, nonce)
