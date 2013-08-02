@@ -62,6 +62,7 @@ Window window;
 TextLayer text_layer;
 char text[12 /* kTextLength */];
 int score = 0;
+bool paused = false;
 
 // Player circle data and functions.
 typedef struct {
@@ -185,13 +186,21 @@ void lines_circle_intersect(
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
+  if (paused) return;
   circle_x_velocity = kCircleXVelocity;
 }
 
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
+  if (paused) return;
   circle_x_velocity = -kCircleXVelocity;
+}
+
+void select_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
+  (void)recognizer;
+  (void)window;
+  paused = !paused;
 }
 
 void click_config_provider(ClickConfig **config, Window *window) {
@@ -202,6 +211,12 @@ void click_config_provider(ClickConfig **config, Window *window) {
 
   config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)down_single_click_handler;
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = kUpdateMs;
+
+  // TODO(ariw): This pauses once and never lets you unpause. Fix!
+  config[BUTTON_ID_SELECT]->click.handler = (ClickHandler)select_single_click_handler;
+  // We want to not do anything upon button holds so configure really long
+  // repeat interval.
+  config[BUTTON_ID_SELECT]->click.repeat_interval_ms = 65535;
 }
 
 /*
@@ -347,6 +362,7 @@ void handle_init(AppContextRef ctx) {
 
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   (void)ctx;
+  if (paused) return;
 
   // Check to see if game is over yet.
   if (circle.y < 0) {
