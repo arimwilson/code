@@ -362,7 +362,6 @@ void handle_init(AppContextRef ctx) {
 
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   (void)ctx;
-  if (paused) return;
 
   // Check to see if game is over yet.
   if (circle.y < 0) {
@@ -374,6 +373,8 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     return;
   }
   app_timer_send_event(ctx, kUpdateMs, 0);
+
+  if (paused) return;
 
   // Update the text.
   if (!kDebug) {
