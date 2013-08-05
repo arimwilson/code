@@ -57,7 +57,8 @@ const float kInitialLineVelocity = -0.627;
 const int kVelocityIncreaseMs = 15000;
 const float kVelocityIncrease = 1.05;
 
-Window window;
+Window game_window;
+Window menu_window;
 
 TextLayer text_layer;
 char text[12 /* kTextLength */];
@@ -200,7 +201,8 @@ void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
 void select_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  paused = !paused;
+  paused = true;
+  window_stack_push(&menu_window, true /* Animated */);
 }
 
 void click_config_provider(ClickConfig **config, Window *window) {
@@ -315,11 +317,11 @@ void handle_init(AppContextRef ctx) {
   (void)ctx;
   srand(time(NULL));
 
-  window_init(&window, "Falldown");
-  window_set_background_color(&window, GColorBlack);
-  window_stack_push(&window, true /* Animated */);
+  window_init(&game_window, "Falldown");
+  window_set_background_color(&game_window, GColorBlack);
+  window_stack_push(&game_window, true /* Animated */);
 
-  Layer* root_layer = window_get_root_layer(&window);
+  Layer* root_layer = window_get_root_layer(&game_window);
 
   // Initialize HTTPebble.
   http_set_app_id(532013811);
@@ -343,7 +345,7 @@ void handle_init(AppContextRef ctx) {
 
   // Attach our desired button functionality
   window_set_click_config_provider(
-      &window, (ClickConfigProvider)click_config_provider);
+      &game_window, (ClickConfigProvider)click_config_provider);
 
   /*
   // Attach our desired acceleration provider.
@@ -355,6 +357,8 @@ void handle_init(AppContextRef ctx) {
   accel_service_update_settings(&accel_settings);
   app_event_service_subscribe(ctx, PEBBLE_ACCEL_EVENT, &handle_accel);
   */
+
+  window_init(&menu_window, "Menu");
 
   // Start updating the game.
   app_timer_send_event(ctx, kUpdateMs, 0);
@@ -373,8 +377,6 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     return;
   }
   app_timer_send_event(ctx, kUpdateMs, 0);
-
-  if (paused) return;
 
   // Update the text.
   if (!kDebug) {

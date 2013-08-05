@@ -95,12 +95,12 @@ class SubmitHandler(webapp.RequestHandler):
                   num_zero_games = 0)
       user.put()
     game = getGame(request["1"])
-    # TODO(ariw): Nonce is not in legacy Falldown client code. This security
-    # hole should be removed soon.
     if not game:
       logging.error("Game %s not found." % request["1"])
       self.error(403)
       return
+    # TODO(ariw): Nonce is not in legacy Falldown client code. This security
+    # hole should be removed soon.
     nonce = request.get("4", None)
     if nonce and not validateNonce(nonce):
       logging.error("Nonce %s not found." % nonce)
