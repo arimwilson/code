@@ -6,6 +6,7 @@
 #include "hmac_sha2.h"
 #include "http.h"
 #include "mac_key.h"  // for kMacKey / kMacKeyLength
+#include "settings.h"
 
 // TODO(ariw): Need to have separate versions of this UUID for iOS / Android.
 // This allows Android to have multiple HTTPebble apps.
@@ -58,12 +59,10 @@ const int kVelocityIncreaseMs = 15000;
 const float kVelocityIncrease = 1.05;
 
 Window game_window;
-Window menu_window;
 
 TextLayer text_layer;
 char text[12 /* kTextLength */];
 int score = 0;
-bool paused = false;
 
 // Player circle data and functions.
 typedef struct {
@@ -73,6 +72,9 @@ typedef struct {
 } Circle;
 Circle circle;
 float circle_x_velocity = 0;
+
+extern FalldownSettings settings;
+extern bool in_menu;
 
 void circle_update_proc(Circle* circle, GContext* ctx) {
   // TODO(ariw): Use an animated circle here instead of this function.
@@ -187,22 +189,19 @@ void lines_circle_intersect(
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (paused) return;
   circle_x_velocity = kCircleXVelocity;
 }
 
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  if (paused) return;
   circle_x_velocity = -kCircleXVelocity;
 }
 
 void select_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  paused = true;
-  window_stack_push(&menu_window, true /* Animated */);
+  display_settings();
 }
 
 void click_config_provider(ClickConfig **config, Window *window) {
@@ -358,7 +357,7 @@ void handle_init(AppContextRef ctx) {
   app_event_service_subscribe(ctx, PEBBLE_ACCEL_EVENT, &handle_accel);
   */
 
-  window_init(&menu_window, "Menu");
+  init_settings();
 
   // Start updating the game.
   app_timer_send_event(ctx, kUpdateMs, 0);
@@ -377,6 +376,8 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     return;
   }
   app_timer_send_event(ctx, kUpdateMs, 0);
+
+  if (in_menu) return;
 
   // Update the text.
   if (!kDebug) {
