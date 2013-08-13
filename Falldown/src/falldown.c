@@ -58,6 +58,9 @@ const float kInitialLineVelocity = -0.627;
 const int kVelocityIncreaseMs = 15000;
 const float kVelocityIncrease = 1.05;
 
+extern FalldownSettings settings;
+extern bool in_menu;
+
 Window game_window;
 
 TextLayer text_layer;
@@ -73,8 +76,11 @@ typedef struct {
 Circle circle;
 float circle_x_velocity = 0;
 
-extern FalldownSettings settings;
-extern bool in_menu;
+AccelData filter = {
+  .x = 0,
+  .y = 0,
+  .z = 0
+};
 
 void circle_update_proc(Circle* circle, GContext* ctx) {
   // TODO(ariw): Use an animated circle here instead of this function.
@@ -220,7 +226,7 @@ void click_config_provider(ClickConfig **config, Window *window) {
   config[BUTTON_ID_SELECT]->click.repeat_interval_ms = 65535;
 }
 
-/*
+
 AccelData average_accel(const PebbleAccelEvent* accel) {
   AccelData average = { 0, 0, 0 };
   AccelData accel_data[32];
@@ -238,12 +244,25 @@ AccelData average_accel(const PebbleAccelEvent* accel) {
   return average;
 }
 
-void handle_accel(PebbleEvent* event) {
-  AccelData accel = average_accel(&event->accel);
-  // TODO(ariw): HARD WORK GOES HERE (of eliminating spurious acceleration
-  // including gravity, determining velocity using only noisy acceleration).
+AccelData filter_accel(const AccelData& accel, AccelData* filter) {
+  AccelData filtered_accel;
+  const float kFilteringFactor = 0.1;
+  filter->x = accel.x * kFilteringFactor + filter->x * (1 - kFilteringFactor);
+  filtered_accel.x = accel.x - filter->x;
+  filter->y = accel.y * kFilteringFactor + filter->y * (1 - kFilteringFactor);
+  filtered_accel.y = accel.y - filter->y;
+  filter->z = accel.z * kFilteringFactor + filter->z * (1 - kFilteringFactor);
+  filtered_accel.z = accel.z - filter->z;
+  return filtered_accel;
 }
-*/
+
+void handle_accel(PebbleEvent* event) {
+  if (!settings->accelerometer_control) return;
+
+  AccelData accel = filter_accel(average_accel(&event->accel), &filter);
+  // TODO(ariw): HARD WORK GOES HERE (of determining velocity using only noisy
+  // acceleration).
+}
 
 void get_mac(const char* game, int score, const char* nonce, char* mac) {
   char message[kBufferSize];
@@ -346,7 +365,6 @@ void handle_init(AppContextRef ctx) {
   window_set_click_config_provider(
       &game_window, (ClickConfigProvider)click_config_provider);
 
-  /*
   // Attach our desired acceleration provider.
   AccelServiceSetting accel_settings = {
     .sampling_rate = ACCEL_SAMPLING_50HZ,
@@ -355,7 +373,6 @@ void handle_init(AppContextRef ctx) {
   }
   accel_service_update_settings(&accel_settings);
   app_event_service_subscribe(ctx, PEBBLE_ACCEL_EVENT, &handle_accel);
-  */
 
   init_settings();
 
