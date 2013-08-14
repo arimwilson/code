@@ -81,6 +81,7 @@ AccelData filter = {
   .y = 0,
   .z = 0
 };
+float circle_x_accel = 0;
 
 void circle_update_proc(Circle* circle, GContext* ctx) {
   // TODO(ariw): Use an animated circle here instead of this function.
@@ -256,12 +257,36 @@ AccelData filter_accel(const AccelData& accel, AccelData* filter) {
   return filtered_accel;
 }
 
+AccelData clamp_accel(const AccelData& accel, int16_t min, int16_t max) {
+  AccelData clamped_accel;
+  clamped_accel.x = max(min(accel.x, max), min);
+  clamped_accel.y = max(min(accel.y, max), min);
+  clamped_accel.z = max(min(accel.z, max), min);
+  return;
+}
+
 void handle_accel(PebbleEvent* event) {
   if (!settings->accelerometer_control) return;
 
-  AccelData accel = filter_accel(average_accel(&event->accel), &filter);
-  // TODO(ariw): HARD WORK GOES HERE (of determining velocity using only noisy
-  // acceleration).
+  // Conversion from sensor data to g.
+  const float kAccelToG = ACCEL_SCALE_4G / INT16_MAX;
+  // Get raw accelerometer data, try to filter out constant acceleration (e.g.
+  // gravity), and clamp so that small movements do not cause movements on
+  // screen.
+  AccelData accel = clamped_accel(
+      filter_accel(average_accel(&event->accel), &filter),
+      0.3 / kAccelToG, INT16_MAX);
+  float accel_g = accel.z * kAccelToG;
+
+  // Derive max acceleration from calculating constant acceleration required in
+  // one update to make it across the screen in kAcrossScreenMs:
+  //
+  // distance(t) = integral(integral(acceleration(t)))
+  // d(t) = a*t^2/2
+  // kWidth = a*(kAcrossScreenMs / kUpdateMs)^2/2
+  // a = kWidth * 2 / (kAcrossScreenMs / kUpdateMs)^2
+  const float kMaxGameAccel = 0.32;
+  circle_x_accel = accel.z * kAccelToG * kRealAccelToGameAccel / ACCEL_SCALE_4G;
 }
 
 void get_mac(const char* game, int score, const char* nonce, char* mac) {
@@ -370,6 +395,7 @@ void handle_init(AppContextRef ctx) {
     .sampling_rate = ACCEL_SAMPLING_50HZ,
     // Try to update approximately once every kUpdateMs.
     .samples_per_update = 2,
+    .scale = ACCEL_SCALE_4G
   }
   accel_service_update_settings(&accel_settings);
   app_event_service_subscribe(ctx, PEBBLE_ACCEL_EVENT, &handle_accel);
@@ -403,6 +429,8 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   text_layer_set_text(&text_layer, text);
 
   // Update the player circle.
+  // TODO(ariw): Need to update this to account for acceleration due to
+  // accelerometer.
   bool intersects_x = false, intersects_y = false;
   lines_circle_intersect(
       circle_x_velocity, kCircleYVelocity - lines_velocity, &lines,
