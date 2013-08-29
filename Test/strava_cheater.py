@@ -12,6 +12,8 @@ assert len(sys.argv) == 6
 
 start = (float(sys.argv[1]), float(sys.argv[2]))
 end = (float(sys.argv[3]), float(sys.argv[4]))
+# Convert start/end to some 2D projection, Pythagoras to get distance, invert to get
+# semi-evenly spaced points at desired speed between the two points.
 gpx_file = open(sys.argv[5], "w")
 
 gpx_point = """<trkpt lat="%(latitude)f" lon="%(longitude)">
