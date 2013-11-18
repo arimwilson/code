@@ -1,16 +1,11 @@
-#include "pebble_os.h"
-#include "pebble_app.h"
-#include "pebble_fonts.h"
+#include <pebble.h>
 
 #include "common.h"
 #include "hmac_sha2.h"
-#include "http.h"
 #include "mac_key.h"  // for kMacKey / kMacKeyLength
 #include "settings.h"
 
-// TODO(ariw): Need to have separate versions of this UUID for iOS / Android.
-// This allows Android to have multiple HTTPebble apps.
-#define MY_UUID HTTP_UUID
+#define MY_UUID { 0xbe, 0x67, 0x86, 0x9d, 0x87, 0x96, 0x46, 0xb0, 0xa2, 0x54, 0x00, 0xa1, 0x52, 0xcf, 0x0f, 0x0f }
 PBL_APP_INFO(
     MY_UUID, "Falldown", "Ari Wilson", 1, 0 /* App version */,
     RESOURCE_ID_IMAGE_ICON, APP_INFO_STANDARD_APP);
@@ -476,6 +471,12 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   if (elapsed_time_ms % kVelocityIncreaseMs < kUpdateMs) {
     lines_velocity *= kVelocityIncrease;
   }
+}
+
+int main(void) {
+  handle_init();
+  app_event_loop();
+  handle_deinit();
 }
 
 void pbl_main(void *params) {
