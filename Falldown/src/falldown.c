@@ -346,8 +346,7 @@ void reset() {
   lines_velocity = kInitialLineVelocity;
 }
 
-void handle_init(AppContextRef ctx) {
-  (void)ctx;
+void handle_init() {
   srand(time(NULL));
 
   game_window = window_create();
@@ -371,7 +370,7 @@ void handle_init(AppContextRef ctx) {
   text_layer_set_text_alignment(text_layer, GTextAlignmentRight);
   text_layer_set_background_color(text_layer, GColorClear);
   text_layer_set_text_color(text_layer, GColorWhite);
-  layer_add_child(root_layer, (Layer*)&text_layer);
+  layer_add_child(root_layer, (Layer*)text_layer);
 
   // Initialize the player circle.
   circle_init(root_layer, kWidth / 2 - kCircleRadius,  0, &circle);
@@ -396,9 +395,7 @@ void handle_init(AppContextRef ctx) {
   app_timer_register(kUpdateMs, (AppTimerCallback)handle_timer, NULL);
 }
 
-void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
-  (void)ctx;
-
+void handle_timer(void* data) {
   // Check to see if game is over yet.
   if (circle.y < 0) {
     send_score(score);
@@ -416,7 +413,7 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   if (!kDebug) {
     snprintf(text, kTextLength, "%d", score);
   }
-  text_layer_set_text(&text_layer, text);
+  text_layer_set_text(text_layer, text);
 
   // Update the player circle.
   // TODO(ariw): Need to update this to account for acceleration due to
@@ -466,6 +463,12 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
   if (elapsed_time_ms % kVelocityIncreaseMs < kUpdateMs) {
     lines_velocity *= kVelocityIncrease;
   }
+}
+
+void handle_deinit() {
+  window_destroy(game_window);
+  text_layer_destroy(text_layer);
+  deinit_settings();
 }
 
 int main(void) {

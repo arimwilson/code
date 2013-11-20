@@ -59,4 +59,9 @@ void display_settings() {
   window_stack_push(menu_window, true /* Animated */);
 }
 
+void deinit_settings() {
+  window_destroy(menu_window);
+  simple_menu_layer_destroy(menu_layer);
+}
+
 #endif
