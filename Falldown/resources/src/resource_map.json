@@ -1,0 +1,11 @@
+{
+  "friendlyVersion": "1.0",
+  "versionDefName": "FALLDOWN_RESOURCES",
+
+  "media": [
+    { "type": "png",
+      "defName": "IMAGE_ICON",
+      "file": "images/icon.png"
+    }
+  ]
+}
