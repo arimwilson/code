@@ -5,11 +5,6 @@
 #include "mac_key.h"  // for kMacKey / kMacKeyLength
 #include "settings.h"
 
-#define MY_UUID { 0xbe, 0x67, 0x86, 0x9d, 0x87, 0x96, 0x46, 0xb0, 0xa2, 0x54, 0x00, 0xa1, 0x52, 0xcf, 0x0f, 0x0f }
-PBL_APP_INFO(
-    MY_UUID, "Falldown", "Ari Wilson", 1, 0 /* App version */,
-    RESOURCE_ID_IMAGE_ICON, APP_INFO_STANDARD_APP);
-
 extern const char* kMacKey;
 extern const int kMacKeyLength;
 
@@ -56,9 +51,9 @@ const float kVelocityIncrease = 1.05;
 extern FalldownSettings settings;
 extern bool in_menu;
 
-Window game_window;
+Window* game_window;
 
-TextLayer text_layer;
+TextLayer* text_layer;
 char text[12 /* kTextLength */];
 int score = 0;
 
@@ -355,9 +350,9 @@ void handle_init(AppContextRef ctx) {
   (void)ctx;
   srand(time(NULL));
 
-  window_init(&game_window, "Falldown");
-  window_set_background_color(&game_window, GColorBlack);
-  window_stack_push(&game_window, true /* Animated */);
+  game_window = window_create();
+  window_set_background_color(game_window, GColorBlack);
+  window_stack_push(game_window, true /* Animated */);
 
   Layer* root_layer = window_get_root_layer(&game_window);
 
@@ -372,10 +367,10 @@ void handle_init(AppContextRef ctx) {
   lines_init(root_layer, &lines);
 
   // Initialize the score.
-  text_layer_init(&text_layer, GRect(0, 0, kWidth, kTextSize));
-  text_layer_set_text_alignment(&text_layer, GTextAlignmentRight);
-  text_layer_set_background_color(&text_layer, GColorClear);
-  text_layer_set_text_color(&text_layer, GColorWhite);
+  text_layer = text_layer_create(GRect(0, 0, kWidth, kTextSize));
+  text_layer_set_text_alignment(text_layer, GTextAlignmentRight);
+  text_layer_set_background_color(text_layer, GColorClear);
+  text_layer_set_text_color(text_layer, GColorWhite);
   layer_add_child(root_layer, (Layer*)&text_layer);
 
   // Initialize the player circle.
@@ -398,7 +393,7 @@ void handle_init(AppContextRef ctx) {
   init_settings();
 
   // Start updating the game.
-  app_timer_send_event(ctx, kUpdateMs, 0);
+  app_timer_register(kUpdateMs, (AppTimerCallback)handle_timer, NULL);
 }
 
 void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
@@ -410,10 +405,10 @@ void handle_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     reset();
     // Don't update the screen for a bit to let the user see their score after
     // a game over.
-    app_timer_send_event(ctx, 3000, 0);
+    app_timer_register(3000, (AppTimerCallback)handle_timer, NULL);
     return;
   }
-  app_timer_send_event(ctx, kUpdateMs, 0);
+  app_timer_register(kUpdateMs, (AppTimerCallback)handle_timer, NULL);
 
   if (in_menu) return;
 
