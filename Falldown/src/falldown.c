@@ -59,7 +59,7 @@ int score = 0;
 
 // Player circle data and functions.
 typedef struct {
-  Layer layer;
+  Layer* layer;
   float x;
   float y;
 } Circle;
@@ -81,10 +81,10 @@ void circle_update_proc(Circle* circle, GContext* ctx) {
 }
 
 void circle_init(Layer* parent_layer, int x, int y, Circle* circle) {
-  layer_init(&circle->layer, GRect(
+  layer_init(circle->layer, GRect(
         circle->x, circle->y, kCircleRadius * 2, kCircleRadius * 2));
-  layer_set_update_proc(&circle->layer, (LayerUpdateProc)circle_update_proc);
-  layer_add_child(parent_layer, &circle->layer);
+  layer_set_update_proc(circle->layer, (LayerUpdateProc)circle_update_proc);
+  layer_add_child(parent_layer, circle->layer);
   circle->x = x;
   circle->y = y;
 }
@@ -389,6 +389,8 @@ void handle_init() {
   accel_service_update_settings(&accel_settings);
   app_event_service_subscribe(ctx, PEBBLE_ACCEL_EVENT, &handle_accel);
 
+  app_message_open(kBufferSize, kBufferSize);
+
   init_settings();
 
   // Start updating the game.
@@ -477,17 +479,3 @@ int main(void) {
   handle_deinit();
 }
 
-void pbl_main(void *params) {
-  PebbleAppHandlers handlers = {
-    .init_handler = &handle_init,
-    .timer_handler = &handle_timer,
-    .messaging_info = {
-      .buffer_sizes = {
-        // TODO(ariw): Are these too big?
-        .inbound = kBufferSize,
-        .outbound = kBufferSize,
-      }
-    },
-  };
-  app_event_loop(params, &handlers);
-}
