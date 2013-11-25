@@ -2,6 +2,11 @@
 
 #include "settings.h"
 
+Window* menu_window;
+SimpleMenuLayer* menu_layer;
+SimpleMenuSection menu_sections[1];
+SimpleMenuItem menu_items[1];
+
 void accelerometer_control_callback(int index, void* context) {
   if (index != 0) return;
   falldown_settings.accelerometer_control =

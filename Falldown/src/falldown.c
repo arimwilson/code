@@ -81,7 +81,7 @@ void circle_update_proc(Circle* circle, GContext* ctx) {
 }
 
 void circle_init(Layer* parent_layer, int x, int y, Circle* circle) {
-  layer_init(circle->layer, GRect(
+  circle->layer = layer_create(GRect(
         circle->x, circle->y, kCircleRadius * 2, kCircleRadius * 2));
   layer_set_update_proc(circle->layer, (LayerUpdateProc)circle_update_proc);
   layer_add_child(parent_layer, circle->layer);
@@ -91,7 +91,7 @@ void circle_init(Layer* parent_layer, int x, int y, Circle* circle) {
 
 // Lines data and functions.
 typedef struct {
-  Layer layer;
+  Layer* layer;
   float y;  // location of this line on the screen
   int holes[2 /* kMaxHoles */];  // which segments have holes
   int holes_size;
@@ -124,9 +124,9 @@ void line_generate(int y, Line* line) {
 
 void line_init(Layer* parent_layer, int y, Line* line) {
   line_generate(y, line);
-  layer_init(&line->layer, GRect(0, line->y, kWidth, kLineThickness));
-  layer_set_update_proc(&line->layer, (LayerUpdateProc)line_update_proc);
-  layer_add_child(parent_layer, &line->layer);
+  line->layer = layer_create(GRect(0, line->y, kWidth, kLineThickness));
+  layer_set_update_proc(line->layer, (LayerUpdateProc)line_update_proc);
+  layer_add_child(parent_layer, line->layer);
 }
 
 void lines_init(Layer* parent_layer, Lines* lines) {
@@ -454,7 +454,7 @@ void handle_timer(void* data) {
           &lines[i]);
       score += 10;
     }
-    layer_set_frame(&lines[i].layer,
+    layer_set_frame(lines[i].layer,
                     GRect(0, (int)lines[i].y, kWidth, kLineThickness));
   }
 
@@ -469,7 +469,11 @@ void handle_timer(void* data) {
 
 void handle_deinit() {
   window_destroy(game_window);
+  for (int i = 0; i < kLineCount; ++i) {
+    layer_destroy(lines[i]->layer);
+  }
   text_layer_destroy(text_layer);
+  layer_destroy(circle->layer);
   deinit_settings();
 }
 

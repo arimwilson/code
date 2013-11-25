@@ -1,13 +1,6 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <pebble.h>
-
-Window* menu_window;
-SimpleMenuLayer* menu_layer;
-SimpleMenuSection menu_sections[1];
-SimpleMenuItem menu_items[1];
-
 typedef struct {
   bool accelerometer_control;
 } FalldownSettings;
