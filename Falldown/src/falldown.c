@@ -201,7 +201,7 @@ void select_single_click_handler(ClickRecognizerRef recognizer, Window *window) 
   display_settings();
 }
 
-void click_config_provider(ClickConfig **config, Window *window) {
+void click_config_provider(Window *window) {
   (void)window;
 
   config[BUTTON_ID_UP]->click.handler = (ClickHandler)up_single_click_handler;
@@ -218,15 +218,12 @@ void click_config_provider(ClickConfig **config, Window *window) {
 }
 
 
-AccelData average_accel(const PebbleAccelEvent* accel) {
+AccelData average_accel(const AccelData* data, uint32_t num_samples) {
   AccelData average = { 0, 0, 0 };
-  AccelData accel_data[32];
-  accel_service_read_data(accel_data, event->accel.count);
-
-  for (int i = 0; i < accel->count; i++) {
-    average.x += accel_data[i].x;
-    average.y += accel_data[i].y;
-    average.z += accel_data[i].z;
+  for (int i = 0; i < count; i++) {
+    average.x += data[i].x;
+    average.y += data[i].y;
+    average.z += data[i].z;
   }
   average.x /= accel->count;
   average.y /= accel->count;
@@ -255,16 +252,17 @@ AccelData clamp_accel(const AccelData& accel, int16_t min, int16_t max) {
   return;
 }
 
-void handle_accel(PebbleEvent* event) {
+void handle_accel(AccelData* data, uint32_t num_samples) {
   if (!settings->accelerometer_control) return;
 
   // Conversion from sensor data to g.
-  const float kAccelToG = ACCEL_SCALE_4G / INT16_MAX;
+  // TODO(ariw): What should the real conversion factor be here?
+  const float kAccelToG = 4 / INT16_MAX;
   // Get raw accelerometer data, try to filter out constant acceleration (e.g.
   // gravity), and clamp so that small movements do not cause movements on
   // screen.
   AccelData accel = clamped_accel(
-      filter_accel(average_accel(&event->accel), &filter),
+      filter_accel(average_accel(data, num_samples), &filter),
       0.3 / kAccelToG, INT16_MAX);
   float accel_g = accel.z * kAccelToG;
 
@@ -380,14 +378,8 @@ void handle_init() {
       &game_window, (ClickConfigProvider)click_config_provider);
 
   // Attach our desired acceleration provider.
-  AccelServiceSetting accel_settings = {
-    .sampling_rate = ACCEL_SAMPLING_50HZ,
-    // Try to update approximately once every kUpdateMs.
-    .samples_per_update = 2,
-    .scale = ACCEL_SCALE_4G
-  }
-  accel_service_update_settings(&accel_settings);
-  app_event_service_subscribe(ctx, PEBBLE_ACCEL_EVENT, &handle_accel);
+  accel_service_set_sampling_rate(ACCEL_SAMPLING_50HZ);
+  accel_data_service_subscribe(2, (AccelDataHandler)handle_accel);
 
   app_message_open(kBufferSize, kBufferSize);
 
