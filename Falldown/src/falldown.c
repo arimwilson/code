@@ -48,7 +48,7 @@ const float kInitialLineVelocity = -0.627;
 const int kVelocityIncreaseMs = 15000;
 const float kVelocityIncrease = 1.05;
 
-extern FalldownSettings settings;
+extern FalldownSettings falldown_settings;
 extern bool in_menu;
 
 Window* game_window;
@@ -242,14 +242,14 @@ AccelData filter_accel(const AccelData* accel, AccelData* filter) {
 
 AccelData clamp_accel(const AccelData* accel, int16_t min, int16_t max) {
   AccelData clamped_accel;
-  clamped_accel.x = max(min(accel->x, max), min);
-  clamped_accel.y = max(min(accel->y, max), min);
-  clamped_accel.z = max(min(accel->z, max), min);
-  return;
+  clamped_accel.x = common_max(common_min(accel->x, max), min);
+  clamped_accel.y = common_max(common_min(accel->y, max), min);
+  clamped_accel.z = common_max(common_min(accel->z, max), min);
+  return clamped_accel;
 }
 
 void handle_accel(AccelData* data, uint32_t num_samples) {
-  if (!settings->accelerometer_control) return;
+  if (!falldown_settings.accelerometer_control) return;
 
   // Conversion from sensor data to g.
   // TODO(ariw): What should the real conversion factor be here?

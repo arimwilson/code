@@ -39,4 +39,12 @@ void common_insertion_sort(int* array, int size) {
   }
 }
 
+int16_t common_min(int16_t a, int16_t b) {
+  return (a < b)? a: b;
+}
+
+int16_t common_max(int16_t a, int16_t b) {
+  return (a >= b)? a: b;
+}
+
 #endif  // COMMON_H
