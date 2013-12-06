@@ -204,51 +204,47 @@ void select_single_click_handler(ClickRecognizerRef recognizer, Window *window) 
 void click_config_provider(Window *window) {
   (void)window;
 
-  config[BUTTON_ID_UP]->click.handler = (ClickHandler)up_single_click_handler;
-  config[BUTTON_ID_UP]->click.repeat_interval_ms = kUpdateMs;
-
-  config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)down_single_click_handler;
-  config[BUTTON_ID_DOWN]->click.repeat_interval_ms = kUpdateMs;
-
-  // TODO(ariw): This pauses once and never lets you unpause. Fix!
-  config[BUTTON_ID_SELECT]->click.handler = (ClickHandler)select_single_click_handler;
+  window_single_repeating_click_subscribe(
+      BUTTON_ID_UP, kUpdateMs, (ClickHandler)up_single_click_handler);
+  window_single_repeating_click_subscribe(
+      BUTTON_ID_DOWN, kUpdateMs, (ClickHandler)down_single_click_handler);
   // We want to not do anything upon button holds so configure really long
   // repeat interval.
-  config[BUTTON_ID_SELECT]->click.repeat_interval_ms = 65535;
+  window_single_repeating_click_subscribe(
+      BUTTON_ID_SELECT, 65535, (ClickHandler)select_single_click_handler);
 }
-
 
 AccelData average_accel(const AccelData* data, uint32_t num_samples) {
   AccelData average = { 0, 0, 0 };
-  for (int i = 0; i < count; i++) {
+  for (uint32_t i = 0; i < num_samples; i++) {
     average.x += data[i].x;
     average.y += data[i].y;
     average.z += data[i].z;
   }
-  average.x /= accel->count;
-  average.y /= accel->count;
-  average.z /= accel->count;
+  average.x /= num_samples;
+  average.y /= num_samples;
+  average.z /= num_samples;
 
   return average;
 }
 
-AccelData filter_accel(const AccelData& accel, AccelData* filter) {
+AccelData filter_accel(const AccelData* accel, AccelData* filter) {
   AccelData filtered_accel;
   const float kFilteringFactor = 0.1;
-  filter->x = accel.x * kFilteringFactor + filter->x * (1 - kFilteringFactor);
-  filtered_accel.x = accel.x - filter->x;
-  filter->y = accel.y * kFilteringFactor + filter->y * (1 - kFilteringFactor);
-  filtered_accel.y = accel.y - filter->y;
-  filter->z = accel.z * kFilteringFactor + filter->z * (1 - kFilteringFactor);
-  filtered_accel.z = accel.z - filter->z;
+  filter->x = accel->x * kFilteringFactor + filter->x * (1 - kFilteringFactor);
+  filtered_accel.x = accel->x - filter->x;
+  filter->y = accel->y * kFilteringFactor + filter->y * (1 - kFilteringFactor);
+  filtered_accel.y = accel->y - filter->y;
+  filter->z = accel->z * kFilteringFactor + filter->z * (1 - kFilteringFactor);
+  filtered_accel.z = accel->z - filter->z;
   return filtered_accel;
 }
 
-AccelData clamp_accel(const AccelData& accel, int16_t min, int16_t max) {
+AccelData clamp_accel(const AccelData* accel, int16_t min, int16_t max) {
   AccelData clamped_accel;
-  clamped_accel.x = max(min(accel.x, max), min);
-  clamped_accel.y = max(min(accel.y, max), min);
-  clamped_accel.z = max(min(accel.z, max), min);
+  clamped_accel.x = max(min(accel->x, max), min);
+  clamped_accel.y = max(min(accel->y, max), min);
+  clamped_accel.z = max(min(accel->z, max), min);
   return;
 }
 
@@ -261,8 +257,8 @@ void handle_accel(AccelData* data, uint32_t num_samples) {
   // Get raw accelerometer data, try to filter out constant acceleration (e.g.
   // gravity), and clamp so that small movements do not cause movements on
   // screen.
-  AccelData accel = clamped_accel(
-      filter_accel(average_accel(data, num_samples), &filter),
+  AccelData accel = clamp_accel(
+      &(filter_accel(&(average_accel(data, num_samples)), &filter)),
       0.3 / kAccelToG, INT16_MAX);
   float accel_g = accel.z * kAccelToG;
 
