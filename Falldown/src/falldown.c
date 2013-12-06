@@ -253,7 +253,7 @@ void handle_accel(AccelData* data, uint32_t num_samples) {
 
   // Conversion from sensor data to g.
   // TODO(ariw): What should the real conversion factor be here?
-  const float kAccelToG = 4 / INT16_MAX;
+  const float kAccelToG = 1.0 / 1000;
   // Get raw accelerometer data, try to filter out constant acceleration (e.g.
   // gravity), and clamp so that small movements do not cause movements on
   // screen.
@@ -270,7 +270,7 @@ void handle_accel(AccelData* data, uint32_t num_samples) {
   // kWidth = a*(kAcrossScreenMs / kUpdateMs)^2/2
   // a = kWidth * 2 / (kAcrossScreenMs / kUpdateMs)^2
   const float kMaxGameAccel = 0.32;
-  circle_x_accel = accel.z * kAccelToG * kRealAccelToGameAccel / ACCEL_SCALE_4G;
+  circle_x_accel = accel_g * kMaxGameAccel;
 }
 
 void get_mac(const char* game, int score, const char* nonce, char* mac) {
@@ -458,10 +458,10 @@ void handle_timer(void* data) {
 void handle_deinit() {
   window_destroy(game_window);
   for (int i = 0; i < kLineCount; ++i) {
-    layer_destroy(lines[i]->layer);
+    layer_destroy(lines[i].layer);
   }
   text_layer_destroy(text_layer);
-  layer_destroy(circle->layer);
+  layer_destroy(circle.layer);
   deinit_settings();
 }
 
