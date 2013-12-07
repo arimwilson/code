@@ -252,7 +252,6 @@ void handle_accel(AccelData* data, uint32_t num_samples) {
   if (!falldown_settings.accelerometer_control) return;
 
   // Conversion from sensor data to g.
-  // TODO(ariw): What should the real conversion factor be here?
   const float kAccelToG = 1.0 / 1000;
   // Get raw accelerometer data, try to filter out constant acceleration (e.g.
   // gravity), and clamp so that small movements do not cause movements on
@@ -410,7 +409,6 @@ void handle_timer(void* data) {
   }
 }
 
-
 void handle_init() {
   srand(time(NULL));
 
@@ -457,6 +455,10 @@ void handle_init() {
 }
 
 void handle_deinit() {
+  // Unsubscribe from used services.
+  accel_service_unsubscribe();
+
+  // Clear all memory.
   window_destroy(game_window);
   for (int i = 0; i < kLineCount; ++i) {
     layer_destroy(lines[i].layer);
