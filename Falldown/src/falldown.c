@@ -340,51 +340,6 @@ void reset() {
   lines_velocity = kInitialLineVelocity;
 }
 
-void handle_init() {
-  srand(time(NULL));
-
-  game_window = window_create();
-  window_set_background_color(game_window, GColorBlack);
-  window_stack_push(game_window, true /* Animated */);
-
-  Layer* root_layer = window_get_root_layer(&game_window);
-
-  // Initialize HTTPebble.
-  http_set_app_id(532013811);
-  HTTPCallbacks http_callbacks = {
-    .success = http_success,
-  };
-  http_register_callbacks(http_callbacks, (void*)NULL);
-
-  // Initialize the lines to fall down.
-  lines_init(root_layer, &lines);
-
-  // Initialize the score.
-  text_layer = text_layer_create(GRect(0, 0, kWidth, kTextSize));
-  text_layer_set_text_alignment(text_layer, GTextAlignmentRight);
-  text_layer_set_background_color(text_layer, GColorClear);
-  text_layer_set_text_color(text_layer, GColorWhite);
-  layer_add_child(root_layer, (Layer*)text_layer);
-
-  // Initialize the player circle.
-  circle_init(root_layer, kWidth / 2 - kCircleRadius,  0, &circle);
-
-  // Attach our desired button functionality
-  window_set_click_config_provider(
-      &game_window, (ClickConfigProvider)click_config_provider);
-
-  // Attach our desired acceleration provider.
-  accel_service_set_sampling_rate(ACCEL_SAMPLING_50HZ);
-  accel_data_service_subscribe(2, (AccelDataHandler)handle_accel);
-
-  app_message_open(kBufferSize, kBufferSize);
-
-  init_settings();
-
-  // Start updating the game.
-  app_timer_register(kUpdateMs, (AppTimerCallback)handle_timer, NULL);
-}
-
 void handle_timer(void* data) {
   // Check to see if game is over yet.
   if (circle.y < 0) {
@@ -428,7 +383,7 @@ void handle_timer(void* data) {
     // Can't fall down yet, move up with the line.
     circle.y += lines_velocity;
   }
-  layer_set_frame(&circle.layer,
+  layer_set_frame(circle.layer,
                   GRect((int)circle.x, (int)circle.y, kCircleRadius * 2,
                         kCircleRadius * 2));
 
@@ -453,6 +408,52 @@ void handle_timer(void* data) {
   if (elapsed_time_ms % kVelocityIncreaseMs < kUpdateMs) {
     lines_velocity *= kVelocityIncrease;
   }
+}
+
+
+void handle_init() {
+  srand(time(NULL));
+
+  game_window = window_create();
+  window_set_background_color(game_window, GColorBlack);
+  window_stack_push(game_window, true /* Animated */);
+
+  Layer* root_layer = window_get_root_layer(&game_window);
+
+  // Initialize HTTPebble.
+  http_set_app_id(532013811);
+  HTTPCallbacks http_callbacks = {
+    .success = http_success,
+  };
+  http_register_callbacks(http_callbacks, (void*)NULL);
+
+  // Initialize the lines to fall down.
+  lines_init(root_layer, &lines);
+
+  // Initialize the score.
+  text_layer = text_layer_create(GRect(0, 0, kWidth, kTextSize));
+  text_layer_set_text_alignment(text_layer, GTextAlignmentRight);
+  text_layer_set_background_color(text_layer, GColorClear);
+  text_layer_set_text_color(text_layer, GColorWhite);
+  layer_add_child(root_layer, (Layer*)text_layer);
+
+  // Initialize the player circle.
+  circle_init(root_layer, kWidth / 2 - kCircleRadius,  0, &circle);
+
+  // Attach our desired button functionality
+  window_set_click_config_provider(
+      game_window, (ClickConfigProvider)click_config_provider);
+
+  // Attach our desired acceleration provider.
+  accel_service_set_sampling_rate(ACCEL_SAMPLING_50HZ);
+  accel_data_service_subscribe(2, (AccelDataHandler)handle_accel);
+
+  app_message_open(kBufferSize, kBufferSize);
+
+  init_settings();
+
+  // Start updating the game.
+  app_timer_register(kUpdateMs, (AppTimerCallback)handle_timer, NULL);
 }
 
 void handle_deinit() {
