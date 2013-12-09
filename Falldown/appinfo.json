@@ -1,0 +1,28 @@
+{
+  "uuid": "825ecbd6-354a-44d7-9187-a4874ea843de",
+  "shortName": "Falldown",
+  "longName": "Falldown",
+  "companyName": "Ari Wilson",
+  "versionCode": 1,
+  "versionLabel": "1.0.0",
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "url": 0,
+    "name": 1,
+    "score": 2,
+    "mac": 3,
+    "nonce": 4
+  },
+  "resources": {
+    "media": [
+      {
+        "type": "png",
+        "name": "IMAGE_ICON",
+        "file": "images/icon.png"
+        "menuIcon": true
+      }
+    ]
+  }
+}
