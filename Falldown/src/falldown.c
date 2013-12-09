@@ -291,9 +291,7 @@ void get_mac(const char* game, int score, const char* nonce, char* mac) {
   }
 }
 
-void http_success(
-    int32_t cookie, int http_status, DictionaryIterator* received,
-    void* context) {
+void app_message_success(DictionaryIterator* iterator, void* context) {
   // Are we in a nonce callback or a score callback?
   if (cookie < 0) return;
   int score = cookie;
@@ -302,20 +300,20 @@ void http_success(
   char mac[SHA256_DIGEST_SIZE * 2 + 1];  // sha256 in hex and terminating \0.
   get_mac(kGameName, score, nonce, (char*)mac);
   DictionaryIterator* body;
-  http_out_get(
-      "http://pebblescores.appspot.com/submit", -1, &body);
+  app_message_outbox_open(&body);
+  dict_write(body, 0, "http://pebblescores.appspot.com/submit");
   dict_write_cstring(body, 1, kGameName);
   dict_write_int32(body, 2, (int32_t)score);
   dict_write_cstring(body, 3, mac);
   dict_write_cstring(body, 4, nonce);
-  http_out_send();
+  app_message_outbox_send();
 }
 
 void send_score(int score) {
   DictionaryIterator* body;
-  http_out_get(
-      "http://pebblescores.appspot.com/nonce", score, &body);
-  http_out_send();
+  app_message_outbox_open(&body);
+  dict_write(body, 0, "http://pebblescores.appspot.com/nonce", score, &body);
+  app_message_outbox_send();
 }
 
 // TODO(ariw): Merge this with the circle/line init functions.
@@ -418,12 +416,9 @@ void handle_init() {
 
   Layer* root_layer = window_get_root_layer(&game_window);
 
-  // Initialize HTTPebble.
-  http_set_app_id(532013811);
-  HTTPCallbacks http_callbacks = {
-    .success = http_success,
-  };
-  http_register_callbacks(http_callbacks, (void*)NULL);
+  // Initialize AppMessage.
+  app_message_register_inbox_received(
+      (AppMessageInboxReceived)app_message_success);
 
   // Initialize the lines to fall down.
   lines_init(root_layer, &lines);

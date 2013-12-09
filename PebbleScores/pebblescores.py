@@ -23,9 +23,10 @@ class User(db.Model):
   num_zero_games = db.IntegerProperty()
 
 class HighScore(db.Model):
-  # TODO(ariw): Should game and user be reference properties?
+  # TODO(ariw): Should game, user, and account_token be reference properties?
   game = db.StringProperty(required = True)
   user = db.StringProperty(required = True)
+  account_token = db.StringProperty(required = True)
   score = db.IntegerProperty(required = True)
   created = db.DateTimeProperty(required = True, auto_now_add = True)
 
