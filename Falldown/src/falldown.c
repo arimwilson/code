@@ -292,10 +292,11 @@ void get_mac(const char* game, int score, const char* nonce, char* mac) {
 }
 
 void app_message_success(DictionaryIterator* iterator, void* context) {
+  // TODO(ariw): All this code needs to be updated.
   // Are we in a nonce callback or a score callback?
   if (cookie < 0) return;
   int score = cookie;
-  char* nonce = dict_find(received, 1)->value->cstring;
+  char* nonce = dict_find(received, 4)->value->cstring;
   static const char* kGameName = "Falldown";
   char mac[SHA256_DIGEST_SIZE * 2 + 1];  // sha256 in hex and terminating \0.
   get_mac(kGameName, score, nonce, (char*)mac);
