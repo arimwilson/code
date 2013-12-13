@@ -14,4 +14,4 @@ void init_settings();
 void display_settings();
 void deinit_settings();
 
-#endif
+#endif // SETTINGS_H

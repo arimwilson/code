@@ -20,7 +20,7 @@
       {
         "type": "png",
         "name": "IMAGE_ICON",
-        "file": "images/icon.png"
+        "file": "images/icon.png",
         "menuIcon": true
       }
     ]

@@ -56,6 +56,7 @@ Window* game_window;
 TextLayer* text_layer;
 char text[12 /* kTextLength */];
 int score = 0;
+int sent_score;
 
 // Player circle data and functions.
 typedef struct {
@@ -256,9 +257,9 @@ void handle_accel(AccelData* data, uint32_t num_samples) {
   // Get raw accelerometer data, try to filter out constant acceleration (e.g.
   // gravity), and clamp so that small movements do not cause movements on
   // screen.
-  AccelData accel = clamp_accel(
-      &(filter_accel(&(average_accel(data, num_samples)), &filter)),
-      0.3 / kAccelToG, INT16_MAX);
+  AccelData accel = average_accel(data, num_samples);
+  accel = filter_accel(&accel, &filter);
+  accel = clamp_accel(&accel, 0.3 / kAccelToG, INT16_MAX);
   float accel_g = accel.z * kAccelToG;
 
   // Derive max acceleration from calculating constant acceleration required in
@@ -294,17 +295,17 @@ void get_mac(const char* game, int score, const char* nonce, char* mac) {
 void app_message_success(DictionaryIterator* iterator, void* context) {
   // TODO(ariw): All this code needs to be updated.
   // Are we in a nonce callback or a score callback?
-  if (cookie < 0) return;
-  int score = cookie;
-  char* nonce = dict_find(received, 4)->value->cstring;
+  Tuple* tuple = dict_find(iterator, 4);
+  if (!tuple) return;
+  char* nonce = tuple->value->cstring;
   static const char* kGameName = "Falldown";
   char mac[SHA256_DIGEST_SIZE * 2 + 1];  // sha256 in hex and terminating \0.
-  get_mac(kGameName, score, nonce, (char*)mac);
+  get_mac(kGameName, sent_score, nonce, (char*)mac);
   DictionaryIterator* body;
-  app_message_outbox_open(&body);
-  dict_write(body, 0, "http://pebblescores.appspot.com/submit");
+  app_message_outbox_begin(&body);
+  dict_write_cstring(body, 0, "http://pebblescores.appspot.com/submit");
   dict_write_cstring(body, 1, kGameName);
-  dict_write_int32(body, 2, (int32_t)score);
+  dict_write_int32(body, 2, (int32_t)sent_score);
   dict_write_cstring(body, 3, mac);
   dict_write_cstring(body, 4, nonce);
   app_message_outbox_send();
@@ -312,8 +313,9 @@ void app_message_success(DictionaryIterator* iterator, void* context) {
 
 void send_score(int score) {
   DictionaryIterator* body;
-  app_message_outbox_open(&body);
-  dict_write(body, 0, "http://pebblescores.appspot.com/nonce", score, &body);
+  app_message_outbox_begin(&body);
+  sent_score = score;
+  dict_write_cstring(body, 0, "http://pebblescores.appspot.com/nonce");
   app_message_outbox_send();
 }
 
@@ -415,7 +417,7 @@ void handle_init() {
   window_set_background_color(game_window, GColorBlack);
   window_stack_push(game_window, true /* Animated */);
 
-  Layer* root_layer = window_get_root_layer(&game_window);
+  Layer* root_layer = window_get_root_layer(game_window);
 
   // Initialize AppMessage.
   app_message_register_inbox_received(
@@ -452,7 +454,7 @@ void handle_init() {
 
 void handle_deinit() {
   // Unsubscribe from used services.
-  accel_service_unsubscribe();
+  accel_data_service_unsubscribe();
 
   // Clear all memory.
   window_destroy(game_window);
