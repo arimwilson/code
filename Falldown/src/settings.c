@@ -13,7 +13,7 @@ void accelerometer_control_callback(int index, void* context) {
       !falldown_settings.accelerometer_control;
   menu_items[0].subtitle =
       (falldown_settings.accelerometer_control? "Yes" : "No");
-  menu_layer_reload_data(&menu_layer->menu);
+  menu_layer_reload_data((MenuLayer*)menu_layer);
 }
 
 void handle_appear(Window* window) {
