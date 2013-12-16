@@ -104,7 +104,6 @@ void line_update_proc(Line* line, GContext* ctx) {
   graphics_fill_rect(ctx, GRect(0, 0, kWidth, kLineThickness), 0, GCornerNone);
   graphics_context_set_fill_color(ctx, GColorBlack);
   for (int i = 0; i < line->holes_size; ++i) {
-    app_log(APP_LOG_LEVEL_INFO, "falldown.c", 107, "line->holes[%d] = %d", i, line->holes[i]);
     graphics_fill_rect(
         ctx,
         GRect(line->holes[i] * kLineSegmentWidth, 0, kLineSegmentWidth,
@@ -118,9 +117,7 @@ void line_generate(int y, Line* line) {
   line->y = y;
   line->holes_size = rand() % kMaxHoles + 1;
   common_shuffle_integers(line->holes_size, (int*)line->holes);
-  app_log(APP_LOG_LEVEL_INFO, "falldown.c", 121, "line->holes[0] = %d", line->holes[0]);
   common_insertion_sort((int*)line->holes, line->holes_size);
-  app_log(APP_LOG_LEVEL_INFO, "falldown.c", 123, "line->holes[0] = %d", line->holes[0]);
 }
 
 void line_init(Layer* parent_layer, int y, Line* line) {
