@@ -289,8 +289,9 @@ void get_mac(const char* game, int score, const char* nonce, char* mac) {
   }
 }
 
-void app_message_success(DictionaryIterator* iterator, void* context) {
+void app_message_inbox_received(DictionaryIterator* iterator, void* context) {
   // Are we in a nonce callback or a score callback?
+  app_log(APP_LOG_LEVEL_INFO, "falldown.c", 294, "received");
   Tuple* tuple = dict_find(iterator, 4);
   if (!tuple) return;
   char* nonce = tuple->value->cstring;
@@ -417,7 +418,7 @@ void handle_init() {
 
   // Initialize AppMessage.
   app_message_register_inbox_received(
-      (AppMessageInboxReceived)app_message_success);
+      (AppMessageInboxReceived)app_message_inbox_received);
 
   // Initialize the lines to fall down.
   lines_init(root_layer, &lines);
