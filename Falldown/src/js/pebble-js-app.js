@@ -3,14 +3,13 @@ Pebble.addEventListener("appmessage",
       // Check to see if we're proxying a nonce or a score.
       var method = e.payload.url.substr(e.payload.url.lastIndexOf("/") + 1);
       var body = "";
+      console.log(method);
       if (method == "submit") {
         var p = e.payload;
         body = JSON.stringify(
           { name: p.name, score: p.score, mac: p.mac, nonce: p.nonce,
             account_token: Pebble.getAccountToken() });
-
       }
-      console.log(body);
       var req = new XMLHttpRequest();
       req.open('POST', e.payload.url, true);
       req.onreadystatechange = function() {
