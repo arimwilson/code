@@ -3,7 +3,6 @@ Pebble.addEventListener("appmessage",
       // Check to see if we're proxying a nonce or a score.
       var method = e.payload.url.substr(e.payload.url.lastIndexOf("/") + 1);
       var body = "";
-      console.log(method);
       if (method == "submit") {
         var p = e.payload;
         body = JSON.stringify(

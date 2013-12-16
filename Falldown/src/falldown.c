@@ -305,6 +305,7 @@ void app_message_inbox_received(DictionaryIterator* iterator, void* context) {
   dict_write_cstring(body, 3, mac);
   dict_write_cstring(body, 4, nonce);
   app_message_outbox_send();
+  app_log(APP_LOG_LEVEL_INFO, "falldown.c", 308, "nonce %s", nonce);
 }
 
 void send_score(int score) {
