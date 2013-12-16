@@ -10,6 +10,7 @@ Pebble.addEventListener("appmessage",
             account_token: Pebble.getAccountToken() });
 
       }
+      console.log(body);
       var req = new XMLHttpRequest();
       req.open('POST', e.payload.url, true);
       req.onreadystatechange = function() {

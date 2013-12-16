@@ -291,10 +291,8 @@ void get_mac(const char* game, int score, const char* nonce, char* mac) {
 
 void app_message_inbox_received(DictionaryIterator* iterator, void* context) {
   // Are we in a nonce callback or a score callback?
-  app_log(APP_LOG_LEVEL_INFO, "falldown.c", 294, "received");
   Tuple* tuple = dict_find(iterator, 4);
   if (!tuple) return;
-  app_log(APP_LOG_LEVEL_INFO, "falldown.c", 294, "next");
   char* nonce = tuple->value->cstring;
   static const char* kGameName = "Falldown";
   char mac[SHA256_DIGEST_SIZE * 2 + 1];  // sha256 in hex and terminating \0.
