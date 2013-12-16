@@ -7,6 +7,9 @@ SimpleMenuLayer* menu_layer;
 SimpleMenuSection menu_sections[1];
 SimpleMenuItem menu_items[1];
 
+FalldownSettings falldown_settings;
+bool in_menu = false;
+
 void accelerometer_control_callback(int index, void* context) {
   if (index != 0) return;
   falldown_settings.accelerometer_control =
@@ -17,7 +20,6 @@ void accelerometer_control_callback(int index, void* context) {
 }
 
 void handle_appear(Window* window) {
-  scroll_layer_set_frame(menu_layer->menu.scroll_layer, window->layer.bounds);
   in_menu = true;
 }
 
@@ -41,9 +43,10 @@ void init_settings() {
     .num_items = ARRAY_LENGTH(menu_items)
   };
   menu_layer = simple_menu_layer_create(
-      menu_window->layer.frame, menu_window, menu_sections,
-      ARRAY_LENGTH(menu_sections), NULL);
-  layer_add_child(&menu_window->layer, &menu_layer->menu.scroll_layer.layer);
+      layer_get_frame(window_get_root_layer(menu_window)), menu_window,
+      menu_sections, ARRAY_LENGTH(menu_sections), NULL);
+  layer_add_child(window_get_root_layer(menu_window),
+                  simple_menu_layer_get_layer(menu_layer));
 }
 
 void display_settings() {

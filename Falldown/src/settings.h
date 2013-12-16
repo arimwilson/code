@@ -4,8 +4,8 @@
 typedef struct {
   bool accelerometer_control;
 } FalldownSettings;
-FalldownSettings falldown_settings;
-bool in_menu = false;
+extern FalldownSettings falldown_settings;
+extern bool in_menu;
 
 void accelerometer_control_callback(int index, void* context);
 void handle_appear(Window* window);

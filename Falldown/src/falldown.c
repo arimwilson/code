@@ -48,9 +48,6 @@ const float kInitialLineVelocity = -0.627;
 const int kVelocityIncreaseMs = 15000;
 const float kVelocityIncrease = 1.05;
 
-extern FalldownSettings falldown_settings;
-extern bool in_menu;
-
 Window* game_window;
 
 TextLayer* text_layer;
@@ -293,7 +290,6 @@ void get_mac(const char* game, int score, const char* nonce, char* mac) {
 }
 
 void app_message_success(DictionaryIterator* iterator, void* context) {
-  // TODO(ariw): All this code needs to be updated.
   // Are we in a nonce callback or a score callback?
   Tuple* tuple = dict_find(iterator, 4);
   if (!tuple) return;
