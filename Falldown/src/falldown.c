@@ -79,12 +79,12 @@ void circle_update_proc(Circle* circle, GContext* ctx) {
 }
 
 void circle_init(Layer* parent_layer, int x, int y, Circle* circle) {
+  circle->x = x;
+  circle->y = y;
   circle->layer = layer_create(GRect(
         circle->x, circle->y, kCircleRadius * 2, kCircleRadius * 2));
   layer_set_update_proc(circle->layer, (LayerUpdateProc)circle_update_proc);
   layer_add_child(parent_layer, circle->layer);
-  circle->x = x;
-  circle->y = y;
 }
 
 // Lines data and functions.
