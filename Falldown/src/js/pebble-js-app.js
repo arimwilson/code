@@ -13,7 +13,7 @@ Pebble.addEventListener("appmessage",
       var req = new XMLHttpRequest();
       req.open('POST', e.payload.url, true);
       req.onreadystatechange = function() {
-        if (method == "nonce" && http.readyState == 4 && http.status == 200) {
+        if (method == "nonce" && req.readyState == 4 && req.status == 200) {
           Pebble.sendAppMessage({ "nonce": http.responseText });
         }
       }
