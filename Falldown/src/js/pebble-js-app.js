@@ -5,6 +5,7 @@ Pebble.addEventListener("appmessage",
       var body = "";
       if (method == "submit") {
         var p = e.payload;
+        // TODO(ariw): Can I just stringify p?
         body = JSON.stringify(
           { name: p.name, score: p.score, mac: p.mac, nonce: p.nonce,
             account_token: Pebble.getAccountToken() });
@@ -13,7 +14,7 @@ Pebble.addEventListener("appmessage",
       req.open('POST', e.payload.url, true);
       req.onreadystatechange = function() {
         if (method == "nonce" && req.readyState == 4 && req.status == 200) {
-          Pebble.sendAppMessage({ "nonce": req.responseText });
+          Pebble.sendAppMessage(JSON.parse(req.responseText));
         }
       }
       req.send(body);
