@@ -1,5 +1,5 @@
 // Example log line:
-// app_log(APP_LOG_LEVEL_INFO, "falldown.c", 123, "line->holes[0] = %d", line->holes[0]);
+// app_log(APP_LOG_LEVEL_INFO, "falldown.c", 1, "log");
 
 #include <pebble.h>
 

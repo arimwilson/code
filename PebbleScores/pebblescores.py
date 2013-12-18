@@ -37,7 +37,7 @@ class NonceHandler(webapp.RequestHandler):
     # their score.
     client = memcache.Client()
     client.set(nonce, True)
-    self.response.out.write(json.dumps({"1": nonce}))
+    self.response.out.write(json.dumps({"nonce": nonce}))
 
 def getEntitiesCacheKey(model, property, filter):
   return "%s,%s:%s" % (model, property, filter)
@@ -95,23 +95,23 @@ class SubmitHandler(webapp.RequestHandler):
       user = User(name = username, ip_address=self.request.remote_addr,
                   num_zero_games = 0)
       user.put()
-    game = getGame(request["1"])
+    game = getGame(request["name"])
     if not game:
-      logging.error("Game %s not found." % request["1"])
+      logging.error("Game %s not found." % request["name"])
       self.error(403)
       return
     # TODO(ariw): Nonce is not in legacy Falldown client code. This security
     # hole should be removed soon.
-    nonce = request.get("4", None)
+    nonce = request.get("nonce", None)
     if nonce and not validateNonce(nonce):
       logging.error("Nonce %s not found." % nonce)
       self.error(403)
       return
-    score = request["2"]
+    score = request["score"]
     mac = getMac(str(game.name), score, nonce, game.mac_key)
-    if  mac != request["3"]:
+    if  mac != request["mac"]:
       logging.error(
-          "Server MAC %s did not equal request MAC %s." % (mac, request["3"]))
+          "Server MAC %s did not equal request MAC %s." % (mac, request["mac"]))
       self.error(403)
       return
 

@@ -1,19 +1,13 @@
+// Example log line:
+// console.log("log");
+
 Pebble.addEventListener("appmessage",
     function(e) {
-      // Check to see if we're proxying a nonce or a score.
-      var method = e.payload.url.substr(e.payload.url.lastIndexOf("/") + 1);
-      var body = "";
-      if (method == "submit") {
-        var p = e.payload;
-        // TODO(ariw): Can I just stringify p?
-        body = JSON.stringify(
-          { name: p.name, score: p.score, mac: p.mac, nonce: p.nonce,
-            account_token: Pebble.getAccountToken() });
-      }
+      var body = JSON.stringify(e.payload);
       var req = new XMLHttpRequest();
       req.open('POST', e.payload.url, true);
       req.onreadystatechange = function() {
-        if (method == "nonce" && req.readyState == 4 && req.status == 200) {
+        if (req.readyState == 4 && req.status == 200) {
           Pebble.sendAppMessage(JSON.parse(req.responseText));
         }
       }
