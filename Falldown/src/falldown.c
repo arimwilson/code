@@ -59,12 +59,12 @@ int score = 0;
 int sent_score;
 
 // Player circle data and functions.
+typedef Layer CircleLayer;
+CircleLayer* circle_layer;
 typedef struct {
-  Layer* layer;
   float x;
   float y;
 } Circle;
-Circle circle;
 float circle_x_velocity = 0;
 
 AccelData filter = {
@@ -74,35 +74,37 @@ AccelData filter = {
 };
 float circle_x_accel = 0;
 
-void circle_update_proc(Circle* circle, GContext* ctx) {
+void circle_update_proc(CircleLayer* circle_layer, GContext* ctx) {
   // TODO(ariw): Use an animated circle here instead of this function.
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_circle(
       ctx, GPoint(kCircleRadius, kCircleRadius), kCircleRadius - 1);
 }
 
-void circle_init(Layer* parent_layer, int x, int y, Circle* circle) {
+void circle_init(Layer* parent_layer, int x, int y, CircleLayer** circle_layer) {
+  *circle_layer = layer_create_with_data(
+      GRect(x, y, kCircleRadius * 2, kCircleRadius * 2), sizeof(Circle));
+  Circle* circle = layer_get_data(*circle_layer);
   circle->x = x;
   circle->y = y;
-  circle->layer = layer_create(GRect(
-        circle->x, circle->y, kCircleRadius * 2, kCircleRadius * 2));
-  layer_set_update_proc(circle->layer, (LayerUpdateProc)circle_update_proc);
-  layer_add_child(parent_layer, circle->layer);
+  layer_set_update_proc(*circle_layer, (LayerUpdateProc)circle_update_proc);
+  layer_add_child(parent_layer, *circle_layer);
 }
 
 // Lines data and functions.
+typedef Layer LineLayer;
+typedef LineLayer *(LineLayers[5 /* kLineCount */]);
+LineLayers line_layers;
 typedef struct {
-  Layer* layer;
   float y;  // location of this line on the screen
   int holes[2 /* kMaxHoles */];  // which segments have holes
   int holes_size;
 } Line;
-typedef Line Lines[5 /* kLineCount */];
-Lines lines;
 int elapsed_time_ms = 0;
 float lines_velocity = -0.627;  // kInitialLineVelocity
 
-void line_update_proc(Line* line, GContext* ctx) {
+void line_update_proc(LineLayer* line_layer, GContext* ctx) {
+  Line* line = layer_get_data(line_layer);
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_rect(ctx, GRect(0, 0, kWidth, kLineThickness), 0, GCornerNone);
   graphics_context_set_fill_color(ctx, GColorBlack);
@@ -123,18 +125,20 @@ void line_generate(int y, Line* line) {
   common_insertion_sort((int*)line->holes, line->holes_size);
 }
 
-void line_init(Layer* parent_layer, int y, Line* line) {
+void line_init(Layer* parent_layer, int y, LineLayer** line_layer) {
+  *line_layer = layer_create_with_data(
+      GRect(0, y, kWidth, kLineThickness), sizeof(Line));
+  Line* line = layer_get_data(*line_layer);
   line_generate(y, line);
-  line->layer = layer_create(GRect(0, line->y, kWidth, kLineThickness));
-  layer_set_update_proc(line->layer, (LayerUpdateProc)line_update_proc);
-  layer_add_child(parent_layer, line->layer);
+  layer_set_update_proc(*line_layer, (LayerUpdateProc)line_update_proc);
+  layer_add_child(parent_layer, *line_layer);
 }
 
-void lines_init(Layer* parent_layer, Lines* lines) {
+void lines_init(Layer* parent_layer, LineLayers* line_layers) {
   for (int i = 0; i < kLineCount; ++i) {
     line_init(
         parent_layer, (kDistanceBetweenLines + kLineThickness) * (i + 2),
-        &((*lines)[i]));
+        &((*line_layers)[i]));
   }
 }
 
@@ -143,12 +147,14 @@ void lines_init(Layer* parent_layer, Lines* lines) {
 // relative_{x,y}_velocity represents the per update pixel {x,y} velocity
 // between the lines and the circle.
 void lines_circle_intersect(
-    float relative_x_velocity, float relative_y_velocity, Lines* lines,
-    Circle* circle, bool* intersects_x, bool* intersects_y) {
+    float relative_x_velocity, float relative_y_velocity,
+    LineLayers* line_layers, CircleLayer* circle_layer, bool* intersects_x,
+    bool* intersects_y) {
   *intersects_x = false;
   *intersects_y = false;
+  Circle* circle = layer_get_data(circle_layer);
   for (int i = 0; i < kLineCount; ++i) {
-    Line* line = &((*lines)[i]);
+    Line* line = layer_get_data((*line_layers)[i]);
     int y = line->y;
     // Determine whether the circle is passing through a line. This happens only
     // if before the move, the top of the circle is either in or above the line
@@ -324,14 +330,16 @@ void reset() {
   score = 0;
 
   // Reset player circle.
-  circle.x = kWidth / 2 - kCircleRadius;
-  circle.y = 0;
+  Circle* circle = layer_get_data(circle_layer);
+  circle->x = kWidth / 2 - kCircleRadius;
+  circle->y = 0;
   circle_x_velocity = 0;
 
   // Reset the lines.
   for (int i = 0; i < kLineCount; ++i) {
+    Line* line = layer_get_data(line_layers[i]);
     line_generate(
-        (kDistanceBetweenLines + kLineThickness) * (i + 2), &lines[i]);
+        (kDistanceBetweenLines + kLineThickness) * (i + 2), line);
   }
 
   // Reset our speed.
@@ -341,7 +349,8 @@ void reset() {
 
 void handle_timer(void* data) {
   // Check to see if game is over yet.
-  if (circle.y < 0) {
+  Circle* circle = layer_get_data(circle_layer);
+  if (circle->y < 0) {
     send_score(score);
     reset();
     // Don't update the screen for a bit to let the user see their score after
@@ -364,40 +373,41 @@ void handle_timer(void* data) {
   // accelerometer.
   bool intersects_x = false, intersects_y = false;
   lines_circle_intersect(
-      circle_x_velocity, kCircleYVelocity - lines_velocity, &lines,
-      &circle, &intersects_x, &intersects_y);
+      circle_x_velocity, kCircleYVelocity - lines_velocity, &line_layers,
+      circle_layer, &intersects_x, &intersects_y);
   if (!intersects_x &&
-      circle.x + circle_x_velocity >= 0 &&
-      circle.x + kCircleRadius * 2 + circle_x_velocity < kWidth) {
-    circle.x += circle_x_velocity;
+      circle->x + circle_x_velocity >= 0 &&
+      circle->x + kCircleRadius * 2 + circle_x_velocity < kWidth) {
+    circle->x += circle_x_velocity;
   }
   circle_x_velocity = 0;
   if (!intersects_y &&
-      circle.y + kCircleRadius * 2 + kCircleYVelocity <=
+      circle->y + kCircleRadius * 2 + kCircleYVelocity <=
           kHeight - kStatusBarHeight) {
     // Fall down!
-    circle.y += kCircleYVelocity;
+    circle->y += kCircleYVelocity;
   }
   if (intersects_y) {
     // Can't fall down yet, move up with the line.
-    circle.y += lines_velocity;
+    circle->y += lines_velocity;
   }
-  layer_set_frame(circle.layer,
-                  GRect((int)circle.x, (int)circle.y, kCircleRadius * 2,
+  layer_set_frame(circle_layer,
+                  GRect((int)circle->x, (int)circle->y, kCircleRadius * 2,
                         kCircleRadius * 2));
 
   // Update the lines as they move upward.
   for (int i = 0; i < kLineCount; ++i) {
-    lines[i].y += lines_velocity;
-    if (lines[i].y < 0) {
-      line_generate(
-          lines[common_mod(i - 1, kLineCount)].y + kDistanceBetweenLines +
-              kLineThickness,
-          &lines[i]);
+    Line* line = layer_get_data(line_layers[i]);
+    line->y += lines_velocity;
+    if (line->y < 0) {
+      Line* base_line = layer_get_data(
+          line_layers[common_mod(i - 1, kLineCount)]);
+      line_generate(base_line->y + kDistanceBetweenLines + kLineThickness,
+                    line);
       score += 10;
     }
-    layer_set_frame(lines[i].layer,
-                    GRect(0, (int)lines[i].y, kWidth, kLineThickness));
+    layer_set_frame(line_layers[i],
+                    GRect(0, (int)line->y, kWidth, kLineThickness));
   }
 
   // Increase our speed sometimes.
@@ -423,7 +433,7 @@ void handle_init() {
       (AppMessageInboxReceived)app_message_inbox_received);
 
   // Initialize the lines to fall down.
-  lines_init(root_layer, &lines);
+  lines_init(root_layer, &line_layers);
 
   // Initialize the score.
   text_layer = text_layer_create(GRect(0, 0, kWidth, kTextSize));
@@ -433,7 +443,7 @@ void handle_init() {
   layer_add_child(root_layer, (Layer*)text_layer);
 
   // Initialize the player circle.
-  circle_init(root_layer, kWidth / 2 - kCircleRadius,  0, &circle);
+  circle_init(root_layer, kWidth / 2 - kCircleRadius,  0, &circle_layer);
 
   // Attach our desired button functionality
   window_set_click_config_provider(
@@ -458,10 +468,10 @@ void handle_deinit() {
   // Clear all memory.
   window_destroy(game_window);
   for (int i = 0; i < kLineCount; ++i) {
-    layer_destroy(lines[i].layer);
+    layer_destroy(line_layers[i]);
   }
   text_layer_destroy(text_layer);
-  layer_destroy(circle.layer);
+  layer_destroy(circle_layer);
   deinit_settings();
 }
 
