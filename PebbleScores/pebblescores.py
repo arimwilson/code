@@ -89,21 +89,21 @@ class SubmitHandler(webapp.RequestHandler):
   # score :).
   def post(self):
     request = json.loads(self.request.body)
-    logging.info(request)
     if "username" not in request:
-      logging.info("No username in info.")
+      logging.info("No username in request.")
       self.error(400)
       return
     username = request["username"]
+    account_token = request["account_token"]
     user = getUser(username)
     if not user:
-      user = User(name = username, account_token = request["account_token"],
+      user = User(name = username, account_token = account_token,
                   ip_address=self.request.remote_addr, num_zero_games = 0)
       user.put()
-    elif request["account_token"] != user.account_token:
+    elif account_token != user.account_token:
       logging.info(
-          "Account token for user %s did not match stored value: stored %s, " \
-          "saw %s." % (username, user.account_token, request["account_token"]))
+          "Server account token %s for user %s did not match request token " \
+           "%s." % (user.account_token, username, account_token))
       self.error(401)
       return
     game = getGame(request["name"])
@@ -111,10 +111,8 @@ class SubmitHandler(webapp.RequestHandler):
       logging.error("Game %s not found." % request["name"])
       self.error(400)
       return
-    # TODO(ariw): Nonce is not in legacy Falldown client code. This security
-    # hole should be removed soon.
-    nonce = request.get("nonce", None)
-    if nonce and not validateNonce(nonce):
+    nonce = request.get["nonce"]
+    if not validateNonce(nonce):
       logging.error("Nonce %s not found." % nonce)
       self.error(401)
       return
