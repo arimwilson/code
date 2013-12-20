@@ -19,14 +19,15 @@ Pebble.addEventListener("appmessage",
     var req = new XMLHttpRequest();
     req.open('POST', e.payload.url, true);
     delete e.payload.url;
-    var body = JSON.stringify(merge_objects(
-        e.payload, window.localStorage.getItem("configuration"));
+    var body = merge_objects(
+        e.payload, JSON.parse(window.localStorage.getItem("configuration")));
+    body["account_token"] = Pebble.getAccountToken();
     req.onreadystatechange = function() {
       if (req.readyState == 4 && req.status == 200) {
         Pebble.sendAppMessage(JSON.parse(req.responseText));
       }
     }
-    req.send(body);
+    req.send(JSON.stringify(body));
   }
 );
 
