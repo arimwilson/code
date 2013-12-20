@@ -1,6 +1,5 @@
 {
   "uuid": "825ecbd6-354a-44d7-9187-a4874ea843de",
-  "shortName": "Falldown",
   "longName": "Falldown",
   "companyName": "Ari Wilson",
   "versionCode": 1,
@@ -24,5 +23,8 @@
         "menuIcon": true
       }
     ]
-  }
+  },
+  "capabilities": [
+    "configurable"
+  ]
 }

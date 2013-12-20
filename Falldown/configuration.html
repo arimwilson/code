@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Configuration</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css" />
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+  </head>
+  <body>
+    <div data-role="page" id="main">
+      <div data-role="header" class="jqm-header">
+        <h1>Falldown Configuration</h1>
+      </div>
+      <div data-role="content">
+        <div data-role="fieldcontain">
+          <label for="name">Name:</label>
+          <textarea cols="40" rows="8" name="name" id="name"></textarea>
+        </div>
+      </div>
+    </div>
+    <script>
+      function saveOptions() {
+        var options = {
+          'name': $("#name").val(),
+        }
+        return options;
+      }
+
+      $().ready(function() {
+        $("#b-cancel").click(function() {
+          document.location = "pebblejs://close";
+        });
+
+        $("#b-submit").click(function() {
+          var location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(saveOptions()));
+          document.location = location;
+        });
+
+      });
+    </script>
+  </body>
+</html>
