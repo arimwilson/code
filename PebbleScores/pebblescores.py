@@ -19,14 +19,14 @@ class Game(db.Model):
 
 class User(db.Model):
   name = db.StringProperty(required = True)
+  account_token = db.StringProperty(required = True)
   ip_address = db.StringProperty(required = True)
   num_zero_games = db.IntegerProperty()
 
 class HighScore(db.Model):
-  # TODO(ariw): Should game, user, and account_token be reference properties?
+  # TODO(ariw): Should game and user be reference properties?
   game = db.StringProperty(required = True)
   user = db.StringProperty(required = True)
-  account_token = db.StringProperty(required = True)
   score = db.IntegerProperty(required = True)
   created = db.DateTimeProperty(required = True, auto_now_add = True)
 
@@ -89,30 +89,41 @@ class SubmitHandler(webapp.RequestHandler):
   # score :).
   def post(self):
     request = json.loads(self.request.body)
-    username = self.request.headers["X-PEBBLE-ID"]
+    logging.info(request)
+    if "username" not in request:
+      logging.info("No username in info.")
+      self.error(400)
+      return
+    username = request["username"]
     user = getUser(username)
     if not user:
-      user = User(name = username, ip_address=self.request.remote_addr,
-                  num_zero_games = 0)
+      user = User(name = username, account_token = request["account_token"],
+                  ip_address=self.request.remote_addr, num_zero_games = 0)
       user.put()
+    elif request["account_token"] != user.account_token:
+      logging.info(
+          "Account token for user %s did not match stored value: stored %s, " \
+          "saw %s." % (username, user.account_token, request["account_token"]))
+      self.error(401)
+      return
     game = getGame(request["name"])
     if not game:
       logging.error("Game %s not found." % request["name"])
-      self.error(403)
+      self.error(400)
       return
     # TODO(ariw): Nonce is not in legacy Falldown client code. This security
     # hole should be removed soon.
     nonce = request.get("nonce", None)
     if nonce and not validateNonce(nonce):
       logging.error("Nonce %s not found." % nonce)
-      self.error(403)
+      self.error(401)
       return
     score = request["score"]
     mac = getMac(str(game.name), score, nonce, game.mac_key)
     if  mac != request["mac"]:
       logging.error(
           "Server MAC %s did not equal request MAC %s." % (mac, request["mac"]))
-      self.error(403)
+      self.error(401)
       return
 
     # Don't store a highscore entry if the score was 0.

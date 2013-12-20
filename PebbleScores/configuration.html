@@ -12,19 +12,26 @@
   <body>
     <div data-role="page" id="main">
       <div data-role="header" class="jqm-header">
-        <h1>Falldown Configuration</h1>
+        <h1>Falldown</h1>
       </div>
       <div data-role="content">
         <div data-role="fieldcontain">
-          <label for="name">Name:</label>
-          <textarea cols="40" rows="8" name="name" id="name"></textarea>
+          <label for="username">Username:</label>
+          <textarea cols="40" rows="8" name="username" id="username"></textarea>
+        </div>
+        <div class="ui-body ui-body-b">
+          <fieldset class="ui-grid-a">
+              <div class="ui-block-a"><button type="submit" data-theme="d" id="b-cancel">Cancel</button></div>
+              <div class="ui-block-b"><button type="submit" data-theme="a" id="b-submit">Submit</button></div>
+            </fieldset>
+          </div>
         </div>
       </div>
     </div>
     <script>
       function saveOptions() {
         var options = {
-          'name': $("#name").val(),
+          'username': $("#username").val(),
         }
         return options;
       }
