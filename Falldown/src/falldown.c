@@ -14,7 +14,6 @@ extern const int kMacKeyLength;
 // Size of temporary buffers.
 const int kBufferSize = 256;
 
-const bool kDebug = false;
 const int kTextSize = 14;
 const int kTextLength = 12;
 
@@ -29,8 +28,14 @@ const int kUpdateMs = 33;
 const int kCircleRadius = 4;
 // Should be able to get across the screen in kAcrossScreenMs:
 const int kAcrossScreenMs = 1000;
-// kWidth / (kAcrossScreenMs / kUpdateMs)
-const float kCircleXVelocity = 4.752;
+// Derive max acceleration from calculating constant acceleration required to
+// make it across the screen in kAcrossScreenMs:
+//
+// distance(t) = integral(integral(acceleration(t)))
+// d(t) = a*t^2/2
+// kWidth = a*(kAcrossScreenMs / kUpdateMs)^2/2
+// a = kWidth * 2 / (kAcrossScreenMs / kUpdateMs)^2
+const float kCircleXMaxAccel = 0.32;
 // Falling speed of circle.
 const float kCircleYVelocity = 1;
 
@@ -72,7 +77,6 @@ AccelData filter = {
   .y = 0,
   .z = 0
 };
-float circle_x_accel = 0;
 
 void circle_update_proc(CircleLayer* circle_layer, GContext* ctx) {
   // TODO(ariw): Use an animated circle here instead of this function.
@@ -193,13 +197,13 @@ void lines_circle_intersect(
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  circle_x_velocity = kCircleXVelocity;
+  circle_x_velocity += kCircleXMaxAccel;
 }
 
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
-  circle_x_velocity = -kCircleXVelocity;
+  circle_x_velocity -= kCircleXMaxAccel;
 }
 
 void select_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
@@ -221,20 +225,6 @@ void click_config_provider(Window *window) {
       BUTTON_ID_SELECT, 65535, (ClickHandler)select_single_click_handler);
 }
 
-AccelData average_accel(const AccelData* data, uint32_t num_samples) {
-  AccelData average = { 0, 0, 0 };
-  for (uint32_t i = 0; i < num_samples; i++) {
-    average.x += data[i].x;
-    average.y += data[i].y;
-    average.z += data[i].z;
-  }
-  average.x /= num_samples;
-  average.y /= num_samples;
-  average.z /= num_samples;
-
-  return average;
-}
-
 AccelData filter_accel(const AccelData* accel, AccelData* filter) {
   AccelData filtered_accel;
   const float kFilteringFactor = 0.1;
@@ -247,15 +237,7 @@ AccelData filter_accel(const AccelData* accel, AccelData* filter) {
   return filtered_accel;
 }
 
-AccelData clamp_accel(const AccelData* accel, int16_t min, int16_t max) {
-  AccelData clamped_accel;
-  clamped_accel.x = common_max(common_min(accel->x, max), min);
-  clamped_accel.y = common_max(common_min(accel->y, max), min);
-  clamped_accel.z = common_max(common_min(accel->z, max), min);
-  return clamped_accel;
-}
-
-void handle_accel(AccelData* data, uint32_t num_samples) {
+void handle_accel() {
   if (!falldown_settings.accelerometer_control) return;
 
   // Conversion from sensor data to g.
@@ -263,20 +245,11 @@ void handle_accel(AccelData* data, uint32_t num_samples) {
   // Get raw accelerometer data, try to filter out constant acceleration (e.g.
   // gravity), and clamp so that small movements do not cause movements on
   // screen.
-  AccelData accel = average_accel(data, num_samples);
+  AccelData accel;
+  accel_service_peek(&accel);
   accel = filter_accel(&accel, &filter);
-  accel = clamp_accel(&accel, 0.3 / kAccelToG, INT16_MAX);
   float accel_g = accel.z * kAccelToG;
-
-  // Derive max acceleration from calculating constant acceleration required in
-  // one update to make it across the screen in kAcrossScreenMs:
-  //
-  // distance(t) = integral(integral(acceleration(t)))
-  // d(t) = a*t^2/2
-  // kWidth = a*(kAcrossScreenMs / kUpdateMs)^2/2
-  // a = kWidth * 2 / (kAcrossScreenMs / kUpdateMs)^2
-  const float kMaxGameAccel = 0.32;
-  circle_x_accel = accel_g * kMaxGameAccel;
+  circle_x_velocity -= accel_g; // * kCircleXMaxAccel;
 }
 
 void get_mac(const char* game, int score, const char* nonce, char* mac) {
@@ -361,26 +334,23 @@ void handle_timer(void* data) {
   app_timer_register(kUpdateMs, (AppTimerCallback)handle_timer, NULL);
 
   if (in_menu) return;
+  handle_accel();
 
   // Update the text.
-  if (!kDebug) {
-    snprintf(text, kTextLength, "%d", score);
-  }
+  snprintf(text, kTextLength, "%d", score);
   text_layer_set_text(text_layer, text);
 
   // Update the player circle.
-  // TODO(ariw): Need to update this to account for acceleration due to
-  // accelerometer.
   bool intersects_x = false, intersects_y = false;
   lines_circle_intersect(
       circle_x_velocity, kCircleYVelocity - lines_velocity, &line_layers,
       circle_layer, &intersects_x, &intersects_y);
-  if (!intersects_x &&
-      circle->x + circle_x_velocity >= 0 &&
-      circle->x + kCircleRadius * 2 + circle_x_velocity < kWidth) {
-    circle->x += circle_x_velocity;
+  if (intersects_x ||
+      circle->x + circle_x_velocity < 0 ||
+      circle->x + kCircleRadius * 2 + circle_x_velocity >= kWidth) {
+    circle_x_velocity = 0;
   }
-  circle_x_velocity = 0;
+  circle->x += circle_x_velocity;
   if (!intersects_y &&
       circle->y + kCircleRadius * 2 + kCircleYVelocity <=
           kHeight - kStatusBarHeight) {
@@ -448,10 +418,6 @@ void handle_init() {
   // Attach our desired button functionality
   window_set_click_config_provider(
       game_window, (ClickConfigProvider)click_config_provider);
-
-  // Attach our desired acceleration provider.
-  accel_service_set_sampling_rate(ACCEL_SAMPLING_50HZ);
-  accel_data_service_subscribe(2, (AccelDataHandler)handle_accel);
 
   app_message_open(kBufferSize, kBufferSize);
 
