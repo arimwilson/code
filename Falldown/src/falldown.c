@@ -394,7 +394,7 @@ void handle_init() {
 
   game_window = window_create();
   window_set_background_color(game_window, GColorBlack);
-  window_stack_push(game_window, true /* Animated */);
+  window_stack_push(game_window, true);
 
   Layer* root_layer = window_get_root_layer(game_window);
 
@@ -430,6 +430,9 @@ void handle_init() {
 void handle_deinit() {
   // Unsubscribe from used services.
   accel_data_service_unsubscribe();
+
+  // Pop all windows off.
+  window_stack_pop_all(true);
 
   // Clear all memory.
   window_destroy(game_window);

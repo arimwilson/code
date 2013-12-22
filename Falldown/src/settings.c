@@ -65,7 +65,7 @@ void init_settings() {
 void display_settings() {
   menu_items[0].subtitle =
       (falldown_settings.accelerometer_control? "Yes" : "No");
-  window_stack_push(menu_window, true /* Animated */);
+  window_stack_push(menu_window, true);
 }
 
 void deinit_settings() {
