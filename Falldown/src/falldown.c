@@ -243,24 +243,20 @@ void handle_accel() {
   // Conversion from sensor data to g.
   const float kAccelToG = 1.0 / 1000;
   // Get raw accelerometer data, try to filter out constant acceleration (e.g.
-  // gravity), and clamp so that small movements do not cause movements on
-  // screen.
+  // gravity), and apply to circle velocity.
   AccelData accel;
   accel_service_peek(&accel);
   accel = filter_accel(&accel, &filter);
   float accel_g = accel.z * kAccelToG;
-  circle_x_velocity -= accel_g; // * kCircleXMaxAccel;
+  // TODO(ariw): Good multiplier here? kCircleXMaxAccel?
+  circle_x_velocity -= accel_g;
 }
 
 void get_mac(const char* game, int score, const char* nonce, char* mac) {
   char message[kBufferSize];
   int message_length;
-  if (nonce) {
-    message_length = snprintf(
-        message, kBufferSize, "%s%d%s", game, score, nonce);
-  } else {
-    message_length = snprintf(message, kBufferSize, "%s%d", game, score);
-  }
+  message_length = snprintf(
+      message, kBufferSize, "%s%d%s", game, score, nonce);
   char binary_mac[SHA256_DIGEST_SIZE];
   hmac_sha256(
       (unsigned char*)kMacKey, kMacKeyLength, (unsigned char*)message,
@@ -276,7 +272,7 @@ void app_message_inbox_received(DictionaryIterator* iterator, void* context) {
   Tuple* tuple = dict_find(iterator, 4);
   if (!tuple) return;
   char* nonce = tuple->value->cstring;
-  static const char* kGameName = "Falldown";
+  static const char* kGameName = "Falldown2";
   char mac[SHA256_DIGEST_SIZE * 2 + 1];  // sha256 in hex and terminating \0.
   get_mac(kGameName, sent_score, nonce, (char*)mac);
   DictionaryIterator* body;
