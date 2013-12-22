@@ -19,7 +19,7 @@ class Game(db.Model):
 
 class User(db.Model):
   name = db.StringProperty(required = True)
-  account_token = db.StringProperty(required = True)
+  account_token = db.StringProperty()
   ip_address = db.StringProperty(required = True)
   num_zero_games = db.IntegerProperty()
 
@@ -94,13 +94,15 @@ class SubmitHandler(webapp.RequestHandler):
       self.error(400)
       return
     username = request["username"]
-    account_token = request["account_token"]
+    account_token = None
+    if "account_token" in request:
+      account_token = request["account_token"]
     user = getUser(username)
     if not user:
       user = User(name = username, account_token = account_token,
                   ip_address=self.request.remote_addr, num_zero_games = 0)
       user.put()
-    elif account_token != user.account_token:
+    elif user.account_token is not None and account_token != user.account_token:
       logging.info(
           "Server account token %s for user %s did not match request token " \
            "%s." % (user.account_token, username, account_token))
