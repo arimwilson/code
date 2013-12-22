@@ -17,7 +17,6 @@ void accelerometer_control_callback(int index, void* context) {
   if (index != 0) return;
   falldown_settings.accelerometer_control =
       !falldown_settings.accelerometer_control;
-  persist_write_bool(0, falldown_settings.accelerometer_control);
   if (falldown_settings.accelerometer_control) {
     menu_items[0].subtitle = "Yes";
     accel_data_service_subscribe(0, (AccelDataHandler)empty_accel);
