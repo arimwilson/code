@@ -4,8 +4,8 @@
 
 Window* menu_window;
 SimpleMenuLayer* menu_layer;
-SimpleMenuSection menu_sections[1];
-SimpleMenuItem menu_items[1];
+static SimpleMenuSection menu_sections[1];
+static SimpleMenuItem menu_items[1];
 
 FalldownSettings falldown_settings;
 bool in_menu = false;
