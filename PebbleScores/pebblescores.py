@@ -84,23 +84,28 @@ def getMac(game, score, nonce, mac_key):
     message = "%s%d" % (game, score)
   return hmac.new(mac_key, message, hashlib.sha256).hexdigest()
 
+# TODO(ariw): Support for non-"username" and non-"account_token" requests is for
+# legacy pre-Pebble 2.0 clients. Remove once most people have upgraded!
 class SubmitHandler(webapp.RequestHandler):
   # Get the user, get the game, verify the nonce, verify the hash, store the
   # score :).
   def post(self):
     request = json.loads(self.request.body)
-    if "username" not in request:
+    username = request.get(
+        "username", self.request.headers.get("X-PEBBLE-ID", None))
+    if username is None:
       logging.info("No username in request.")
       self.error(400)
       return
-    username = request["username"]
     account_token = None
     if "account_token" in request:
       account_token = request["account_token"]
     user = getUser(username)
     if not user:
-      user = User(name = username, account_token = account_token,
-                  ip_address=self.request.remote_addr, num_zero_games = 0)
+      user = User(name = username, ip_address=self.request.remote_addr,
+                  num_zero_games = 0)
+      if account_token is not None:
+        user.account_token = account_token
       user.put()
     elif user.account_token is not None and account_token != user.account_token:
       logging.info(
