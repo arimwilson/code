@@ -113,7 +113,7 @@ class SubmitHandler(webapp.RequestHandler):
       logging.error("Game %s not found." % request["name"])
       self.error(400)
       return
-    nonce = request.get["nonce"]
+    nonce = request["nonce"]
     if not validateNonce(nonce):
       logging.error("Nonce %s not found." % nonce)
       self.error(401)

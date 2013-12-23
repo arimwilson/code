@@ -9,7 +9,7 @@ builtins:
 
 handlers:
 - url: /(.*\.(html|js|css))
-  static_file: \1
+  static_files: \1
   upload: (.*\.(html|js|css))
 - url: /nonce
   script: pebblescores.app
