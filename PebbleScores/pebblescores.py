@@ -107,12 +107,14 @@ class SubmitHandler(webapp.RequestHandler):
       if account_token is not None:
         user.account_token = account_token
       user.put()
-    elif user.account_token is not None and account_token != user.account_token:
-      logging.info(
-          "Server account token %s for user %s did not match request token " \
-           "%s." % (user.account_token, username, account_token))
-      self.error(401)
-      return
+    # TODO(ariw): Re-enable account_token check once it's consistent in Pebble.
+    # elif (user.account_token is not None and
+    #       account_token != user.account_token):
+    #   logging.info(
+    #       "Server account token %s for user %s did not match request token " \
+    #        "%s." % (user.account_token, username, account_token))
+    #   self.error(401)
+    #   return
     game = getGame(request["name"])
     if not game:
       logging.error("Game %s not found." % request["name"])
