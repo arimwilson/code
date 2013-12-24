@@ -248,8 +248,9 @@ void handle_accel() {
   accel_service_peek(&accel);
   accel = filter_accel(&accel, &filter);
   float accel_g = accel.z * kAccelToG;
-  // TODO(ariw): Good multiplier here? kCircleXMaxAccel?
-  circle_x_velocity -= accel_g;
+  // 2 was chosen here to make it so you don't have to move your wrists too
+  // violently to play...
+  circle_x_velocity -= accel_g * 2;
 }
 
 void get_mac(const char* game, int score, const char* nonce, char* mac) {
