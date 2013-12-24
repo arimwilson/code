@@ -331,6 +331,7 @@ void handle_timer(void* data) {
   app_timer_register(kUpdateMs, (AppTimerCallback)handle_timer, NULL);
 
   if (in_menu) return;
+
   handle_accel();
 
   // Update the text.
