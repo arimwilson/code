@@ -84,8 +84,12 @@ def getMac(game, score, nonce, mac_key):
     message = "%s%d" % (game, score)
   return hmac.new(mac_key, message, hashlib.sha256).hexdigest()
 
-# TODO(ariw): Support for non-"username" and non-"account_token" requests is for
-# legacy pre-Pebble 2.0 clients. Remove once most people have upgraded!
+def getTwice(dict, property1, property2):
+  dict.get(property1, dict.get(property2, None))
+
+# TODO(ariw): Support for numeric, non-"username", and non-"account_token"
+# requests is for legacy pre-Pebble 2.0 clients. Remove once most people have
+# upgraded!
 class SubmitHandler(webapp.RequestHandler):
   # Get the user, get the game, verify the nonce, verify the hash, store the
   # score :).
@@ -97,9 +101,7 @@ class SubmitHandler(webapp.RequestHandler):
       logging.info("No username in request.")
       self.error(400)
       return
-    account_token = None
-    if "account_token" in request:
-      account_token = request["account_token"]
+    account_token = request.get("account_token", None)
     user = getUser(username)
     if not user:
       user = User(name = username, ip_address=self.request.remote_addr,
@@ -115,21 +117,22 @@ class SubmitHandler(webapp.RequestHandler):
     #        "%s." % (user.account_token, username, account_token))
     #   self.error(401)
     #   return
-    game = getGame(request["name"])
+    game = getGame(getTwice(request, "name", "1"))
     if not game:
-      logging.error("Game %s not found." % request["name"])
+      logging.error("Game %s not found." % getTwice(request, "name", "1"))
       self.error(400)
       return
-    nonce = request["nonce"]
+    nonce = getTwice(request, "nonce", "4")
     if not validateNonce(nonce):
       logging.error("Nonce %s not found." % nonce)
       self.error(401)
       return
-    score = request["score"]
+    score = getTwice(request, "score", "2")
     mac = getMac(str(game.name), score, nonce, game.mac_key)
-    if  mac != request["mac"]:
+    if  mac != getTwice(request, "mac", 3):
       logging.error(
-          "Server MAC %s did not equal request MAC %s." % (mac, request["mac"]))
+          "Server MAC %s did not equal request MAC %s." % (
+              mac, getTwice(request, "mac", "3")))
       self.error(401)
       return
 
