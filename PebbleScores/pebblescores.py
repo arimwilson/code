@@ -84,8 +84,8 @@ def getMac(game, score, nonce, mac_key):
     message = "%s%d" % (game, score)
   return hmac.new(mac_key, message, hashlib.sha256).hexdigest()
 
-def getTwice(dict, property1, property2):
-  dict.get(property1, dict.get(property2, None))
+def getTwice(dictionary, property1, property2):
+  return dictionary.get(property1, dictionary.get(property2, None))
 
 # TODO(ariw): Support for numeric, non-"username", and non-"account_token"
 # requests is for legacy pre-Pebble 2.0 clients. Remove once most people have
