@@ -81,10 +81,7 @@ def validateNonce(nonce):
   return validated_nonce and client.cas(nonce, False, 1)
 
 def getMac(game, score, nonce, mac_key):
-  if nonce:
-    message = "%s%d%s" % (game, score, nonce)
-  else:
-    message = "%s%d" % (game, score)
+  message = "%s%d%s" % (game, score, nonce)
   return hmac.new(mac_key, message, hashlib.sha256).hexdigest()
 
 def getTwice(dictionary, property1, property2):
@@ -132,7 +129,7 @@ class SubmitHandler(webapp.RequestHandler):
       return
     score = getTwice(request, "score", "2")
     mac = getMac(str(game.name), score, nonce, game.mac_key)
-    if  mac != getTwice(request, "mac", 3):
+    if mac != str(getTwice(request, "mac", 3)):
       logging.error(
           "Server MAC %s did not equal request MAC %s, request: %s." % (
               mac, getTwice(request, "mac", "3"), self.request.body))
