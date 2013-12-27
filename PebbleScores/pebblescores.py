@@ -114,25 +114,28 @@ class SubmitHandler(webapp.RequestHandler):
     #       account_token != user.account_token):
     #   logging.info(
     #       "Server account token %s for user %s did not match request token " \
-    #        "%s." % (user.account_token, username, account_token))
+    #       "%s, request: %s." % (
+    #           user.account_token, username, account_token, self.request.body))
     #   self.error(401)
     #   return
     game = getGame(getTwice(request, "name", "1"))
     if not game:
-      logging.error("Game %s not found." % getTwice(request, "name", "1"))
+      logging.error("Game %s not found, request: %s." % (
+          getTwice(request, "name", "1"), self.request.body))
       self.error(400)
       return
     nonce = getTwice(request, "nonce", "4")
     if not validateNonce(nonce):
-      logging.error("Nonce %s not found." % nonce)
+      logging.error("Nonce %s not found, request: %s." % (
+          nonce, self.request.body))
       self.error(401)
       return
     score = getTwice(request, "score", "2")
     mac = getMac(str(game.name), score, nonce, game.mac_key)
     if  mac != getTwice(request, "mac", 3):
       logging.error(
-          "Server MAC %s did not equal request MAC %s." % (
-              mac, getTwice(request, "mac", "3")))
+          "Server MAC %s did not equal request MAC %s, request: %s." % (
+              mac, getTwice(request, "mac", "3"), self.request.body))
       self.error(401)
       return
 
