@@ -1,5 +1,8 @@
 # TODO(ariw): Some sort of registration interface so others can add their own
 # games?
+# TODO(ariw): Support for numeric, non-"username", and non-"account_token"
+# requests is for legacy pre-Pebble 2.0 clients. Remove once most people have
+# upgraded!
 
 import base64
 import hashlib
@@ -37,7 +40,7 @@ class NonceHandler(webapp.RequestHandler):
     # their score.
     client = memcache.Client()
     client.set(nonce, True)
-    self.response.out.write(json.dumps({"nonce": nonce}))
+    self.response.out.write(json.dumps({"1": nonce, "nonce": nonce}))
 
 def getEntitiesCacheKey(model, property, filter):
   return "%s,%s:%s" % (model, property, filter)
@@ -87,9 +90,6 @@ def getMac(game, score, nonce, mac_key):
 def getTwice(dictionary, property1, property2):
   return dictionary.get(property1, dictionary.get(property2, None))
 
-# TODO(ariw): Support for numeric, non-"username", and non-"account_token"
-# requests is for legacy pre-Pebble 2.0 clients. Remove once most people have
-# upgraded!
 class SubmitHandler(webapp.RequestHandler):
   # Get the user, get the game, verify the nonce, verify the hash, store the
   # score :).
