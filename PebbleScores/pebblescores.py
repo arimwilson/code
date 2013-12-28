@@ -129,7 +129,7 @@ class SubmitHandler(webapp.RequestHandler):
       return
     score = getTwice(request, "score", "2")
     mac = getMac(str(game.name), score, nonce, game.mac_key)
-    if mac != str(getTwice(request, "mac", 3)):
+    if mac != getTwice(request, "mac", 3):
       logging.error(
           "Server MAC %s did not equal request MAC %s, request: %s." % (
               mac, getTwice(request, "mac", "3"), self.request.body))
