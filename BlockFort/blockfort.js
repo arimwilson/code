@@ -17,12 +17,12 @@ cameraDirection = function() {
 }
 
 // Global object for scene-specific stuff.
-var MEEPESH = {
+var BLOCKFORT = {
 }
 
-MEEPESH.update = function() {
+BLOCKFORT.update = function() {
   // Render the scene.
-  requestAnimationFrame(MEEPESH.update);
+  requestAnimationFrame(BLOCKFORT.update);
   renderer.render(scene, camera);
 
   // Update controls.
@@ -30,46 +30,46 @@ MEEPESH.update = function() {
   time = Date.now();
 }
 
-MEEPESH.pointerLockChange = function(event) {
-  if (document.pointerLockElement === MEEPESH.element ||
-      document.webkitPointerLockElement === MEEPESH.element ||
-      document.mozPointerLockElement === MEEPESH.element) {
+BLOCKFORT.pointerLockChange = function(event) {
+  if (document.pointerLockElement === BLOCKFORT.element ||
+      document.webkitPointerLockElement === BLOCKFORT.element ||
+      document.mozPointerLockElement === BLOCKFORT.element) {
     controls.enabled = true;
-    $(document).click(MEEPESH.buildClick);
-    $(document).keypress(MEEPESH.save);
-    $(document).keypress(MEEPESH.load);
+    $(document).click(BLOCKFORT.buildClick);
+    $(document).keypress(BLOCKFORT.save);
+    $(document).keypress(BLOCKFORT.load);
 
-    MEEPESH.blocker.hide();
+    BLOCKFORT.blocker.hide();
   } else {
     controls.enabled = false;
     $(document).off('click');
     $(document).off('keypress');
 
-    MEEPESH.blocker.show();
+    BLOCKFORT.blocker.show();
   }
 }
 
-MEEPESH.pointerLockClick = function(event) {
-  MEEPESH.element.requestPointerLock =
-      MEEPESH.element.requestPointerLock ||
-      MEEPESH.element.webkitRequestPointerLock ||
-      MEEPESH.element.mozRequestPointerLock;
-  MEEPESH.element.requestPointerLock();
+BLOCKFORT.pointerLockClick = function(event) {
+  BLOCKFORT.element.requestPointerLock =
+      BLOCKFORT.element.requestPointerLock ||
+      BLOCKFORT.element.webkitRequestPointerLock ||
+      BLOCKFORT.element.mozRequestPointerLock;
+  BLOCKFORT.element.requestPointerLock();
 }
 
 // Given world coordinates, return grid coordinates.
-MEEPESH.gridCoordinates = function(v) {
+BLOCKFORT.gridCoordinates = function(v) {
   var u = new t.Vector3();
-  u.x = Math.floor(v.x / MEEPESH.unitSize);
-  u.y = Math.floor(v.y / MEEPESH.unitSize);
-  u.z = Math.floor(v.z / MEEPESH.unitSize);
+  u.x = Math.floor(v.x / BLOCKFORT.unitSize);
+  u.y = Math.floor(v.y / BLOCKFORT.unitSize);
+  u.z = Math.floor(v.z / BLOCKFORT.unitSize);
   return u;
 }
 
-MEEPESH.createFloor = function() {
+BLOCKFORT.createFloor = function() {
   var geometry = new t.PlaneGeometry(
-      MEEPESH.unitSize * MEEPESH.units, MEEPESH.unitSize * MEEPESH.units,
-      MEEPESH.unitSize, MEEPESH.unitSize);
+      BLOCKFORT.unitSize * BLOCKFORT.units, BLOCKFORT.unitSize * BLOCKFORT.units,
+      BLOCKFORT.unitSize, BLOCKFORT.unitSize);
   // Floors generally are on the xz plane rather than the yz plane. Rotate it
   // there :).
   geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
@@ -81,34 +81,34 @@ MEEPESH.createFloor = function() {
 }
 
 // v should be in grid coordinates.
-MEEPESH.createCube = function(v, color) {
+BLOCKFORT.createCube = function(v, color) {
   var cube = new t.Mesh(
-      new t.CubeGeometry(MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize,
-                         MEEPESH.unitSize, MEEPESH.unitSize, MEEPESH.unitSize),
+      new t.CubeGeometry(BLOCKFORT.unitSize, BLOCKFORT.unitSize, BLOCKFORT.unitSize,
+                         BLOCKFORT.unitSize, BLOCKFORT.unitSize, BLOCKFORT.unitSize),
       new t.MeshLambertMaterial({ color: color, ambient: color })
   );
-  cube.position.set(v.x * MEEPESH.unitSize, (v.y + 0.5) * MEEPESH.unitSize,
-                    v.z * MEEPESH.unitSize);
+  cube.position.set(v.x * BLOCKFORT.unitSize, (v.y + 0.5) * BLOCKFORT.unitSize,
+                    v.z * BLOCKFORT.unitSize);
   return cube;
 }
 
 // Build blocks / destroy blocks controls.
-MEEPESH.buildClick = function(event) {
+BLOCKFORT.buildClick = function(event) {
   var direction = cameraDirection();
   var ray = new t.Raycaster(controls.getObject().position, direction);
-  var intersects = ray.intersectObjects(MEEPESH.objects);
+  var intersects = ray.intersectObjects(BLOCKFORT.objects);
 
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
-      var cube = MEEPESH.createCube(MEEPESH.gridCoordinates(
-          intersects[0].point.sub(direction)), "#" + MEEPESH.block_color.val());
+      var cube = BLOCKFORT.createCube(BLOCKFORT.gridCoordinates(
+          intersects[0].point.sub(direction)), "#" + BLOCKFORT.block_color.val());
       scene.add(cube);
-      MEEPESH.objects.push(cube);
+      BLOCKFORT.objects.push(cube);
     } else if (event.which === 3) { // right click
       var i = 0;
-      for (; i < MEEPESH.objects.length; ++i) {
-        if (MEEPESH.objects[i].id === intersects[0].object.id) {
-          if (i != 0) MEEPESH.objects.remove(i);
+      for (; i < BLOCKFORT.objects.length; ++i) {
+        if (BLOCKFORT.objects[i].id === intersects[0].object.id) {
+          if (i != 0) BLOCKFORT.objects.remove(i);
           break;
         }
       }
@@ -117,61 +117,61 @@ MEEPESH.buildClick = function(event) {
   }
 }
 
-MEEPESH.cube = function(cube) {
-  this.position = MEEPESH.gridCoordinates(cube.position);
+BLOCKFORT.cube = function(cube) {
+  this.position = BLOCKFORT.gridCoordinates(cube.position);
   this.color = cube.material.color.getHex();
   return this;
 }
 
 // Convert rendered world into a simplified format suitable for later
 // retrieval.
-MEEPESH.world = function() {
+BLOCKFORT.world = function() {
   var data = new Array();
   // Don't include floor in serialized objects.
-  for (i = 1; i < MEEPESH.objects.length; ++i) {
-    data.push(new MEEPESH.cube(MEEPESH.objects[i]));
+  for (i = 1; i < BLOCKFORT.objects.length; ++i) {
+    data.push(new BLOCKFORT.cube(BLOCKFORT.objects[i]));
   }
   return data;
 }
 
-MEEPESH.save = function(event) {
+BLOCKFORT.save = function(event) {
   // z
   if (event.keyCode !== 122) return;
-  MEEPESH.name = prompt("World name to save?", MEEPESH.name);
+  BLOCKFORT.name = prompt("World name to save?", BLOCKFORT.name);
   $.post("backend/save", {
-      name: MEEPESH.name, data: JSON.stringify(MEEPESH.world())
+      name: BLOCKFORT.name, data: JSON.stringify(BLOCKFORT.world())
   });
 }
 
-MEEPESH.load = function(event) {
+BLOCKFORT.load = function(event) {
   // x
   if (event.keyCode != 120) return;
-  MEEPESH.name = prompt("World name to load?", MEEPESH.name);
+  BLOCKFORT.name = prompt("World name to load?", BLOCKFORT.name);
   $.ajax({
       url: "backend/load", type: 'POST', async: false,
-      data: { name: MEEPESH.name },
+      data: { name: BLOCKFORT.name },
       success: function(data) {
         // TODO(ariw): This algorithm is slow as balls.
         data = eval(data)
         if (data.length > 0) {
           // Remove existing objects from scene except floor.
-          for (i = MEEPESH.objects.length - 1; i >= 1; --i) {
-            scene.remove(MEEPESH.objects[i])
-            MEEPESH.objects.remove(i);
+          for (i = BLOCKFORT.objects.length - 1; i >= 1; --i) {
+            scene.remove(BLOCKFORT.objects[i])
+            BLOCKFORT.objects.remove(i);
           }
           // Add new objects to scene.
           data = eval(data);
           for (i = 0; i < data.length; ++i) {
-            MEEPESH.objects.push(MEEPESH.createCube(
+            BLOCKFORT.objects.push(BLOCKFORT.createCube(
                 data[i].position, data[i].color));
-            scene.add(MEEPESH.objects[i + 1]);
+            scene.add(BLOCKFORT.objects[i + 1]);
           }
         }
       },
   });
 }
 
-MEEPESH.start = function() {
+BLOCKFORT.start = function() {
   t = THREE;
   renderer = new t.WebGLRenderer();
   width = document.body.clientWidth;
@@ -180,18 +180,18 @@ MEEPESH.start = function() {
   scene = new t.Scene();
   time = Date.now();
 
-  MEEPESH.blocker = $("#blocker");
-  MEEPESH.menu = $("#menu");
-  MEEPESH.block_color = $("#block_color");
-  MEEPESH.unitSize = 20;
-  MEEPESH.units = 1000;
-  MEEPESH.name = "Default";
-  MEEPESH.objects = new Array();
+  BLOCKFORT.blocker = $("#blocker");
+  BLOCKFORT.menu = $("#menu");
+  BLOCKFORT.block_color = $("#block_color");
+  BLOCKFORT.unitSize = 20;
+  BLOCKFORT.units = 1000;
+  BLOCKFORT.name = "Default";
+  BLOCKFORT.objects = new Array();
 
   // Floor.
-  var floor = MEEPESH.createFloor();
+  var floor = BLOCKFORT.createFloor();
   scene.add(floor);
-  MEEPESH.objects.push(floor);
+  BLOCKFORT.objects.push(floor);
 
   // White ambient light.
   var light = new t.AmbientLight(0xFFFFFF);
@@ -210,28 +210,28 @@ MEEPESH.start = function() {
                         'mozPointerLockElement' in document ||
                         'webkitPointerLockElement' in document;
   if (!havePointerLock) {
-    MEEPESH.menu.html("No pointer lock functionality detected!");
+    BLOCKFORT.menu.html("No pointer lock functionality detected!");
     return;
   }
-  MEEPESH.element = document.body;
+  BLOCKFORT.element = document.body;
   // TODO(ariw): This breaks on Firefox since we don't requestFullscreen()
   // first.
-  $(document).on('pointerlockchange', MEEPESH.pointerLockChange);
-  $(document).on('webkitpointerlockchange', MEEPESH.pointerLockChange);
-  $(document).on('mozpointerlockchange', MEEPESH.pointerLockChange);
+  $(document).on('pointerlockchange', BLOCKFORT.pointerLockChange);
+  $(document).on('webkitpointerlockchange', BLOCKFORT.pointerLockChange);
+  $(document).on('mozpointerlockchange', BLOCKFORT.pointerLockChange);
   $(document).on('pointerlockerror', function(event) {});
   $(document).on('webkitpointerlockerror', function(event) {});
   $(document).on('mozpointerlockerror', function(event) {});
-  MEEPESH.blocker.click(MEEPESH.pointerLockClick);
-  MEEPESH.menu.click(function(event) { event.stopPropagation(); });
+  BLOCKFORT.blocker.click(BLOCKFORT.pointerLockClick);
+  BLOCKFORT.menu.click(function(event) { event.stopPropagation(); });
 
-  MEEPESH.block_color.get(0).color.fromString("D4AF37");
+  BLOCKFORT.block_color.get(0).color.fromString("D4AF37");
 
   // Get the window ready.
   $(document.body).append(renderer.domElement);
   $(window).on('resize', onWindowResize);
 
   // Begin updating.
-  MEEPESH.update();
+  BLOCKFORT.update();
 }
 
