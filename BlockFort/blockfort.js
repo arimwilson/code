@@ -83,8 +83,9 @@ BLOCKFORT.createFloor = function() {
 // v should be in grid coordinates.
 BLOCKFORT.createCube = function(v, color) {
   var cube = new t.Mesh(
-      new t.CubeGeometry(BLOCKFORT.unitSize, BLOCKFORT.unitSize, BLOCKFORT.unitSize,
-                         BLOCKFORT.unitSize, BLOCKFORT.unitSize, BLOCKFORT.unitSize),
+      new t.CubeGeometry(BLOCKFORT.unitSize, BLOCKFORT.unitSize,
+                         BLOCKFORT.unitSize, BLOCKFORT.unitSize,
+                         BLOCKFORT.unitSize, BLOCKFORT.unitSize),
       new t.MeshLambertMaterial({ color: color, ambient: color })
   );
   cube.position.set(v.x * BLOCKFORT.unitSize, (v.y + 0.5) * BLOCKFORT.unitSize,
@@ -100,8 +101,9 @@ BLOCKFORT.buildClick = function(event) {
 
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
-      var cube = BLOCKFORT.createCube(BLOCKFORT.gridCoordinates(
-          intersects[0].point.sub(direction)), "#" + BLOCKFORT.block_color.val());
+      var cube = BLOCKFORT.createCube(
+          BLOCKFORT.gridCoordinates(intersects[0].point.sub(direction)),
+          "#" + BLOCKFORT.block_color.val());
       scene.add(cube);
       BLOCKFORT.objects.push(cube);
     } else if (event.which === 3) { // right click
