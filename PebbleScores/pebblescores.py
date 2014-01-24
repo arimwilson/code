@@ -106,7 +106,14 @@ class SubmitHandler(webapp.RequestHandler):
       if account_token is not None:
         user.account_token = account_token
       user.put()
-    # TODO(ariw): Re-enable account_token check once it's consistent in Pebble.
+    # TODO(ariw): Remove this overwriting of account_token once it's consistent
+    # in Pebble and users have a chance to register their username.
+    elif (user.account_token is not None and
+          account_token != user.account_token):
+      user.account_token = account_token
+      user.put()
+    # TODO(ariw): Re-enable account_token check once it's consistent in Pebble
+    # and we have a way to indicate to users that their username is taken.
     # elif (user.account_token is not None and
     #       account_token != user.account_token):
     #   logging.info(
