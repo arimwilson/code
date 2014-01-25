@@ -176,10 +176,13 @@ _HTML_TEMPLATE = """
 
 class ListHandler(webapp.RequestHandler):
   def get(self):
-    # Get the top 100 scores by game.
+    # Get the top 100 scores by game and optionally name.
     query = HighScore.all()
     game = self.request.get("game")
     query.filter("game =", game)
+    user = self.request.get("user", None)
+    if user:
+      query.filter("user =", user)
     query.order("-score")
     highscores = query.fetch(100)
     highscores_html = [highscoreHtml(highscore) for highscore in highscores]
