@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-
 # Example usage:
 # Fiji Way points:
 # Start: 33.973542,-118.445449
