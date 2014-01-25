@@ -199,6 +199,9 @@ BLOCKFORT.start = function() {
   var light = new t.AmbientLight(0xFFFFFF);
   scene.add(light);
 
+  // Blue background color.
+  renderer.setClearColor(0x00BFFF);
+
   // Set up controls.
   camera = new t.PerspectiveCamera(
       60,  // Field of view
