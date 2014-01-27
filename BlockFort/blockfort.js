@@ -128,10 +128,13 @@ BLOCKFORT.cube = function(cube) {
 // Convert rendered world into a simplified format suitable for later
 // retrieval.
 BLOCKFORT.world = function() {
-  var data = new Array();
+  var data = {};
+  data.position = controls.getObject().position;
+  data.direction = camera.matrixWorld;
+  data.objects = new Array();
   // Don't include floor in serialized objects.
   for (i = 1; i < BLOCKFORT.objects.length; ++i) {
-    data.push(new BLOCKFORT.cube(BLOCKFORT.objects[i]));
+    data.objects.push(new BLOCKFORT.cube(BLOCKFORT.objects[i]));
   }
   return data;
 }
@@ -154,18 +157,27 @@ BLOCKFORT.load = function(event) {
       data: { name: BLOCKFORT.name },
       success: function(data) {
         // TODO(ariw): This algorithm is slow as balls.
-        data = eval(data)
         if (data.length > 0) {
+          data = JSON.parse(JSON.parse(data))
+
           // Remove existing objects from scene except floor.
           for (i = BLOCKFORT.objects.length - 1; i >= 1; --i) {
             scene.remove(BLOCKFORT.objects[i])
             BLOCKFORT.objects.remove(i);
           }
-          // Add new objects to scene.
-          data = eval(data);
-          for (i = 0; i < data.length; ++i) {
+          // Load scene.
+          var objects;
+          // TODO(ariw): Remove this legacy mode.
+          if (data instanceof Array) {
+            objects = data;
+          } else {
+            objects = data.objects;
+            controls.getObject().position = data.position;
+            camera.matrixWorld = data.direction;
+          }
+          for (i = 0; i < objects.length; ++i) {
             BLOCKFORT.objects.push(BLOCKFORT.createCube(
-                data[i].position, data[i].color));
+                objects[i].position, objects[i].color));
             scene.add(BLOCKFORT.objects[i + 1]);
           }
         }

@@ -51,12 +51,17 @@ func load(w http.ResponseWriter, r *http.Request) {
   name := r.FormValue("name")
   var world *World
   _, world, err = getWorld(c, cur_user, name)
-  if err != nil && err != datastore.Done {
-    c.Errorf("Could not load world %s for user %s with error: %s",
-             name, cur_user, err.Error())
-    http.Error(w, err.Error(), http.StatusInternalServerError)
+  if err != nil {
+     c.Infof("Could not load world %s for user %s: %s.", name, cur_user,
+             err.Error())
+    if err == datastore.Done {
+      http.Error(w, err.Error(), http.StatusBadRequest)
+    } else {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
     return
   }
+
   encoder := json.NewEncoder(w)
   var data []byte
   data, err = unzip(world.Data)
