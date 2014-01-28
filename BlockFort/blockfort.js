@@ -119,24 +119,25 @@ BLOCKFORT.buildClick = function(event) {
   }
 }
 
-BLOCKFORT.cube = function(cube) {
-  this.position = BLOCKFORT.gridCoordinates(cube.position);
-  this.color = cube.material.color.getHex();
-  return this;
-}
-
 // Convert rendered world into a simplified format suitable for later
 // retrieval.
-BLOCKFORT.world = function() {
+BLOCKFORT.serialize = function() {
   var data = {};
   data.position = controls.getObject().position;
-  data.direction = camera.matrixWorld;
+  data.rotation = {};
+  data.rotation.x = controls.getObject().rotation._x;
+  data.rotation.y = controls.getObject().rotation._y;
+  data.rotation.z = controls.getObject().rotation._z;
   data.objects = new Array();
   // Don't include floor in serialized objects.
   for (i = 1; i < BLOCKFORT.objects.length; ++i) {
-    data.objects.push(new BLOCKFORT.cube(BLOCKFORT.objects[i]));
+    var object = {};
+    object.position = BLOCKFORT.gridCoordinates(BLOCKFORT.objects[i].position);
+    object.color = BLOCKFORT.objects[i].material.color.getHex();
+    data.objects.push(object);
   }
-  return data;
+  console.log(data);
+  return JSON.stringify(data);
 }
 
 BLOCKFORT.save = function(event) {
@@ -144,8 +145,38 @@ BLOCKFORT.save = function(event) {
   if (event.keyCode !== 122) return;
   BLOCKFORT.name = prompt("World name to save?", BLOCKFORT.name);
   $.post("backend/save", {
-      name: BLOCKFORT.name, data: JSON.stringify(BLOCKFORT.world())
+      name: BLOCKFORT.name, data: BLOCKFORT.serialize()
   });
+}
+
+// Convert simplified format into rendered world.
+BLOCKFORT.deserialize = function(data) {
+  // TODO(ariw): This algorithm is slow as balls.
+  if (data.length > 0) {
+    data = JSON.parse(JSON.parse(data));
+
+    // Remove existing objects from scene except floor.
+    for (i = BLOCKFORT.objects.length - 1; i >= 1; --i) {
+      scene.remove(BLOCKFORT.objects[i])
+      BLOCKFORT.objects.remove(i);
+    }
+    // Load scene.
+    var objects;
+    // TODO(ariw): Remove this legacy mode.
+    if (data instanceof Array) {
+      objects = data;
+    } else {
+      objects = data.objects;
+      controls.getObject().position.copy(data.position);
+      controls.getObject().rotation.set(
+          data.rotation.x, data.rotation.y, data.rotation.z);
+    }
+    for (i = 0; i < objects.length; ++i) {
+      BLOCKFORT.objects.push(BLOCKFORT.createCube(
+          objects[i].position, objects[i].color));
+      scene.add(BLOCKFORT.objects[i + 1]);
+    }
+  }
 }
 
 BLOCKFORT.load = function(event) {
@@ -154,34 +185,7 @@ BLOCKFORT.load = function(event) {
   BLOCKFORT.name = prompt("World name to load?", BLOCKFORT.name);
   $.ajax({
       url: "backend/load", type: 'POST', async: false,
-      data: { name: BLOCKFORT.name },
-      success: function(data) {
-        // TODO(ariw): This algorithm is slow as balls.
-        if (data.length > 0) {
-          data = JSON.parse(JSON.parse(data))
-
-          // Remove existing objects from scene except floor.
-          for (i = BLOCKFORT.objects.length - 1; i >= 1; --i) {
-            scene.remove(BLOCKFORT.objects[i])
-            BLOCKFORT.objects.remove(i);
-          }
-          // Load scene.
-          var objects;
-          // TODO(ariw): Remove this legacy mode.
-          if (data instanceof Array) {
-            objects = data;
-          } else {
-            objects = data.objects;
-            controls.getObject().position = data.position;
-            camera.matrixWorld = data.direction;
-          }
-          for (i = 0; i < objects.length; ++i) {
-            BLOCKFORT.objects.push(BLOCKFORT.createCube(
-                objects[i].position, objects[i].color));
-            scene.add(BLOCKFORT.objects[i + 1]);
-          }
-        }
-      },
+      data: { name: BLOCKFORT.name }, success: BLOCKFORT.deserialize,
   });
 }
 
