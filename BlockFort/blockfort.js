@@ -124,10 +124,8 @@ BLOCKFORT.buildClick = function(event) {
 BLOCKFORT.serialize = function() {
   var data = {};
   data.position = controls.getObject().position;
-  data.rotation = {};
-  data.rotation.x = controls.getObject().rotation._x;
-  data.rotation.y = controls.getObject().rotation._y;
-  data.rotation.z = controls.getObject().rotation._z;
+  data.yaw = controls.getObject().rotation.y;
+  data.pitch = controls.getObject().children[0].rotation.x;
   data.objects = new Array();
   // Don't include floor in serialized objects.
   for (i = 1; i < BLOCKFORT.objects.length; ++i) {
@@ -136,7 +134,6 @@ BLOCKFORT.serialize = function() {
     object.color = BLOCKFORT.objects[i].material.color.getHex();
     data.objects.push(object);
   }
-  console.log(data);
   return JSON.stringify(data);
 }
 
@@ -168,8 +165,8 @@ BLOCKFORT.deserialize = function(data) {
     } else {
       objects = data.objects;
       controls.getObject().position.copy(data.position);
-      controls.getObject().rotation.set(
-          data.rotation.x, data.rotation.y, data.rotation.z);
+      controls.getObject().rotation.set(0, data.yaw, 0);
+      controls.getObject().children[0].rotation.set(data.pitch, 0, 0);
     }
     for (i = 0; i < objects.length; ++i) {
       BLOCKFORT.objects.push(BLOCKFORT.createCube(
