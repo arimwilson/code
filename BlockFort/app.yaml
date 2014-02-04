@@ -24,6 +24,9 @@ handlers:
 - url: /jscolor
   static_dir: jscolor
 # API interface to persisted worlds.
-- url: /backend/.*
+- url: /load
+  script: _go_app
+  login: required
+- url: /save
   script: _go_app
   login: required

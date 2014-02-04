@@ -6,8 +6,8 @@ import (
 )
 
 func init() {
-  http.HandleFunc("/backend/load", load)
-  http.HandleFunc("/backend/save", save)
+  http.HandleFunc("/load", load)
+  http.HandleFunc("/save", save)
 }
 
 type World struct {

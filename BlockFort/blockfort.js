@@ -141,7 +141,7 @@ BLOCKFORT.save = function(event) {
   // z
   if (event.keyCode !== 122) return;
   BLOCKFORT.name = prompt("World name to save?", BLOCKFORT.name);
-  $.post("backend/save", {
+  $.post("save", {
       name: BLOCKFORT.name, data: BLOCKFORT.serialize()
   });
 }
@@ -181,7 +181,7 @@ BLOCKFORT.load = function(event) {
   if (event.keyCode != 120) return;
   BLOCKFORT.name = prompt("World name to load?", BLOCKFORT.name);
   $.ajax({
-      url: "backend/load", type: 'POST', async: false,
+      url: "load", type: 'POST', async: false,
       data: { name: BLOCKFORT.name }, success: BLOCKFORT.deserialize,
   });
 }
