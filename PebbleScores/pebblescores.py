@@ -102,8 +102,7 @@ class SubmitHandler(webapp.RequestHandler):
     account_token = request.get("account_token", None)
     user = getUser(username)
     if not user:
-      user = User(name = username, ip_address=self.request.remote_addr,
-                  num_saved_scores = 0)
+      user = User(name = username, ip_address=self.request.remote_addr)
       if account_token is not None:
         user.account_token = account_token
       user.put()
@@ -148,17 +147,19 @@ class SubmitHandler(webapp.RequestHandler):
     # stored kSavedScoresWindowSize scores.
     # TODO(ariw): This window should be per-game rather than per-user!
     kSavedScoresWindowSize = 10
+    user.num_saved_scores = (
+        user.name_saved_scores if user.name_saved_scores is not None else 0)
+    user.lowest_saved_score = (
+        user.lowest_saved_score if user.lowest_saved_scores is not None else 0)
     if (score == 0 or
         (user.num_saved_scores >= kSavedScoresWindowSize and
          user.lowest_saved_score >= score)):
       return
 
     # We may need to update the user's metadata based on the current score.
-    if (user.num_saved_scores is None or
-        user.num_saved_scores < kSavedScoresWindowSize):
-      user.num_saved_scores = (
-          user.num_saved_scores + 1 if user.num_saved_scores is not None else 1)
-      if user.lowest_saved_score is None or score < user.lowest_saved_score:
+    if user.num_saved_scores < kSavedScoresWindowSize:
+      user.num_saved_scores = user.num_saved_scores + 1
+      if score < user.lowest_saved_score:
         user.lowest_saved_score = score
       # We have to invalidate the user cache if we change the underlying user.
       memcache.delete(getEntitiesCacheKey("User", "name", username))
