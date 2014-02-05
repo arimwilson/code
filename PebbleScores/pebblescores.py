@@ -51,25 +51,25 @@ def getEntities(model, property, filter):
   cache_key = getEntitiesCacheKey(model, property, filter)
   client = memcache.Client()
   entities = client.get(cache_key)
-  if entities:
+  if entities is not None:
     return entities
   query = eval(model).all()
   query.filter("%s =" % property, filter)
   entities = [entity for entity in query]
-  if not entities:
-    return entities
+  if entities is None:
+    return
   client.add(cache_key, entities)
   return entities
 
 def getUser(username):
   users = getEntities("User", "name", username)
-  if not users:
+  if users is None:
     return
   return users[0]
 
 def getGame(game):
   games = getEntities("Game", "name", game)
-  if not games:
+  if games is None:
     return
   return games[0]
 
@@ -109,7 +109,7 @@ class SubmitHandler(webapp.RequestHandler):
       return
     account_token = request.get("account_token", None)
     user = getUser(username)
-    if not user:
+    if user is None:
       user = User(name = username, ip_address=self.request.remote_addr)
       if account_token is not None:
         user.account_token = account_token
@@ -130,7 +130,7 @@ class SubmitHandler(webapp.RequestHandler):
     #   self.error(401)
     #   return
     game = getGame(getTwice(request, "name", "1"))
-    if not game:
+    if game is None:
       logging.error("Game %s not found, request: %s." % (
           getTwice(request, "name", "1"), self.request.body))
       self.error(400)
