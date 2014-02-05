@@ -24,7 +24,7 @@ class User(db.Model):
   name = db.StringProperty(required = True)
   account_token = db.StringProperty()
   ip_address = db.StringProperty(required = True)
-  saved_scores_window = db.ListProperty(long)
+  saved_scores_window = db.ListProperty(int)
 
 class HighScore(db.Model):
   # TODO(ariw): Should game and user be reference properties?
@@ -147,7 +147,7 @@ class SubmitHandler(webapp.RequestHandler):
     # TODO(ariw): This window should be per-game rather than per-user!
     kSavedScoresWindowSize = 10
     user.saved_scores_window = (
-        user.saved_scores_window if user.lowest_saved_scores is not None else [])
+        user.saved_scores_window if user.saved_scores_window is not None else [])
     if (score == 0 or
         (len(user.saved_scores_window) >= kSavedScoresWindowSize and
          user.saved_scores_window[0] >= score)):
