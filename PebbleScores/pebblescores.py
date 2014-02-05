@@ -152,6 +152,8 @@ class SubmitHandler(webapp.RequestHandler):
     if (score == 0 or
         (len(user.saved_scores_window) >= kSavedScoresWindowSize and
          score < user.saved_scores_window[0])):
+      logging.info("Score %d for user %s was too low to be saved." % (
+          score, username))
       return
 
     # We need to update the user's metadata based on the current score.
