@@ -79,8 +79,7 @@ def setEntities(model, property, filter, entities):
   cache_key = getEntitiesCacheKey(model, property, filter)
   client = memcache.Client()
   client.set(cache_key, entities)
-  for entity in entities:
-    entity.put()
+  db.put_async(entities)
 
 def validateNonce(nonce):
   client = memcache.Client()
@@ -103,32 +102,12 @@ class SubmitHandler(webapp.RequestHandler):
     request = json.loads(self.request.body)
     username = request.get(
         "username", self.request.headers.get("X-PEBBLE-ID", None))
+
+    # Has the user configured their game yet?
     if username is None or username == "":
       logging.info("No username in request.")
       self.error(400)
       return
-    account_token = request.get("account_token", None)
-    user = getUser(username)
-    if user is None:
-      user = User(name = username, ip_address=self.request.remote_addr)
-      if account_token is not None:
-        user.account_token = account_token
-    # TODO(ariw): Remove this overwriting of account_token once it's consistent
-    # in Pebble and users have a chance to register their username.
-    elif (user.account_token is not None and
-          account_token != user.account_token):
-      user.account_token = account_token
-      setEntities("User", "name", username, [user])
-    # TODO(ariw): Re-enable account_token check once it's consistent in Pebble
-    # and we have a way to indicate to users that their username is taken.
-    # elif (user.account_token is not None and
-    #       account_token != user.account_token):
-    #   logging.info(
-    #       "Server account token %s for user %s did not match request token " \
-    #       "%s, request: %s." % (
-    #           user.account_token, username, account_token, self.request.body))
-    #   self.error(401)
-    #   return
     game = getGame(getTwice(request, "name", "1"))
     if game is None:
       logging.error("Game %s not found, request: %s." % (
@@ -150,6 +129,30 @@ class SubmitHandler(webapp.RequestHandler):
       self.error(401)
       return
 
+    account_token = request.get("account_token", None)
+    # TODO(ariw): All User reads/writes should be running in a transaction to
+    # prevent a race condition (multiple User entries stored).
+    user = getUser(username)
+    if user is None:
+      user = User(name = username, ip_address=self.request.remote_addr)
+      if account_token is not None:
+        user.account_token = account_token
+    # TODO(ariw): Remove this overwriting of account_token once it's consistent
+    # in Pebble and users have a chance to register their username.
+    elif (user.account_token is not None and
+          account_token != user.account_token):
+      user.account_token = account_token
+      setEntities("User", "name", username, [user])
+    # TODO(ariw): Re-enable account_token check once it's consistent in Pebble
+    # and we have a way to indicate to users that their username is taken.
+    # elif (user.account_token is not None and
+    #       account_token != user.account_token):
+    #   logging.info(
+    #       "Server account token %s for user %s did not match request token " \
+    #       "%s, request: %s." % (
+    #           user.account_token, username, account_token, self.request.body))
+    #   self.error(401)
+    #   return
     # Don't store a highscore entry if the score was 0 or low and we already
     # stored kSavedScoresWindowSize scores.
     # TODO(ariw): This window should be per-game rather than per-user!
@@ -175,7 +178,7 @@ class SubmitHandler(webapp.RequestHandler):
     # Save the high score!
     highscore = HighScore(
         game = game.name, user = user.name, score = score)
-    highscore.put()
+    db.put_async(highscore)
 
 _HIGHSCORE_HTML_TEMPLATE = """
   <li><b>%(highscore)s</b> - %(username)s"""
