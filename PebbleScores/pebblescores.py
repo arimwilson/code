@@ -103,7 +103,7 @@ class SubmitHandler(webapp.RequestHandler):
     request = json.loads(self.request.body)
     username = request.get(
         "username", self.request.headers.get("X-PEBBLE-ID", None))
-    if username is None:
+    if username is None or username == "":
       logging.info("No username in request.")
       self.error(400)
       return
