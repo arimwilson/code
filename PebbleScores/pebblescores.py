@@ -158,7 +158,7 @@ class SubmitHandler(webapp.RequestHandler):
         user.saved_scores_window if user.saved_scores_window is not None else [])
     if (score == 0 or
         (len(user.saved_scores_window) >= kSavedScoresWindowSize and
-         score < user.saved_scores_window[0])):
+         score <= user.saved_scores_window[0])):
       logging.info("Score %d for user %s was too low to be saved." % (
           score, username))
       return
@@ -167,7 +167,7 @@ class SubmitHandler(webapp.RequestHandler):
     if len(user.saved_scores_window) < kSavedScoresWindowSize:
       user.saved_scores_window.append(score)
     else:
-      assert score >= user.saved_scores_window[0]
+      assert score > user.saved_scores_window[0]
       user.saved_scores_window[0] = score
     user.saved_scores_window.sort()  # Could just merge the element in here.
     setEntities("User", "name", username, [user])
