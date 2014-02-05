@@ -110,6 +110,7 @@ class SubmitHandler(webapp.RequestHandler):
     elif (user.account_token is not None and
           account_token != user.account_token):
       user.account_token = account_token
+      memcache.delete(getEntitiesCacheKey("User", "name", username))
       user.put()
     # TODO(ariw): Re-enable account_token check once it's consistent in Pebble
     # and we have a way to indicate to users that their username is taken.
@@ -150,21 +151,19 @@ class SubmitHandler(webapp.RequestHandler):
         user.saved_scores_window if user.saved_scores_window is not None else [])
     if (score == 0 or
         (len(user.saved_scores_window) >= kSavedScoresWindowSize and
-         user.saved_scores_window[0] >= score)):
+         score < user.saved_scores_window[0])):
       return
 
-    # We may need to update the user's metadata based on the current score.
+    # We need to update the user's metadata based on the current score.
     if len(user.saved_scores_window) < kSavedScoresWindowSize:
       user.saved_scores_window.append(score)
-      user.saved_scores_window.sort()  # Could just merge the element in here.
-      # We have to invalidate the user cache if we change the underlying user.
-      memcache.delete(getEntitiesCacheKey("User", "name", username))
-      user.put()
-    elif user.saved_scores_window[0] < score:
+    else:
+      assert score >= user.saved_scores_window[0]
       user.saved_scores_window[0] = score
-      user.saved_scores_window.sort()
-      memcache.delete(getEntitiesCacheKey("User", "name", username))
-      user.put()
+    user.saved_scores_window.sort()  # Could just merge the element in here.
+    # We have to invalidate the user cache if we change the underlying user.
+    memcache.delete(getEntitiesCacheKey("User", "name", username))
+    user.put()
 
     # Save the high score!
     highscore = HighScore(
