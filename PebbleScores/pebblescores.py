@@ -24,8 +24,7 @@ class User(db.Model):
   name = db.StringProperty(required = True)
   account_token = db.StringProperty()
   ip_address = db.StringProperty(required = True)
-  num_saved_scores = db.IntegerProperty()
-  lowest_saved_score = db.IntegerProperty()
+  saved_scores_window = db.ListProperty(long)
 
 class HighScore(db.Model):
   # TODO(ariw): Should game and user be reference properties?
@@ -147,26 +146,23 @@ class SubmitHandler(webapp.RequestHandler):
     # stored kSavedScoresWindowSize scores.
     # TODO(ariw): This window should be per-game rather than per-user!
     kSavedScoresWindowSize = 10
-    user.num_saved_scores = (
-        user.name_saved_scores if user.name_saved_scores is not None else 0)
-    user.lowest_saved_score = (
-        user.lowest_saved_score if user.lowest_saved_scores is not None else 0)
+    user.saved_scores_window = (
+        user.saved_scores_window if user.lowest_saved_scores is not None else [])
     if (score == 0 or
-        (user.num_saved_scores >= kSavedScoresWindowSize and
-         user.lowest_saved_score >= score)):
+        (len(user.saved_scores_window) >= kSavedScoresWindowSize and
+         user.saved_scores_window[0] >= score)):
       return
 
     # We may need to update the user's metadata based on the current score.
-    if user.num_saved_scores < kSavedScoresWindowSize:
-      user.num_saved_scores = user.num_saved_scores + 1
-      if score < user.lowest_saved_score:
-        user.lowest_saved_score = score
+    if len(user.saved_scores_window) < kSavedScoresWindowSize:
+      user.saved_scores_window.append(score)
+      user.saved_scores_window.sort()  # Could just merge the element in here.
       # We have to invalidate the user cache if we change the underlying user.
       memcache.delete(getEntitiesCacheKey("User", "name", username))
       user.put()
-    elif user.lowest_saved_score < score:
-      user.num_saved_scores += 1
-      user.lowest_saved_score = score
+    elif user.saved_scores_window[0] < score:
+      user.saved_scores_window[0] = score
+      user.saved_scores_window.sort()
       memcache.delete(getEntitiesCacheKey("User", "name", username))
       user.put()
 
