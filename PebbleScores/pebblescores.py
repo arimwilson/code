@@ -56,20 +56,20 @@ def getEntities(model, property, filter):
   query = eval(model).all()
   query.filter("%s =" % property, filter)
   entities = [entity for entity in query]
-  if entities is None:
-    return
+  if not entities:
+    return entities
   client.add(cache_key, entities)
   return entities
 
 def getUser(username):
   users = getEntities("User", "name", username)
-  if users is None:
+  if not users:
     return
   return users[0]
 
 def getGame(game):
   games = getEntities("Game", "name", game)
-  if games is None:
+  if not games:
     return
   return games[0]
 
