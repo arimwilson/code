@@ -24,7 +24,8 @@ class User(db.Model):
   name = db.StringProperty(required = True)
   account_token = db.StringProperty()
   ip_address = db.StringProperty(required = True)
-  num_zero_games = db.IntegerProperty()
+  num_saved_scores = db.IntegerProperty()
+  lowest_saved_score = db.IntegerProperty()
 
 class HighScore(db.Model):
   # TODO(ariw): Should game and user be reference properties?
@@ -102,9 +103,15 @@ class SubmitHandler(webapp.RequestHandler):
     user = getUser(username)
     if not user:
       user = User(name = username, ip_address=self.request.remote_addr,
-                  num_zero_games = 0)
+                  num_saved_scores = 0)
       if account_token is not None:
         user.account_token = account_token
+      user.put()
+    # TODO(ariw): Remove this overwriting of account_token once it's consistent
+    # in Pebble and users have a chance to register their username.
+    elif (user.account_token is not None and
+          account_token != user.account_token):
+      user.account_token = account_token
       user.put()
     # TODO(ariw): Re-enable account_token check once it's consistent in Pebble
     # and we have a way to indicate to users that their username is taken.
@@ -137,13 +144,32 @@ class SubmitHandler(webapp.RequestHandler):
       self.error(401)
       return
 
-    # Don't store a highscore entry if the score was 0.
-    if score == 0:
-      user.num_zero_games += 1
-      # Have to invalidate user cache since we're changing the underlying user.
+    # Don't store a highscore entry if the score was 0 or low and we already
+    # stored kSavedScoresWindowSize scores.
+    # TODO(ariw): This window should be per-game rather than per-user!
+    kSavedScoresWindowSize = 10
+    if (score == 0 or
+        (user.num_saved_scores >= kSavedScoresWindowSize and
+         user.lowest_saved_score >= score)):
+      return
+
+    # We may need to update the user's metadata based on the current score.
+    if (user.num_saved_scores is None or
+        user.num_saved_scores < kSavedScoresWindowSize):
+      user.num_saved_scores = (
+          user.num_saved_scores + 1 if user.num_saved_scores is not None else 1)
+      if user.lowest_saved_score is None or score < user.lowest_saved_score:
+        user.lowest_saved_score = score
+      # We have to invalidate the user cache if we change the underlying user.
       memcache.delete(getEntitiesCacheKey("User", "name", username))
       user.put()
-      return
+    elif user.lowest_saved_score < score:
+      user.num_saved_scores += 1
+      user.lowest_saved_score = score
+      memcache.delete(getEntitiesCacheKey("User", "name", username))
+      user.put()
+
+    # Save the high score!
     highscore = HighScore(
         game = game.name, user = user.name, score = score)
     highscore.put()
