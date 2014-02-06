@@ -19,12 +19,15 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 class Game(db.Model):
   name = db.StringProperty(required = True)
   mac_key = db.BlobProperty(required = True)
+  # TODO(ariw): This should probably be auto-updated.
+  low_score = db.IntegerProperty(default = 0)
 
 class User(db.Model):
   name = db.StringProperty(required = True)
   account_token = db.StringProperty()
   ip_address = db.StringProperty(required = True)
-  saved_scores_window = db.ListProperty(int)
+  # Should probably be named num_low_scoring_games.
+  num_zero_games = db.IntegerProperty(default = 0)
 
 class HighScore(db.Model):
   # TODO(ariw): Should game and user be reference properties?
@@ -65,12 +68,14 @@ def getUser(username):
   users = getEntities("User", "name", username)
   if not users:
     return
+  assert len(users) == 1, "More than one user with name %s." % username
   return users[0]
 
 def getGame(game):
   games = getEntities("Game", "name", game)
   if not games:
     return
+  assert len(games) == 1, "More than one game with name %s." % game
   return games[0]
 
 # Set a list of entities of type model with property=filter in memcache and the
@@ -80,6 +85,9 @@ def setEntities(model, property, filter, entities):
   client = memcache.Client()
   client.set(cache_key, entities)
   db.put_async(entities)
+
+def setUser(user, username):
+  return setEntities("User", "name", username, [user])
 
 def validateNonce(nonce):
   client = memcache.Client()
@@ -102,12 +110,12 @@ class SubmitHandler(webapp.RequestHandler):
     request = json.loads(self.request.body)
     username = request.get(
         "username", self.request.headers.get("X-PEBBLE-ID", None))
-
     # Has the user configured their game yet?
     if username is None or username == "":
       logging.info("No username in request.")
       self.error(400)
       return
+
     game = getGame(getTwice(request, "name", "1"))
     if game is None:
       logging.error("Game %s not found, request: %s." % (
@@ -130,19 +138,19 @@ class SubmitHandler(webapp.RequestHandler):
       return
 
     account_token = request.get("account_token", None)
-    # TODO(ariw): All User reads/writes should be running in a transaction to
-    # prevent a race condition (multiple User entries stored).
+    # TODO(ariw): This view of User is not guaranteed to be consistent at all.
     user = getUser(username)
     if user is None:
       user = User(name = username, ip_address=self.request.remote_addr)
       if account_token is not None:
         user.account_token = account_token
+      setUser(user, username)
     # TODO(ariw): Remove this overwriting of account_token once it's consistent
     # in Pebble and users have a chance to register their username.
     elif (user.account_token is not None and
           account_token != user.account_token):
       user.account_token = account_token
-      setEntities("User", "name", username, [user])
+      setUser(user, username)
     # TODO(ariw): Re-enable account_token check once it's consistent in Pebble
     # and we have a way to indicate to users that their username is taken.
     # elif (user.account_token is not None and
@@ -153,27 +161,11 @@ class SubmitHandler(webapp.RequestHandler):
     #           user.account_token, username, account_token, self.request.body))
     #   self.error(401)
     #   return
-    # Don't store a highscore entry if the score was 0 or low and we already
-    # stored kSavedScoresWindowSize scores.
-    # TODO(ariw): This window should be per-game rather than per-user!
-    kSavedScoresWindowSize = 10
-    user.saved_scores_window = (
-        user.saved_scores_window if user.saved_scores_window is not None else [])
-    if (score == 0 or
-        (len(user.saved_scores_window) >= kSavedScoresWindowSize and
-         score <= user.saved_scores_window[0])):
-      logging.info("Score %d for user %s was too low to be saved." % (
-          score, username))
+    # Don't store a highscore entry if the score was too low.
+    if score <= game.low_score:
+      user.num_zero_games = user.num_zero_games + 1
+      setUser(user, username)
       return
-
-    # We need to update the user's metadata based on the current score.
-    if len(user.saved_scores_window) < kSavedScoresWindowSize:
-      user.saved_scores_window.append(score)
-    else:
-      assert score > user.saved_scores_window[0]
-      user.saved_scores_window[0] = score
-    user.saved_scores_window.sort()  # Could just merge the element in here.
-    setEntities("User", "name", username, [user])
 
     # Save the high score!
     highscore = HighScore(
