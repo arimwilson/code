@@ -163,7 +163,7 @@ class SubmitHandler(webapp.RequestHandler):
     #   return
     # Don't store a highscore entry if the score was too low.
     if score <= game.low_score:
-      user.num_zero_games = user.num_zero_games + 1
+      user.num_zero_games += 1
       setUser(user, username)
       return
 
