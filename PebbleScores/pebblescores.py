@@ -78,17 +78,6 @@ def getGame(game):
   assert len(games) == 1, "More than one game with name %s." % game
   return games[0]
 
-# Set a list of entities of type model with property=filter in memcache and the
-# datastore.
-def setEntities(model, property, filter, entities):
-  cache_key = getEntitiesCacheKey(model, property, filter)
-  client = memcache.Client()
-  client.set(cache_key, entities)
-  db.put_async(entities)
-
-def setUser(user, username):
-  return setEntities("User", "name", username, [user])
-
 def validateNonce(nonce):
   client = memcache.Client()
   validated_nonce = client.gets(nonce)
@@ -144,13 +133,15 @@ class SubmitHandler(webapp.RequestHandler):
       user = User(name = username, ip_address=self.request.remote_addr)
       if account_token is not None:
         user.account_token = account_token
-      setUser(user, username)
+      memcache.delete(getEntitiesCacheKey("User", "name", username))
+      user.put()
     # TODO(ariw): Remove this overwriting of account_token once it's consistent
     # in Pebble and users have a chance to register their username.
     elif (user.account_token is not None and
           account_token != user.account_token):
       user.account_token = account_token
-      setUser(user, username)
+      memcache.delete(getEntitiesCacheKey("User", "name", username))
+      user.put()
     # TODO(ariw): Re-enable account_token check once it's consistent in Pebble
     # and we have a way to indicate to users that their username is taken.
     # elif (user.account_token is not None and
@@ -164,8 +155,9 @@ class SubmitHandler(webapp.RequestHandler):
     # Don't store a highscore entry if the score was too low.
     if score <= game.low_score:
       user.num_zero_games += 1
-      setUser(user, username)
-      return
+      # We have to invalidate the user cache if we change the underlying user.
+      memcache.delete(getEntitiesCacheKey("User", "name", username))
+      user.put()
 
     # Save the high score!
     highscore = HighScore(
