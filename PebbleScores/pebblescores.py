@@ -26,6 +26,7 @@ class User(db.Model):
   name = db.StringProperty(required = True)
   account_token = db.StringProperty()
   ip_address = db.StringProperty(required = True)
+  created = db.DateTimeProperty(auto_now_add = True)
   # Should probably be named num_low_scoring_games.
   num_zero_games = db.IntegerProperty(default = 0)
 
@@ -68,14 +69,14 @@ def getUser(username):
   users = getEntities("User", "name", username)
   if not users:
     return
-  assert len(users) == 1, "More than one user with name %s." % username
+  assert len(users) <= 1, "More than one user with name %s." % username
   return users[0]
 
 def getGame(game):
   games = getEntities("Game", "name", game)
   if not games:
     return
-  assert len(games) == 1, "More than one game with name %s." % game
+  assert len(games) <= 1, "More than one game with name %s." % game
   return games[0]
 
 def validateNonce(nonce):
@@ -158,11 +159,12 @@ class SubmitHandler(webapp.RequestHandler):
       # We have to invalidate the user cache if we change the underlying user.
       memcache.delete(getEntitiesCacheKey("User", "name", username))
       user.put()
+      return
 
     # Save the high score!
     highscore = HighScore(
         game = game.name, user = user.name, score = score)
-    db.put_async(highscore)
+    db.put(highscore)
 
 _HIGHSCORE_HTML_TEMPLATE = """
   <li><b>%(highscore)s</b> - %(username)s"""
@@ -205,3 +207,4 @@ app = webapp.WSGIApplication([
     ('/submit', SubmitHandler),
     ('/list', ListHandler),
   ])
+

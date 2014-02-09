@@ -58,8 +58,12 @@ const float kVelocityIncrease = 1.05;
 
 Window* game_window;
 
-TextLayer* text_layer;
-char text[12 /* kTextLength */];
+TextLayer* high_score_text_layer;
+char high_score_text[12 /* kTextLength */];
+int high_score;
+
+TextLayer* score_text_layer;
+char score_text[12 /* kTextLength */];
 int score = 0;
 int sent_score;
 
@@ -321,7 +325,12 @@ void handle_timer(void* data) {
   // Check to see if game is over yet.
   Circle* circle = layer_get_data(circle_layer);
   if (circle->y < 0) {
+    // Send the score / update the persisted high score if necessary.
     send_score(score);
+    if (score > high_score) {
+      high_score = score;
+      persist_write_int(0, high_score);
+    }
     reset();
     // Don't update the screen for a bit to let the user see their score after
     // a game over.
@@ -334,9 +343,11 @@ void handle_timer(void* data) {
 
   handle_accel();
 
-  // Update the text.
-  snprintf(text, kTextLength, "%d", score);
-  text_layer_set_text(text_layer, text);
+  // Update the score texts.
+  snprintf(high_score_text, kTextLength, "%d", high_score);
+  text_layer_set_text(high_score_text_layer, high_score_text);
+  snprintf(score_text, kTextLength, "%d", score);
+  text_layer_set_text(score_text_layer, score_text);
 
   // Update the player circle.
   bool intersects_x = false, intersects_y = false;
@@ -403,12 +414,18 @@ void handle_init() {
   // Initialize the lines to fall down.
   lines_init(root_layer, &line_layers);
 
-  // Initialize the score.
-  text_layer = text_layer_create(GRect(0, 0, kWidth, kTextSize));
-  text_layer_set_text_alignment(text_layer, GTextAlignmentRight);
-  text_layer_set_background_color(text_layer, GColorClear);
-  text_layer_set_text_color(text_layer, GColorWhite);
-  layer_add_child(root_layer, (Layer*)text_layer);
+  // Initialize the score / high score.
+  high_score = persist_read_int(0);
+  high_score_text_layer = text_layer_create(GRect(0, 0, kWidth, kTextSize));
+  text_layer_set_text_alignment(high_score_text_layer, GTextAlignmentLeft);
+  text_layer_set_background_color(high_score_text_layer, GColorClear);
+  text_layer_set_text_color(high_score_text_layer, GColorWhite);
+  layer_add_child(root_layer, (Layer*)high_score_text_layer);
+  score_text_layer = text_layer_create(GRect(0, 0, kWidth, kTextSize));
+  text_layer_set_text_alignment(score_text_layer, GTextAlignmentRight);
+  text_layer_set_background_color(score_text_layer, GColorClear);
+  text_layer_set_text_color(score_text_layer, GColorWhite);
+  layer_add_child(root_layer, (Layer*)score_text_layer);
 
   // Initialize the player circle.
   circle_init(root_layer, kWidth / 2 - kCircleRadius,  0, &circle_layer);
@@ -437,7 +454,8 @@ void handle_deinit() {
   for (int i = 0; i < kLineCount; ++i) {
     layer_destroy(line_layers[i]);
   }
-  text_layer_destroy(text_layer);
+  text_layer_destroy(high_score_text_layer);
+  text_layer_destroy(score_text_layer);
   layer_destroy(circle_layer);
   deinit_settings();
 }
