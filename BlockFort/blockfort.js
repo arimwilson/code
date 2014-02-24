@@ -17,12 +17,12 @@ cameraDirection = function() {
 }
 
 // Global object for scene-specific stuff.
-var BLOCKFORT = {
+var blockfort = {
 }
 
-BLOCKFORT.update = function() {
+blockfort.update = function() {
   // Render the scene.
-  requestAnimationFrame(BLOCKFORT.update);
+  requestAnimationFrame(blockfort.update);
   renderer.render(scene, camera);
 
   // Update controls.
@@ -30,46 +30,47 @@ BLOCKFORT.update = function() {
   time = Date.now();
 }
 
-BLOCKFORT.pointerLockChange = function(event) {
-  if (document.pointerLockElement === BLOCKFORT.element ||
-      document.webkitPointerLockElement === BLOCKFORT.element ||
-      document.mozPointerLockElement === BLOCKFORT.element) {
+blockfort.pointerLockChange = function(event) {
+  if (document.pointerLockElement === blockfort.element ||
+      document.webkitPointerLockElement === blockfort.element ||
+      document.mozPointerLockElement === blockfort.element) {
     controls.enabled = true;
-    $(document).click(BLOCKFORT.buildClick);
-    $(document).keypress(BLOCKFORT.save);
-    $(document).keypress(BLOCKFORT.load);
+    $(document).click(blockfort.buildClick);
+    $(document).keypress(blockfort.save);
+    $(document).keypress(blockfort.load);
+    $(document).keypress(blockfort.share);
 
-    BLOCKFORT.blocker.hide();
+    blockfort.blocker.hide();
   } else {
     controls.enabled = false;
     $(document).off('click');
     $(document).off('keypress');
 
-    BLOCKFORT.blocker.show();
+    blockfort.blocker.show();
   }
 }
 
-BLOCKFORT.pointerLockClick = function(event) {
-  BLOCKFORT.element.requestPointerLock =
-      BLOCKFORT.element.requestPointerLock ||
-      BLOCKFORT.element.webkitRequestPointerLock ||
-      BLOCKFORT.element.mozRequestPointerLock;
-  BLOCKFORT.element.requestPointerLock();
+blockfort.pointerLockClick = function(event) {
+  blockfort.element.requestPointerLock =
+      blockfort.element.requestPointerLock ||
+      blockfort.element.webkitRequestPointerLock ||
+      blockfort.element.mozRequestPointerLock;
+  blockfort.element.requestPointerLock();
 }
 
 // Given world coordinates, return grid coordinates.
-BLOCKFORT.gridCoordinates = function(v) {
+blockfort.gridCoordinates = function(v) {
   var u = new t.Vector3();
-  u.x = Math.floor(v.x / BLOCKFORT.unitSize);
-  u.y = Math.floor(v.y / BLOCKFORT.unitSize);
-  u.z = Math.floor(v.z / BLOCKFORT.unitSize);
+  u.x = Math.floor(v.x / blockfort.unitSize);
+  u.y = Math.floor(v.y / blockfort.unitSize);
+  u.z = Math.floor(v.z / blockfort.unitSize);
   return u;
 }
 
-BLOCKFORT.createFloor = function() {
+blockfort.createFloor = function() {
   var geometry = new t.PlaneGeometry(
-      BLOCKFORT.unitSize * BLOCKFORT.units, BLOCKFORT.unitSize * BLOCKFORT.units,
-      BLOCKFORT.unitSize, BLOCKFORT.unitSize);
+      blockfort.unitSize * blockfort.units, blockfort.unitSize * blockfort.units,
+      blockfort.unitSize, blockfort.unitSize);
   // Floors generally are on the xz plane rather than the yz plane. Rotate it
   // there :).
   geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
@@ -81,36 +82,36 @@ BLOCKFORT.createFloor = function() {
 }
 
 // v should be in grid coordinates.
-BLOCKFORT.createCube = function(v, color) {
+blockfort.createCube = function(v, color) {
   var cube = new t.Mesh(
-      new t.CubeGeometry(BLOCKFORT.unitSize, BLOCKFORT.unitSize,
-                         BLOCKFORT.unitSize, BLOCKFORT.unitSize,
-                         BLOCKFORT.unitSize, BLOCKFORT.unitSize),
+      new t.CubeGeometry(blockfort.unitSize, blockfort.unitSize,
+                         blockfort.unitSize, blockfort.unitSize,
+                         blockfort.unitSize, blockfort.unitSize),
       new t.MeshLambertMaterial({ color: color, ambient: color })
   );
-  cube.position.set(v.x * BLOCKFORT.unitSize, (v.y + 0.5) * BLOCKFORT.unitSize,
-                    v.z * BLOCKFORT.unitSize);
+  cube.position.set(v.x * blockfort.unitSize, (v.y + 0.5) * blockfort.unitSize,
+                    v.z * blockfort.unitSize);
   return cube;
 }
 
 // Build blocks / destroy blocks controls.
-BLOCKFORT.buildClick = function(event) {
+blockfort.buildClick = function(event) {
   var direction = cameraDirection();
   var ray = new t.Raycaster(controls.getObject().position, direction);
-  var intersects = ray.intersectObjects(BLOCKFORT.objects);
+  var intersects = ray.intersectObjects(blockfort.objects);
 
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
-      var cube = BLOCKFORT.createCube(
-          BLOCKFORT.gridCoordinates(intersects[0].point.sub(direction)),
-          "#" + BLOCKFORT.block_color.val());
+      var cube = blockfort.createCube(
+          blockfort.gridCoordinates(intersects[0].point.sub(direction)),
+          "#" + blockfort.block_color.val());
       scene.add(cube);
-      BLOCKFORT.objects.push(cube);
+      blockfort.objects.push(cube);
     } else if (event.which === 3) { // right click
       var i = 0;
-      for (; i < BLOCKFORT.objects.length; ++i) {
-        if (BLOCKFORT.objects[i].id === intersects[0].object.id) {
-          if (i != 0) BLOCKFORT.objects.remove(i);
+      for (; i < blockfort.objects.length; ++i) {
+        if (blockfort.objects[i].id === intersects[0].object.id) {
+          if (i != 0) blockfort.objects.remove(i);
           break;
         }
       }
@@ -121,72 +122,80 @@ BLOCKFORT.buildClick = function(event) {
 
 // Convert rendered world into a simplified format suitable for later
 // retrieval.
-BLOCKFORT.serialize = function() {
+blockfort.serialize = function() {
   var data = {};
   data.position = controls.getObject().position;
   data.yaw = controls.getObject().rotation.y;
   data.pitch = controls.getObject().children[0].rotation.x;
   data.objects = new Array();
   // Don't include floor in serialized objects.
-  for (i = 1; i < BLOCKFORT.objects.length; ++i) {
+  for (i = 1; i < blockfort.objects.length; ++i) {
     var object = {};
-    object.position = BLOCKFORT.gridCoordinates(BLOCKFORT.objects[i].position);
-    object.color = BLOCKFORT.objects[i].material.color.getHex();
+    object.position = blockfort.gridCoordinates(blockfort.objects[i].position);
+    object.color = blockfort.objects[i].material.color.getHex();
     data.objects.push(object);
   }
   return JSON.stringify(data);
 }
 
-BLOCKFORT.save = function(event) {
+blockfort.save = function(event) {
   // z
   if (event.keyCode !== 122) return;
-  BLOCKFORT.name = prompt("World name to save?", BLOCKFORT.name);
-  $.post("save", {
-      name: BLOCKFORT.name, data: BLOCKFORT.serialize()
-  });
+  blockfort.name = prompt("World name to save?", blockfort.name);
+  if (blockfort.name == null) return;
+  $.post("save", { name: blockfort.name, data: blockfort.serialize() },
+         function(data) { blockfort.id = data; }
+  );
 }
 
 // Convert simplified format into rendered world.
-BLOCKFORT.deserialize = function(data) {
+blockfort.deserialize = function(data) {
   // TODO(ariw): This algorithm is slow as balls.
-  if (data.length > 0) {
-    data = JSON.parse(JSON.parse(data));
+  if (data.length = 0) return;
+  data = JSON.parse(data);
 
-    // Remove existing objects from scene except floor.
-    for (i = BLOCKFORT.objects.length - 1; i >= 1; --i) {
-      scene.remove(BLOCKFORT.objects[i])
-      BLOCKFORT.objects.remove(i);
-    }
-    // Load scene.
-    var objects;
-    // TODO(ariw): Remove this legacy mode.
-    if (data instanceof Array) {
-      objects = data;
-    } else {
-      objects = data.objects;
-      controls.getObject().position.copy(data.position);
-      controls.getObject().rotation.set(0, data.yaw, 0);
-      controls.getObject().children[0].rotation.set(data.pitch, 0, 0);
-    }
-    for (i = 0; i < objects.length; ++i) {
-      BLOCKFORT.objects.push(BLOCKFORT.createCube(
-          objects[i].position, objects[i].color));
-      scene.add(BLOCKFORT.objects[i + 1]);
-    }
+  // Remove existing objects from scene except floor.
+  for (i = blockfort.objects.length - 1; i >= 1; --i) {
+    scene.remove(blockfort.objects[i])
+    blockfort.objects.remove(i);
+  }
+  // Load scene.
+  var objects;
+  // TODO(ariw): Remove this legacy mode.
+  if (data instanceof Array) {
+    objects = data;
+  } else {
+    objects = data.objects;
+    controls.getObject().position.copy(data.position);
+    controls.getObject().rotation.set(0, data.yaw, 0);
+    controls.getObject().children[0].rotation.set(data.pitch, 0, 0);
+  }
+  for (i = 0; i < objects.length; ++i) {
+    blockfort.objects.push(blockfort.createCube(
+        objects[i].position, objects[i].color));
+    scene.add(blockfort.objects[i + 1]);
   }
 }
 
-BLOCKFORT.load = function(event) {
+blockfort.load = function(event) {
   // x
   if (event.keyCode != 120) return;
-  BLOCKFORT.name = prompt("World name to load?", BLOCKFORT.name);
+  blockfort.name = prompt("World name to load?", blockfort.name);
+  if (blockfort.name == null) return;
   $.ajax({
-      url: "load", type: 'POST', async: false,
-      data: { name: BLOCKFORT.name }, success: BLOCKFORT.deserialize,
+      url: "load", type: "POST", async: false,
+      data: { name: blockfort.name }, success: blockfort.deserialize,
+      dataType: "json"
   });
 }
 
-BLOCKFORT.start = function() {
+blockfort.share = function(event) {
+  // c
+  if (event.keyCode != 99 || !("id" in blockfort)) return;
+  alert("http://blockfort.appspot.com/?id=" + blockfort.id);
+}
+
+blockfort.start = function() {
   t = THREE;
   renderer = new t.WebGLRenderer();
   width = document.body.clientWidth;
@@ -195,18 +204,18 @@ BLOCKFORT.start = function() {
   scene = new t.Scene();
   time = Date.now();
 
-  BLOCKFORT.blocker = $("#blocker");
-  BLOCKFORT.menu = $("#menu");
-  BLOCKFORT.block_color = $("#block_color");
-  BLOCKFORT.unitSize = 20;
-  BLOCKFORT.units = 1000;
-  BLOCKFORT.name = "Default";
-  BLOCKFORT.objects = new Array();
+  blockfort.blocker = $("#blocker");
+  blockfort.menu = $("#menu");
+  blockfort.block_color = $("#block_color");
+  blockfort.unitSize = 20;
+  blockfort.units = 1000;
+  blockfort.name = "Default";
+  blockfort.objects = new Array();
 
   // Floor.
-  var floor = BLOCKFORT.createFloor();
+  var floor = blockfort.createFloor();
   scene.add(floor);
-  BLOCKFORT.objects.push(floor);
+  blockfort.objects.push(floor);
 
   // White ambient light.
   var light = new t.AmbientLight(0xFFFFFF);
@@ -214,6 +223,14 @@ BLOCKFORT.start = function() {
 
   // Blue background color.
   renderer.setClearColor(0x00BFFF);
+
+  // Load world if previously specified.
+  if ("id" in common.URL_PARAMETERS) {
+    $.ajax({
+        url: "load", type: "POST", async: false,
+        data: { id: common.URL_PARAMETERS.id }, success: blockfort.deserialize
+    });
+  }
 
   // Set up controls.
   camera = new t.PerspectiveCamera(
@@ -224,32 +241,32 @@ BLOCKFORT.start = function() {
   );
   controls = new t.PointerLockControls(camera);
   scene.add(controls.getObject());
-  var havePointerLock = 'pointerLockElement' in document ||
-                        'mozPointerLockElement' in document ||
-                        'webkitPointerLockElement' in document;
+  var havePointerLock = "pointerLockElement" in document ||
+                        "mozPointerLockElement" in document ||
+                        "webkitPointerLockElement" in document;
   if (!havePointerLock) {
-    BLOCKFORT.menu.html("No pointer lock functionality detected!");
+    blockfort.menu.html("No pointer lock functionality detected!");
     return;
   }
-  BLOCKFORT.element = document.body;
+  blockfort.element = document.body;
   // TODO(ariw): This breaks on Firefox since we don't requestFullscreen()
   // first.
-  $(document).on('pointerlockchange', BLOCKFORT.pointerLockChange);
-  $(document).on('webkitpointerlockchange', BLOCKFORT.pointerLockChange);
-  $(document).on('mozpointerlockchange', BLOCKFORT.pointerLockChange);
+  $(document).on('pointerlockchange', blockfort.pointerLockChange);
+  $(document).on('webkitpointerlockchange', blockfort.pointerLockChange);
+  $(document).on('mozpointerlockchange', blockfort.pointerLockChange);
   $(document).on('pointerlockerror', function(event) {});
   $(document).on('webkitpointerlockerror', function(event) {});
   $(document).on('mozpointerlockerror', function(event) {});
-  BLOCKFORT.blocker.click(BLOCKFORT.pointerLockClick);
-  BLOCKFORT.menu.click(function(event) { event.stopPropagation(); });
+  blockfort.blocker.click(blockfort.pointerLockClick);
+  blockfort.menu.click(function(event) { event.stopPropagation(); });
 
-  BLOCKFORT.block_color.get(0).color.fromString("D4AF37");
+  blockfort.block_color.get(0).color.fromString("D4AF37");
 
   // Get the window ready.
   $(document.body).append(renderer.domElement);
   $(window).on('resize', onWindowResize);
 
   // Begin updating.
-  BLOCKFORT.update();
+  blockfort.update();
 }
 

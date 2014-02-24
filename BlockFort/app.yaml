@@ -23,10 +23,11 @@ handlers:
 # JSColor.
 - url: /jscolor
   static_dir: jscolor
-# API interface to persisted worlds.
+# Load either named or IDed world.
 - url: /load
   script: _go_app
   login: required
+# Save named  world, returning ID.
 - url: /save
   script: _go_app
   login: required

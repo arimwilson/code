@@ -21,7 +21,7 @@ func getWorld(c appengine.Context, cur_user string, name string) (
     *datastore.Key, *World, error) {
   query := datastore.NewQuery("world").
       Filter("User =", cur_user).
-      Filter("Name=", name)
+      Filter("Name =", name)
   world := new(World)
   key, err := query.Run(c).Next(world)
   return key, world, err
@@ -49,17 +49,34 @@ func load(w http.ResponseWriter, r *http.Request) {
   }
   cur_user := user.Current(c).String()
   name := r.FormValue("name")
+  id := r.FormValue("id")
   var world *World
-  _, world, err = getWorld(c, cur_user, name)
-  if err != nil {
-     c.Infof("Could not load world %s for user %s: %s.", name, cur_user,
-             err.Error())
-    if err == datastore.Done {
-      http.Error(w, err.Error(), http.StatusBadRequest)
-    } else {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
+  if name != "" {
+    _, world, err = getWorld(c, cur_user, name)
+    if err != nil {
+       c.Infof("Could not load world %s for user %s: %s.", name, cur_user,
+               err.Error())
+      if err == datastore.Done {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+      } else {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+      }
+      return
     }
-    return
+  } else if id != "" {
+    var key *datastore.Key
+    key, err = datastore.DecodeKey(id)
+    if err != nil {
+      c.Infof("Could not decode key for world with id %s: %s.", id, err.Error())
+      http.Error(w, err.Error(), http.StatusBadRequest)
+      return
+    }
+    err = datastore.Get(c, key, world)
+    if err != nil {
+      c.Infof("Could not load world with id %s: %s.", id, err.Error())
+      http.Error(w, err.Error(), http.StatusBadRequest)
+      return
+    }
   }
 
   encoder := json.NewEncoder(w)
@@ -95,8 +112,6 @@ func save(w http.ResponseWriter, r *http.Request) {
   }
   cur_user := user.Current(c).String()
   name := r.FormValue("name")
-  var key *datastore.Key
-  var world *World
   var data []byte
   data, err = zip([]byte(r.FormValue("data")));
   if err != nil {
@@ -104,6 +119,8 @@ func save(w http.ResponseWriter, r *http.Request) {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
+  var key *datastore.Key
+  var world *World
   key, world, err = getWorld(c, cur_user, name)
   if err == nil {
     world.Data = data
@@ -113,8 +130,8 @@ func save(w http.ResponseWriter, r *http.Request) {
     world.Name = name
     world.Version = 2
     world.Data = data
-    _, err = datastore.Put(c, datastore.NewIncompleteKey(c, "world", nil),
-                           world)
+    key = datastore.NewIncompleteKey(c, "world", nil)
+    _, err = datastore.Put(c, key, world)
   }
   if err != nil {
     c.Errorf("Could not save world %s for user %s with error: %s",
@@ -122,4 +139,5 @@ func save(w http.ResponseWriter, r *http.Request) {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
+  w.Write([]byte(key.Encode()))
 }
