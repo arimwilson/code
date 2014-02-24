@@ -43,8 +43,8 @@ blockfort.pointerLockChange = function(event) {
     blockfort.blocker.hide();
   } else {
     controls.enabled = false;
-    $(document).off('click');
-    $(document).off('keypress');
+    $(document).off("click");
+    $(document).off("keypress");
 
     blockfort.blocker.show();
   }
@@ -151,7 +151,7 @@ blockfort.save = function(event) {
 // Convert simplified format into rendered world.
 blockfort.deserialize = function(data) {
   // TODO(ariw): This algorithm is slow as balls.
-  if (data.length = 0) return;
+  if (data.length == 0) return;
   data = JSON.parse(data);
 
   // Remove existing objects from scene except floor.
@@ -251,12 +251,12 @@ blockfort.start = function() {
   blockfort.element = document.body;
   // TODO(ariw): This breaks on Firefox since we don't requestFullscreen()
   // first.
-  $(document).on('pointerlockchange', blockfort.pointerLockChange);
-  $(document).on('webkitpointerlockchange', blockfort.pointerLockChange);
-  $(document).on('mozpointerlockchange', blockfort.pointerLockChange);
-  $(document).on('pointerlockerror', function(event) {});
-  $(document).on('webkitpointerlockerror', function(event) {});
-  $(document).on('mozpointerlockerror', function(event) {});
+  $(document).on("pointerlockchange", blockfort.pointerLockChange);
+  $(document).on("webkitpointerlockchange", blockfort.pointerLockChange);
+  $(document).on("mozpointerlockchange", blockfort.pointerLockChange);
+  $(document).on("pointerlockerror", function(event) {});
+  $(document).on("webkitpointerlockerror", function(event) {});
+  $(document).on("mozpointerlockerror", function(event) {});
   blockfort.blocker.click(blockfort.pointerLockClick);
   blockfort.menu.click(function(event) { event.stopPropagation(); });
 
@@ -264,7 +264,7 @@ blockfort.start = function() {
 
   // Get the window ready.
   $(document.body).append(renderer.domElement);
-  $(window).on('resize', onWindowResize);
+  $(window).on("resize", onWindowResize);
 
   // Begin updating.
   blockfort.update();
