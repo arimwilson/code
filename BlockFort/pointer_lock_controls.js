@@ -4,6 +4,8 @@
 
 THREE.PointerLockControls = function ( camera ) {
 
+  var scope = this;
+
   var pitchObject = new THREE.Object3D();
   pitchObject.add( camera );
 
@@ -23,8 +25,7 @@ THREE.PointerLockControls = function ( camera ) {
   var PI_2 = Math.PI / 2;
 
   var onMouseMove = function ( event ) {
-
-    if ( this.enabled === false ) return;
+    if ( scope.enabled === false ) return;
 
     var movementX = event.movementX || event.mozMovementX ||
                     event.webkitMovementX || 0;
@@ -108,11 +109,11 @@ THREE.PointerLockControls = function ( camera ) {
 
   };
 
+  this.enabled = false;
+
   document.addEventListener( 'mousemove', onMouseMove, false );
   document.addEventListener( 'keydown', onKeyDown, false );
   document.addEventListener( 'keyup', onKeyUp, false );
-
-  this.enabled = false;
 
   this.getObject = function () {
 
@@ -122,7 +123,7 @@ THREE.PointerLockControls = function ( camera ) {
 
   this.update = function ( delta ) {
 
-    if ( this.enabled === false ) return;
+    if ( scope.enabled === false ) return;
 
     delta *= 0.1;
 

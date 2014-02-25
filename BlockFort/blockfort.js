@@ -142,7 +142,7 @@ blockfort.save = function(event) {
   // z
   if (event.keyCode !== 122) return;
   blockfort.name = prompt("World name to save?", blockfort.name);
-  if (blockfort.name == null) return;
+  if (blockfort.name === null) return;
   $.post("save", { name: blockfort.name, data: blockfort.serialize() },
          function(data) { blockfort.id = data; }
   );
@@ -151,7 +151,7 @@ blockfort.save = function(event) {
 // Convert simplified format into rendered world.
 blockfort.deserialize = function(world) {
   // TODO(ariw): This algorithm is slow as balls.
-  if (world.Data.length == 0) return;
+  if (world.Data.length === 0) return;
   data = JSON.parse(window.atob(world.Data));
   blockfort.id = world.Id
 
@@ -182,7 +182,7 @@ blockfort.load = function(event) {
   // x
   if (event.keyCode != 120) return;
   blockfort.name = prompt("World name to load?", blockfort.name);
-  if (blockfort.name == null) return;
+  if (blockfort.name === null) return;
   $.ajax({
       url: "load", type: "POST", async: false,
       data: { name: blockfort.name }, success: blockfort.deserialize,
@@ -235,15 +235,6 @@ blockfort.start = function() {
   controls = new t.PointerLockControls(camera);
   scene.add(controls.getObject());
 
-  // Load world if previously specified.
-  if ("id" in common.URL_PARAMETERS) {
-    $.ajax({
-        url: "load", type: "POST", async: false,
-        data: { id: common.URL_PARAMETERS.id }, success: blockfort.deserialize,
-        dataType: "json"
-    });
-  }
-
   var havePointerLock = "pointerLockElement" in document ||
                         "mozPointerLockElement" in document ||
                         "webkitPointerLockElement" in document;
@@ -268,6 +259,15 @@ blockfort.start = function() {
   // Get the window ready.
   $(document.body).append(renderer.domElement);
   $(window).on("resize", onWindowResize);
+
+  // Load world if previously specified.
+  if ("id" in common.URL_PARAMETERS) {
+    $.ajax({
+        url: "load", type: "POST", async: false,
+        data: { id: common.URL_PARAMETERS.id }, success: blockfort.deserialize,
+        dataType: "json"
+    });
+  }
 
   // Begin updating.
   blockfort.update();
