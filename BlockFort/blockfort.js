@@ -149,10 +149,11 @@ blockfort.save = function(event) {
 }
 
 // Convert simplified format into rendered world.
-blockfort.deserialize = function(data) {
+blockfort.deserialize = function(world) {
   // TODO(ariw): This algorithm is slow as balls.
-  if (data.length == 0) return;
-  data = JSON.parse(data);
+  if (world.Data.length == 0) return;
+  data = JSON.parse(window.atob(world.Data));
+  blockfort.id = world.Id
 
   // Remove existing objects from scene except floor.
   for (i = blockfort.objects.length - 1; i >= 1; --i) {
@@ -192,7 +193,7 @@ blockfort.load = function(event) {
 blockfort.share = function(event) {
   // c
   if (event.keyCode != 99 || !("id" in blockfort)) return;
-  alert("http://blockfort.appspot.com/?id=" + blockfort.id);
+  alert(window.location.origin + "?id=" + blockfort.id);
 }
 
 blockfort.start = function() {
@@ -224,14 +225,6 @@ blockfort.start = function() {
   // Blue background color.
   renderer.setClearColor(0x00BFFF);
 
-  // Load world if previously specified.
-  if ("id" in common.URL_PARAMETERS) {
-    $.ajax({
-        url: "load", type: "POST", async: false,
-        data: { id: common.URL_PARAMETERS.id }, success: blockfort.deserialize
-    });
-  }
-
   // Set up controls.
   camera = new t.PerspectiveCamera(
       60,  // Field of view
@@ -241,6 +234,16 @@ blockfort.start = function() {
   );
   controls = new t.PointerLockControls(camera);
   scene.add(controls.getObject());
+
+  // Load world if previously specified.
+  if ("id" in common.URL_PARAMETERS) {
+    $.ajax({
+        url: "load", type: "POST", async: false,
+        data: { id: common.URL_PARAMETERS.id }, success: blockfort.deserialize,
+        dataType: "json"
+    });
+  }
+
   var havePointerLock = "pointerLockElement" in document ||
                         "mozPointerLockElement" in document ||
                         "webkitPointerLockElement" in document;

@@ -11,10 +11,11 @@ func init() {
 }
 
 type World struct {
+  Id string
   User string
   Name string
   Version int
-  Data []byte
+  Data []byte  // Zipped world data received from user.
 }
 
 func getWorld(c appengine.Context, cur_user string, name string) (
@@ -51,8 +52,9 @@ func load(w http.ResponseWriter, r *http.Request) {
   name := r.FormValue("name")
   id := r.FormValue("id")
   var world *World
+  var key *datastore.Key
   if name != "" {
-    _, world, err = getWorld(c, cur_user, name)
+    key, world, err = getWorld(c, cur_user, name)
     if err != nil {
        c.Infof("Could not load world %s for user %s: %s.", name, cur_user,
                err.Error())
@@ -64,30 +66,34 @@ func load(w http.ResponseWriter, r *http.Request) {
       return
     }
   } else if id != "" {
-    var key *datastore.Key
     key, err = datastore.DecodeKey(id)
     if err != nil {
       c.Infof("Could not decode key for world with id %s: %s.", id, err.Error())
       http.Error(w, err.Error(), http.StatusBadRequest)
       return
     }
+    world = new(World)
     err = datastore.Get(c, key, world)
     if err != nil {
       c.Infof("Could not load world with id %s: %s.", id, err.Error())
       http.Error(w, err.Error(), http.StatusBadRequest)
       return
     }
+  } else {
+    error := "Invalid request: must specify either name or id."
+    c.Infof(error)
+    http.Error(w, error, http.StatusBadRequest)
   }
 
   encoder := json.NewEncoder(w)
-  var data []byte
-  data, err = unzip(world.Data)
+  world.Data, err = unzip(world.Data)
   if err != nil {
     c.Errorf("Could not decompress data with error: %s", err.Error())
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
-  encoder.Encode(string(data))
+  world.Id = key.Encode()
+  encoder.Encode(world)
 }
 
 func zip(uncompressed_bytes []byte) ([]byte, error) {
