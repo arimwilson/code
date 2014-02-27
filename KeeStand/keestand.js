@@ -120,7 +120,7 @@ function salt_error() {
     salt_ = localStorage["salt"];
     password_hash_ = password_hash(password_, salt_);
     var actual_password_hash = localStorage["password_hash"];
-    if (password_hash_ != actual_password_hash_) {
+    if (password_hash_ != actual_password_hash) {
       login_error();
       return;
     }
