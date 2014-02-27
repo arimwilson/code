@@ -4,6 +4,8 @@ CACHE MANIFEST
 CACHE:
 /favicon.ico
 /css/cupertino/jquery-ui-1.8.9.custom.css
+# TODO(ariw): These cross-domain references will not work on non-Chrome
+# browsers.
 https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js
 https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js
 /sjcl.js
