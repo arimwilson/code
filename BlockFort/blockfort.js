@@ -103,7 +103,8 @@ blockfort.buildClick = function(event) {
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
       var cube = blockfort.createCube(
-          blockfort.gridCoordinates(intersects[0].point.sub(direction)),
+          blockfort.gridCoordinates(intersects[0].point.sub(
+              direction.multiplyScalar(blockfort.unitSize))),
           "#" + blockfort.block_color.val());
       scene.add(cube);
       blockfort.objects.push(cube);
