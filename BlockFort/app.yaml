@@ -12,6 +12,9 @@ handlers:
 - url: /blockfort.gif
   static_files: blockfort.gif
   upload: blockfort.gif
+- url: /crosshair.png
+  static_files: crosshair.png
+  upload: crosshair.png
 # Magic CSS.
 - url: /style.less
   static_files: style.less

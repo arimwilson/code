@@ -4,6 +4,7 @@ var t, renderer, scene, width, height, camera, controls, time;
 onWindowResize = function() {
   width = window.innerWidth;
   height = window.innerHeight;
+  blockfort.crosshair.position.set(width / 2, height / 2, 0);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
@@ -94,7 +95,7 @@ blockfort.createCube = function(v, color) {
   return cube;
 }
 
-// Build blocks / destroy blocks controls.
+// Build block / destroy block controls.
 blockfort.buildClick = function(event) {
   var direction = cameraDirection();
   var ray = new t.Raycaster(controls.getObject().position, direction);
@@ -212,6 +213,12 @@ blockfort.start = function() {
   blockfort.unitSize = 20;
   blockfort.units = 1000;
   blockfort.name = "Default";
+  blockfort.crosshair = new t.Sprite(new t.SpriteMaterial(
+      {map: t.ImageUtils.loadTexture("crosshair.png"),
+       useScreenCoordinates: true}));
+  blockfort.crosshair.position.set(width / 2, height / 2, 0);
+  blockfort.crosshair.scale.set(32, 32, 1.0);
+  scene.add(blockfort.crosshair);
   blockfort.objects = new Array();
 
   // Floor.
