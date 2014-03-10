@@ -1,12 +1,22 @@
 // Generic three.js objects are in the global namespace.
-var t, renderer, scene, width, height, camera, controls, time;
+var t, renderer, scene, sceneOrtho, width, height, camera, cameraOrtho,
+    controls, time;
 
 onWindowResize = function() {
   width = window.innerWidth;
   height = window.innerHeight;
-  blockfort.crosshair.position.set(width / 2, height / 2, 0);
+
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
+
+  cameraOrtho.left = -width / 2;
+  cameraOrtho.right = width / 2;
+  cameraOrtho.top = height / 2;
+  cameraOrtho.bottom = -height / 2;
+  cameraOrtho.updateProjectionMatrix();
+
+  blockfort.crosshair.position.set(0, 0, 1);
+
   renderer.setSize(width, height);
 }
 
@@ -22,9 +32,13 @@ var blockfort = {
 }
 
 blockfort.update = function() {
-  // Render the scene.
   requestAnimationFrame(blockfort.update);
+
+  // Render the scene.
+  renderer.clear();
   renderer.render(scene, camera);
+  renderer.clearDepth();
+  renderer.render(sceneOrtho, cameraOrtho);
 
   // Update controls.
   controls.update(Date.now() - time);
@@ -204,7 +218,9 @@ blockfort.start = function() {
   width = document.body.clientWidth;
   height = document.body.clientHeight;
   renderer.setSize(width, height);
+  renderer.autoClear = false;
   scene = new t.Scene();
+  sceneOrtho = new t.Scene();
   time = Date.now();
 
   blockfort.blocker = $("#blocker");
@@ -214,11 +230,12 @@ blockfort.start = function() {
   blockfort.units = 1000;
   blockfort.name = "Default";
   blockfort.crosshair = new t.Sprite(new t.SpriteMaterial(
-      {map: t.ImageUtils.loadTexture("crosshair.png"),
-       useScreenCoordinates: true}));
-  blockfort.crosshair.position.set(width / 2, height / 2, 0);
+      {map: t.ImageUtils.loadTexture("crosshair.png")}));
+  blockfort.crosshair.position.set(0, 0, 1);
+  // TODO(ariw): Replace these constants with material.map.image.width,
+  // material.map.image.height on texture load finish.
   blockfort.crosshair.scale.set(32, 32, 1.0);
-  scene.add(blockfort.crosshair);
+  sceneOrtho.add(blockfort.crosshair);
   blockfort.objects = new Array();
 
   // Floor.
@@ -233,7 +250,7 @@ blockfort.start = function() {
   // Blue background color.
   renderer.setClearColor(0x00BFFF);
 
-  // Set up controls.
+  // Set up cameras and controls.
   camera = new t.PerspectiveCamera(
       60,  // Field of view
       width / height,  // Aspect ratio
@@ -241,6 +258,9 @@ blockfort.start = function() {
       10000  // Far plane
   );
   controls = new t.PointerLockControls(camera);
+  cameraOrtho = new THREE.OrthographicCamera(
+      -width / 2, width / 2, height / 2, -height / 2, 1, 10);
+  cameraOrtho.position.z = 10;
   scene.add(controls.getObject());
 
   var havePointerLock = "pointerLockElement" in document ||
