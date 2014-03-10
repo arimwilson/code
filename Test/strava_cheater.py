@@ -8,7 +8,7 @@
 # Time: 1pm Saturday.
 # Height: ~5m.
 #
-# ./strava_cheater.py 33.973542 -118.445449 33.977137 -118.438389 30 test.gpx
+# ./strava_cheater.py 33.973542 -118.445449 33.977137 -118.438389 35 test.gpx
 
 import math, sys
 
@@ -42,7 +42,7 @@ xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/
 
 GPX_HEIGHT_M = 5
 
-GPX_TIME = "2013-08-24T21:00:%s.000Z"
+GPX_TIME = "2014-03-09T21:00:%s.000Z"
 
 EARTH_RADIUS_MI = 3963.19
 
