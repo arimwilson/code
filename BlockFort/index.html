@@ -2,6 +2,7 @@
   <head>
     <title>BlockFort</title>
     <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+    <meta name="viewport" content="width=device-width; user-scalable=no; minimum-scale=1.0; maximum-scale=1.0">
     <link rel="icon" type="image/gif" href="blockfort.gif" />
     <link rel="stylesheet/less" type="text/css" href="style.less" />
     <script type="text/javascript"
@@ -16,9 +17,17 @@
   </head>
   <body onload="blockfort.start()">
     <div id="blocker">
-      <div id="menu">Click on the landscape to play. WASD moves, space/shift
-        flies, z saves, x loads, and c generates a sharing URL. Block color:
-        <input class="color" id="block_color">.
+      <div id="menu">
+      <table>
+        <tr><td><h1>Blockfort</h1></td></tr>
+        <tr><td><button type="button" id="save"
+              class="menu-button">Save</button></td></tr>
+        <tr><td><button type="button" id="load"
+              class="menu-button">Load</button></td></tr>
+        <tr><td><button type="button" id="share"
+              class="menu-button">Share</button></td></tr>
+        <tr><td><input class="color" id="block_color"></td></tr>
+      </table>
       </div>
     </div>
   </body>

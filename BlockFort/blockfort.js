@@ -51,9 +51,6 @@ blockfort.pointerLockChange = function(event) {
       document.mozPointerLockElement === blockfort.element) {
     controls.enabled = true;
     $(document).click(blockfort.buildClick);
-    $(document).keypress(blockfort.save);
-    $(document).keypress(blockfort.load);
-    $(document).keypress(blockfort.share);
 
     blockfort.blocker.hide();
   } else {
@@ -155,8 +152,6 @@ blockfort.serialize = function() {
 }
 
 blockfort.save = function(event) {
-  // z
-  if (event.keyCode !== 122) return;
   blockfort.name = prompt("World name to save?", blockfort.name);
   if (blockfort.name === null) return;
   $.post("save", { name: blockfort.name, data: blockfort.serialize() },
@@ -195,8 +190,6 @@ blockfort.deserialize = function(world) {
 }
 
 blockfort.load = function(event) {
-  // x
-  if (event.keyCode != 120) return;
   blockfort.name = prompt("World name to load?", blockfort.name);
   if (blockfort.name === null) return;
   $.ajax({
@@ -207,8 +200,7 @@ blockfort.load = function(event) {
 }
 
 blockfort.share = function(event) {
-  // c
-  if (event.keyCode != 99 || !("id" in blockfort)) return;
+  if (!("id" in blockfort)) return;
   alert(window.location.origin + "?id=" + blockfort.id);
 }
 
@@ -225,6 +217,9 @@ blockfort.start = function() {
 
   blockfort.blocker = $("#blocker");
   blockfort.menu = $("#menu");
+  $("#save").click(blockfort.save);
+  $("#load").click(blockfort.load);
+  $("#share").click(blockfort.share);
   blockfort.block_color = $("#block_color");
   blockfort.unitSize = 20;
   blockfort.units = 1000;
