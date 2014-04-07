@@ -225,7 +225,7 @@ blockfort.start = function() {
   blockfort.units = 1000;
   blockfort.name = "Default";
   blockfort.crosshair = new t.Sprite(new t.SpriteMaterial(
-      {map: t.ImageUtils.loadTexture("crosshair.png")}));
+      {map: t.ImageUtils.loadTexture("images/crosshair.png")}));
   blockfort.crosshair.position.set(0, 0, 1);
   // TODO(ariw): Replace these constants with material.map.image.width,
   // material.map.image.height on texture load finish.

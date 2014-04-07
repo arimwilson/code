@@ -9,12 +9,8 @@ handlers:
   static_files: index.html
   upload: index.html
   login: required
-- url: /blockfort.gif
-  static_files: blockfort.gif
-  upload: blockfort.gif
-- url: /crosshair.png
-  static_files: crosshair.png
-  upload: crosshair.png
+- url: /images
+  static_dir: images
 # Magic CSS.
 - url: /style.less
   static_files: style.less
