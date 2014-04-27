@@ -4,7 +4,7 @@
 # Fiji Way points:
 # Start: 33.973542,-118.445449
 # End: 33.977137,-118.438389
-# Target speed: 30 mi/h
+# Target speed: 35 mi/h
 # Time: 1pm Saturday.
 # Height: ~5m.
 #
