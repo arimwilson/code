@@ -101,9 +101,17 @@ blockfort.createCube = function(v, color) {
                          blockfort.unitSize, blockfort.unitSize),
       new t.MeshLambertMaterial({ color: color, ambient: color })
   );
-  cube.position.set(v.x * blockfort.unitSize, (v.y + 0.5) * blockfort.unitSize,
-                    v.z * blockfort.unitSize);
+  cube.position.set((v.x + 0.5) * blockfort.unitSize, (v.y + 0.5) * blockfort.unitSize,
+                    (v.z + 0.5) * blockfort.unitSize);
   return cube;
+}
+
+blockfort.createLine = function(u, v) {
+  var geometry = new t.Geometry();
+  geometry.vertices.push(u);
+  geometry.vertices.push(v);
+  return new t.Line(
+      geometry, new t.LineBasicMaterial({color: 0x000000}));
 }
 
 // Build block / destroy block controls.
@@ -114,9 +122,10 @@ blockfort.buildClick = function(event) {
 
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
+      var intersectPoint = intersects[0].point.sub(
+          direction.multiplyScalar(blockfort.unitSize));
       var cube = blockfort.createCube(
-          blockfort.gridCoordinates(intersects[0].point.sub(
-              direction.multiplyScalar(blockfort.unitSize))),
+          blockfort.gridCoordinates(intersectPoint),
           "#" + blockfort.block_color.val());
       scene.add(cube);
       blockfort.objects.push(cube);
