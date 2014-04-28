@@ -81,16 +81,19 @@ blockfort.gridCoordinates = function(v) {
 
 blockfort.createFloor = function() {
   var geometry = new t.PlaneGeometry(
-      blockfort.unitSize * blockfort.units, blockfort.unitSize * blockfort.units,
-      blockfort.unitSize, blockfort.unitSize);
+      blockfort.unitSize * blockfort.units,
+      blockfort.unitSize * blockfort.units, blockfort.unitSize,
+      blockfort.unitSize);
   // Floors generally are on the xz plane rather than the yz plane. Rotate it
   // there :).
   geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
   var floorColor = 0x395D33;
+  var floorTexture = t.ImageUtils.loadTexture("images/grass.png");
+  floorTexture.wrapS = floorTexture.wrapT = t.RepeatWrapping;
+  floorTexture.repeat.set(blockfort.units, blockfort.units);
   return new t.Mesh(
-      geometry, new t.MeshLambertMaterial(
-          { color: floorColor, ambient: floorColor })
-  );
+      geometry, new t.MeshBasicMaterial(
+          { map: floorTexture, side: t.DoubleSide }));
 }
 
 // v should be in grid coordinates.
@@ -99,7 +102,8 @@ blockfort.createCube = function(v, color) {
       new t.CubeGeometry(blockfort.unitSize, blockfort.unitSize,
                          blockfort.unitSize, blockfort.unitSize,
                          blockfort.unitSize, blockfort.unitSize),
-      new t.MeshLambertMaterial({ color: color, ambient: color })
+      new t.MeshLambertMaterial({ map: blockfort.cubeTexture, color: color,
+                                  ambient: color })
   );
   cube.position.set((v.x + 0.5) * blockfort.unitSize, (v.y + 0.5) * blockfort.unitSize,
                     (v.z + 0.5) * blockfort.unitSize);
@@ -125,7 +129,7 @@ blockfort.buildClick = function(event) {
       var intersectPoint = intersects[0].point.sub(
           direction.multiplyScalar(blockfort.unitSize));
       var cube = blockfort.createCube(
-          blockfort.gridCoordinates(intersectPoint),
+          blockfort.gridCoordinates(intersects[0].point),
           "#" + blockfort.block_color.val());
       scene.add(cube);
       blockfort.objects.push(cube);
@@ -230,7 +234,7 @@ blockfort.start = function() {
   $("#load").click(blockfort.load);
   $("#share").click(blockfort.share);
   blockfort.block_color = $("#block_color");
-  blockfort.unitSize = 20;
+  blockfort.unitSize = 64;
   blockfort.units = 1000;
   blockfort.name = "Default";
   blockfort.crosshair = new t.Sprite(new t.SpriteMaterial(
@@ -250,6 +254,9 @@ blockfort.start = function() {
   // White ambient light.
   var light = new t.AmbientLight(0xFFFFFF);
   scene.add(light);
+
+  // Cube texture.
+  blockfort.cubeTexture = t.ImageUtils.loadTexture("images/whiteblock.png");
 
   // Blue background color.
   renderer.setClearColor(0x00BFFF);
