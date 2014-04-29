@@ -88,7 +88,7 @@ blockfort.createFloor = function() {
   // there :).
   geometry.applyMatrix(new t.Matrix4().makeRotationX(-Math.PI / 2));
   var floorColor = 0x395D33;
-  var floorTexture = t.ImageUtils.loadTexture("images/grass.png");
+  var floorTexture = t.ImageUtils.loadTexture("images/grass.jpg");
   floorTexture.wrapS = floorTexture.wrapT = t.RepeatWrapping;
   floorTexture.repeat.set(blockfort.units, blockfort.units);
   return new t.Mesh(
