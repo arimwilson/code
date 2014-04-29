@@ -98,13 +98,12 @@ blockfort.createFloor = function() {
 
 // v should be in grid coordinates.
 blockfort.createCube = function(v, color) {
-  var cube = new t.Mesh(
-      new t.CubeGeometry(blockfort.unitSize, blockfort.unitSize,
-                         blockfort.unitSize, blockfort.unitSize,
-                         blockfort.unitSize, blockfort.unitSize),
-      new t.MeshLambertMaterial({ map: blockfort.cubeTexture, color: color,
-                                  ambient: color })
-  );
+  var cubeColor = new t.Color(color);
+  if (cubeColor != blockfort.cubeMat.color) {
+    blockfort.cubeMat = blockfort.cubeMat.clone();
+    blockfort.cubeMat.ambient = blockfort.cubeMat.color = cubeColor;
+  }
+  var cube = new t.Mesh(blockfort.cubeGeo, blockfort.cubeMat);
   cube.position.set((v.x + 0.5) * blockfort.unitSize, (v.y + 0.5) * blockfort.unitSize,
                     (v.z + 0.5) * blockfort.unitSize);
   return cube;
@@ -228,11 +227,14 @@ blockfort.start = function() {
   sceneOrtho = new t.Scene();
   time = Date.now();
 
+  // Menu.
   blockfort.blocker = $("#blocker");
   blockfort.menu = $("#menu");
   $("#save").click(blockfort.save);
   $("#load").click(blockfort.load);
   $("#share").click(blockfort.share);
+
+  // World options.
   blockfort.block_color = $("#block_color");
   blockfort.unitSize = 64;
   blockfort.units = 1000;
@@ -255,8 +257,12 @@ blockfort.start = function() {
   var light = new t.AmbientLight(0xFFFFFF);
   scene.add(light);
 
-  // Cube texture.
-  blockfort.cubeTexture = t.ImageUtils.loadTexture("images/whiteblock.png");
+  // Cube materials.
+  blockfort.cubeGeo = new t.CubeGeometry(
+      blockfort.unitSize, blockfort.unitSize, blockfort.unitSize,
+      blockfort.unitSize, blockfort.unitSize, blockfort.unitSize);
+  blockfort.cubeMat = new t.MeshLambertMaterial(
+      { map : t.ImageUtils.loadTexture("images/whiteblock.png") });
 
   // Blue background color.
   renderer.setClearColor(0x00BFFF);
