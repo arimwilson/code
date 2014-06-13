@@ -63,6 +63,13 @@ blockfort.pointerLockChange = function(event) {
 }
 
 blockfort.pointerLockClick = function(event) {
+  blockfort.element.requestFullscreen =
+      blockfort.element.requestFullscreen ||
+      blockfort.element.webkitRequestFullscreen ||
+      blockfort.element.mozRequestFullScreen;
+  blockfort.element.requestFullscreen();
+  // TODO(ariw): This is still broken on Firefox because we don't wait for
+  // fullscreenchange to confirm we can actually get the pointer.
   blockfort.element.requestPointerLock =
       blockfort.element.requestPointerLock ||
       blockfort.element.webkitRequestPointerLock ||
@@ -280,16 +287,7 @@ blockfort.start = function() {
   cameraOrtho.position.z = 10;
   scene.add(controls.getObject());
 
-  var havePointerLock = "pointerLockElement" in document ||
-                        "mozPointerLockElement" in document ||
-                        "webkitPointerLockElement" in document;
-  if (!havePointerLock) {
-    blockfort.menu.html("No pointer lock functionality detected!");
-    return;
-  }
   blockfort.element = document.body;
-  // TODO(ariw): This breaks on Firefox since we don't requestFullscreen()
-  // first.
   $(document).on("pointerlockchange", blockfort.pointerLockChange);
   $(document).on("webkitpointerlockchange", blockfort.pointerLockChange);
   $(document).on("mozpointerlockchange", blockfort.pointerLockChange);
