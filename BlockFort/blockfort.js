@@ -45,6 +45,14 @@ blockfort.update = function() {
   time = Date.now();
 }
 
+blockfort.fullScreenChange = function(event) {
+  blockfort.element.requestPointerLock =
+      blockfort.element.requestPointerLock ||
+      blockfort.element.webkitRequestPointerLock ||
+      blockfort.element.mozRequestPointerLock;
+  blockfort.element.requestPointerLock();
+}
+
 blockfort.pointerLockChange = function(event) {
   if (document.pointerLockElement === blockfort.element ||
       document.webkitPointerLockElement === blockfort.element ||
@@ -68,13 +76,6 @@ blockfort.pointerLockClick = function(event) {
       blockfort.element.webkitRequestFullscreen ||
       blockfort.element.mozRequestFullScreen;
   blockfort.element.requestFullscreen();
-  // TODO(ariw): This is still broken on Firefox because we don't wait for
-  // fullscreenchange to confirm we can actually get the pointer.
-  blockfort.element.requestPointerLock =
-      blockfort.element.requestPointerLock ||
-      blockfort.element.webkitRequestPointerLock ||
-      blockfort.element.mozRequestPointerLock;
-  blockfort.element.requestPointerLock();
 }
 
 // Given world coordinates, return grid coordinates.
@@ -288,6 +289,12 @@ blockfort.start = function() {
   scene.add(controls.getObject());
 
   blockfort.element = document.body;
+  $(document).on("fullscreenchange", blockfort.fullScreenChange);
+  $(document).on("webkitfullscreenchange", blockfort.fullScreenChange);
+  $(document).on("mozfullscreenchange", blockfort.fullScreenChange);
+  $(document).on("fullscreenerror", function(event) {});
+  $(document).on("webkitfullscreenerror", function(event) {});
+  $(document).on("mozfullscreenerror", function(event) {});
   $(document).on("pointerlockchange", blockfort.pointerLockChange);
   $(document).on("webkitpointerlockchange", blockfort.pointerLockChange);
   $(document).on("mozpointerlockchange", blockfort.pointerLockChange);
