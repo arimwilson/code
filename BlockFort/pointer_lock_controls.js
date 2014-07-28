@@ -24,6 +24,14 @@ THREE.PointerLockControls = function ( camera ) {
 
   var PI_2 = Math.PI / 2;
 
+  var look = function(movementX, movementY) {
+    yawObject.rotation.y -= movementX * 0.002;
+    pitchObject.rotation.x -= movementY * 0.002;
+
+    pitchObject.rotation.x = Math.max( - PI_2, Math.min(
+        PI_2, pitchObject.rotation.x ) );
+  };
+
   var onMouseMove = function ( event ) {
     if ( scope.enabled === false ) return;
 
@@ -31,13 +39,7 @@ THREE.PointerLockControls = function ( camera ) {
                     event.webkitMovementX || 0;
     var movementY = event.movementY || event.mozMovementY ||
                     event.webkitMovementY || 0;
-
-    yawObject.rotation.y -= movementX * 0.002;
-    pitchObject.rotation.x -= movementY * 0.002;
-
-    pitchObject.rotation.x = Math.max( - PI_2, Math.min(
-        PI_2, pitchObject.rotation.x ) );
-
+    look(movementX, movementY);
   };
 
   var onKeyDown = function ( event ) {
@@ -109,11 +111,92 @@ THREE.PointerLockControls = function ( camera ) {
 
   };
 
+  var isMoveTouch = function(x, y) {
+    return y >= height / 2 && x <= y / 3;
+  };
+
+  var isLookTouch = function(x, y) {
+    return y >= height / 2 && x >= 2 * y / 3;
+  };
+
+  var onTouchStart = function(event) {
+    for (var i = 0; i < event.changedTouches.length; i++) {
+      var touch = event.changedTouches[i];
+      if (isMoveTouch(touch.pageX, touch.pageY)) {
+        var relativeWidth = width / 3;
+        var relativeHeight = height / 2;
+        var relativeX = touch.pageX + relativeWidth / 2;
+        var relativeY = touch.pageY - height / 2 + relativeHeight / 2;
+        if (relativeX <= relativeY) {
+          if (relativeX <= -relativeY) {
+            // Left.
+            moveLeft = true;
+          } else {
+            // Down.
+            moveBackward = true;
+          }
+        } else {
+          if (relativeX <= -relativeY) {
+            // Up.
+            moveForward = true;
+          } else {
+            // Right.
+            moveRight = true;
+          }
+        }
+      } else if (isLookTouch(touch.pageX, touch.pageY)) {
+      }
+    }
+  };
+
+  var onTouchMove = function(event) {
+    event.preventDefault();
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+    for (var i = 0; i < event.changedTouches.length; i++) {
+      var touch = event.changedTouches[i];
+      if (isLookTouch(touch.pageX, touch.pageY)) {
+      }
+    }
+  };
+
+  var onTouchEnd = function(event) {
+    for (var i = 0; i < event.changedTouches.length; i++) {
+      var touch = event.changedTouches[i];
+      if (isMoveTouch(touch.pageX, touch.pageY)) {
+        var relativeWidth = width / 3;
+        var relativeHeight = height / 2;
+        var relativeX = touch.pageX + relativeWidth / 2;
+        var relativeY = touch.pageY - height / 2 + relativeHeight / 2;
+        if (relativeX <= relativeY) {
+          if (relativeX <= -relativeY) {
+            // Left.
+            moveLeft = false;
+          } else {
+            // Down.
+            moveBackward = false;
+          }
+        } else {
+          if (relativeX <= -relativeY) {
+            // Up.
+            moveForward = false;
+          } else {
+            // Right.
+            moveRight = false;
+          }
+        }
+      }
+    }
+  };
+
   this.enabled = false;
 
   document.addEventListener( 'mousemove', onMouseMove, false );
   document.addEventListener( 'keydown', onKeyDown, false );
   document.addEventListener( 'keyup', onKeyUp, false );
+  document.addEventListener( 'touchstart', onTouchStart, false);
+  document.addEventListener( 'touchmove', onTouchMove, false);
+  document.addEventListener( 'touchend', onTouchEnd, false);
 
   this.getObject = function () {
 
