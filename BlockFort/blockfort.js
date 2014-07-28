@@ -53,7 +53,7 @@ blockfort.fullScreenChange = function(event) {
   blockfort.element.requestPointerLock();
 }
 
-blockfort.pointerLockChange = function(event) {
+blockfort.controlsChange = function(event) {
   if (document.pointerLockElement === blockfort.element ||
       document.webkitPointerLockElement === blockfort.element ||
       document.mozPointerLockElement === blockfort.element) {
@@ -295,12 +295,14 @@ blockfort.start = function() {
   $(document).on("fullscreenerror", function(event) {});
   $(document).on("webkitfullscreenerror", function(event) {});
   $(document).on("mozfullscreenerror", function(event) {});
-  $(document).on("pointerlockchange", blockfort.pointerLockChange);
-  $(document).on("webkitpointerlockchange", blockfort.pointerLockChange);
-  $(document).on("mozpointerlockchange", blockfort.pointerLockChange);
-  $(document).on("pointerlockerror", function(event) {});
-  $(document).on("webkitpointerlockerror", function(event) {});
-  $(document).on("mozpointerlockerror", function(event) {});
+  $(document).on("pointerlockchange", blockfort.controlsChange);
+  $(document).on("webkitpointerlockchange", blockfort.controlsChange);
+  $(document).on("mozpointerlockchange", blockfort.controlsChange);
+  // TODO(ariw): There's got to be a better way than using presence of
+  // pointerlock to detect if someone is using a mobile browser.
+  $(document).on("pointerlockerror", blockfort.controlsChange);
+  $(document).on("webkitpointerlockerror", blockfort.controlsChange);
+  $(document).on("mozpointerlockerror", blockfort.controlsChange);
   blockfort.blocker.click(blockfort.pointerLockClick);
   blockfort.menu.click(function(event) { event.stopPropagation(); });
 

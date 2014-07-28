@@ -25,6 +25,8 @@ THREE.PointerLockControls = function ( camera ) {
   var PI_2 = Math.PI / 2;
 
   var look = function(movementX, movementY) {
+    if ( scope.enabled === false ) return;
+
     yawObject.rotation.y -= movementX * 0.002;
     pitchObject.rotation.x -= movementY * 0.002;
 
@@ -33,8 +35,6 @@ THREE.PointerLockControls = function ( camera ) {
   };
 
   var onMouseMove = function ( event ) {
-    if ( scope.enabled === false ) return;
-
     var movementX = event.movementX || event.mozMovementX ||
                     event.webkitMovementX || 0;
     var movementY = event.movementY || event.mozMovementY ||
@@ -112,55 +112,59 @@ THREE.PointerLockControls = function ( camera ) {
   };
 
   var isMoveTouch = function(x, y) {
-    return y >= height / 2 && x <= y / 3;
+    return y >= window.innerHeight / 2 && x <= window.innerWidth / 3;
   };
 
   var isLookTouch = function(x, y) {
-    return y >= height / 2 && x >= 2 * y / 3;
+    return y >= window.innerHeight / 2 && x >= 2 * window.innerWidth / 3;
   };
 
+  var lookTouches = {};
+
   var onTouchStart = function(event) {
+    var width = window.innerWidth;
+    var height = window.innerHeight;
     for (var i = 0; i < event.changedTouches.length; i++) {
       var touch = event.changedTouches[i];
       if (isMoveTouch(touch.pageX, touch.pageY)) {
         var relativeWidth = width / 3;
         var relativeHeight = height / 2;
-        var relativeX = touch.pageX + relativeWidth / 2;
-        var relativeY = touch.pageY - height / 2 + relativeHeight / 2;
+        var relativeX = touch.pageX - relativeWidth / 2;
+        var relativeY = touch.pageY - height / 2 - relativeHeight / 2;
         if (relativeX <= relativeY) {
           if (relativeX <= -relativeY) {
-            // Left.
             moveLeft = true;
           } else {
-            // Down.
             moveBackward = true;
           }
         } else {
           if (relativeX <= -relativeY) {
-            // Up.
             moveForward = true;
           } else {
-            // Right.
             moveRight = true;
           }
         }
       } else if (isLookTouch(touch.pageX, touch.pageY)) {
+        lookTouches[touch.identifier] = [touch.pageX, touch.pageY];
       }
     }
   };
 
   var onTouchMove = function(event) {
     event.preventDefault();
-    var width = window.innerWidth;
-    var height = window.innerHeight;
     for (var i = 0; i < event.changedTouches.length; i++) {
       var touch = event.changedTouches[i];
       if (isLookTouch(touch.pageX, touch.pageY)) {
+        look(touch.pageX - lookTouches[touch.identifier][0],
+             touch.pageY - lookTouches[touch.identifier][1]);
+        lookTouches[touch.identifier] = [touch.pageX, touch.pageY];
       }
     }
   };
 
   var onTouchEnd = function(event) {
+    var width = window.innerWidth;
+    var height = window.innerHeight;
     for (var i = 0; i < event.changedTouches.length; i++) {
       var touch = event.changedTouches[i];
       if (isMoveTouch(touch.pageX, touch.pageY)) {
@@ -170,21 +174,19 @@ THREE.PointerLockControls = function ( camera ) {
         var relativeY = touch.pageY - height / 2 + relativeHeight / 2;
         if (relativeX <= relativeY) {
           if (relativeX <= -relativeY) {
-            // Left.
             moveLeft = false;
           } else {
-            // Down.
             moveBackward = false;
           }
         } else {
           if (relativeX <= -relativeY) {
-            // Up.
             moveForward = false;
           } else {
-            // Right.
             moveRight = false;
           }
         }
+      } else if (isLookTouch(touch.pageX, touch.pageY)) {
+        delete lookTouches[touch.identifier];
       }
     }
   };
