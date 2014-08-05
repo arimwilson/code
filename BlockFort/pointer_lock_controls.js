@@ -43,7 +43,6 @@ THREE.PointerLockControls = function ( camera ) {
   };
 
   var onKeyDown = function ( event ) {
-
     switch ( event.keyCode ) {
 
       case 38: // up
@@ -78,7 +77,6 @@ THREE.PointerLockControls = function ( camera ) {
   };
 
   var onKeyUp = function ( event ) {
-
     switch( event.keyCode ) {
 
       case 38: // up
@@ -115,13 +113,21 @@ THREE.PointerLockControls = function ( camera ) {
     return y >= window.innerHeight / 2 && x <= window.innerWidth / 3;
   };
 
+  var isHeightTouch = function(x, y) {
+    return y <= window.innerHeight / 5 &&
+           (x <= window.innerWidth / 3 || x >= 2 * window.innerWidth / 3);
+  };
+
   var isLookTouch = function(x, y) {
     return y >= window.innerHeight / 2 && x >= 2 * window.innerWidth / 3;
   };
 
+  var moveTouches = {};
   var lookTouches = {};
+  var createTouches = {};
 
   var onTouchStart = function(event) {
+    if ( scope.enabled === false ) return;
     var width = window.innerWidth;
     var height = window.innerHeight;
     for (var i = 0; i < event.changedTouches.length; i++) {
@@ -133,20 +139,35 @@ THREE.PointerLockControls = function ( camera ) {
         var relativeY = touch.pageY - height / 2 - relativeHeight / 2;
         if (relativeX <= relativeY) {
           if (relativeX <= -relativeY) {
+            moveTouches[touch.identifier] = 1;
             moveLeft = true;
           } else {
+            moveTouches[touch.identifier] = 2;
             moveBackward = true;
           }
         } else {
           if (relativeX <= -relativeY) {
+            moveTouches[touch.identifier] = 3;
             moveForward = true;
           } else {
+            moveTouches[touch.identifier] = 4;
             moveRight = true;
           }
         }
+      } else if (isHeightTouch(touch.pageX, touch.pageY)) {
+        if (touch.pageX <= width / 3) {
+          moveTouches[touch.identifier] = 5;
+          flyDown = true;
+        } else if (touch.pageX >= 2 * width / 3) {
+          moveTouches[touch.identifier] = 6;
+          flyUp = true;
+        }
       } else if (isLookTouch(touch.pageX, touch.pageY)) {
         lookTouches[touch.identifier] = [touch.pageX, touch.pageY];
+      } else {
+        createTouches[touch.identifier] = new Date().getTime();
       }
+      event.preventDefault();
     }
   };
 
@@ -154,39 +175,51 @@ THREE.PointerLockControls = function ( camera ) {
     event.preventDefault();
     for (var i = 0; i < event.changedTouches.length; i++) {
       var touch = event.changedTouches[i];
-      if (isLookTouch(touch.pageX, touch.pageY)) {
-        look(touch.pageX - lookTouches[touch.identifier][0],
-             touch.pageY - lookTouches[touch.identifier][1]);
+      if (touch.identifier in lookTouches) {
+        look(2 * (touch.pageX - lookTouches[touch.identifier][0]),
+             2 * (touch.pageY - lookTouches[touch.identifier][1]));
         lookTouches[touch.identifier] = [touch.pageX, touch.pageY];
       }
     }
   };
 
   var onTouchEnd = function(event) {
-    var width = window.innerWidth;
-    var height = window.innerHeight;
     for (var i = 0; i < event.changedTouches.length; i++) {
       var touch = event.changedTouches[i];
-      if (isMoveTouch(touch.pageX, touch.pageY)) {
-        var relativeWidth = width / 3;
-        var relativeHeight = height / 2;
-        var relativeX = touch.pageX + relativeWidth / 2;
-        var relativeY = touch.pageY - height / 2 + relativeHeight / 2;
-        if (relativeX <= relativeY) {
-          if (relativeX <= -relativeY) {
+      if (touch.identifier in moveTouches) {
+        switch (moveTouches[touch.identifier]) {
+          case 1:
             moveLeft = false;
-          } else {
+            break;
+          case 2:
             moveBackward = false;
-          }
-        } else {
-          if (relativeX <= -relativeY) {
+            break;
+          case 3:
             moveForward = false;
-          } else {
+            break;
+          case 4:
             moveRight = false;
-          }
+            break;
+          case 5:
+            flyDown = false;
+            break;
+          case 6:
+            flyUp = false;
+            break;
         }
-      } else if (isLookTouch(touch.pageX, touch.pageY)) {
+        delete moveTouches[touch.identifier];
+      } else if (touch.identifier in lookTouches) {
         delete lookTouches[touch.identifier];
+      } else if (touch.identifier in createTouches) {
+        var ev = new Object();
+        if (new Date().getTime() - createTouches[touch.identifier] < 1000) {
+          ev.which = 1;
+        } else {
+          ev.which = 3;
+        }
+        // TODO(ariw): How can I not reference blockfort in controls JavaScript?
+        blockfort.buildClick(ev);
+        delete createTouches[touch.identifier];
       }
     }
   };

@@ -45,19 +45,8 @@ blockfort.update = function() {
   time = Date.now();
 }
 
-blockfort.fullScreenChange = function(event) {
-  blockfort.element.requestPointerLock =
-      blockfort.element.requestPointerLock ||
-      blockfort.element.webkitRequestPointerLock ||
-      blockfort.element.mozRequestPointerLock;
-  blockfort.pointerLockChange();
-  blockfort.element.requestPointerLock();
-}
-
-blockfort.pointerLockChange = function(event) {
-  if (document.pointerLockElement === blockfort.element ||
-      document.webkitPointerLockElement === blockfort.element ||
-      document.mozPointerLockElement === blockfort.element) {
+blockfort.changeControls = function(enabled) {
+  if (enabled) {
     controls.enabled = true;
     $(document).click(blockfort.buildClick);
 
@@ -71,7 +60,19 @@ blockfort.pointerLockChange = function(event) {
   }
 }
 
-blockfort.pointerLockClick = function(event) {
+blockfort.fullScreenChange = function(event) {
+  var enabled = document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement;
+  blockfort.changeControls(enabled);
+  blockfort.element.requestPointerLock =
+      blockfort.element.requestPointerLock ||
+      blockfort.element.webkitRequestPointerLock ||
+      blockfort.element.mozRequestPointerLock;
+  blockfort.element.requestPointerLock();
+}
+
+blockfort.blockerClick = function(event) {
   blockfort.element.requestFullscreen =
       blockfort.element.requestFullscreen ||
       blockfort.element.webkitRequestFullscreen ||
@@ -132,6 +133,7 @@ blockfort.buildClick = function(event) {
   var ray = new t.Raycaster(controls.getObject().position, direction);
   var intersects = ray.intersectObjects(blockfort.objects);
 
+  console.log(event);
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
       var intersectPoint = intersects[0].point.sub(
@@ -296,13 +298,13 @@ blockfort.start = function() {
   $(document).on("fullscreenerror", function(event) {});
   $(document).on("webkitfullscreenerror", function(event) {});
   $(document).on("mozfullscreenerror", function(event) {});
-  $(document).on("pointerlockchange", blockfort.pointerLockChange);
-  $(document).on("webkitpointerlockchange", blockfort.pointerLockChange);
-  $(document).on("mozpointerlockchange", blockfort.pointerLockChange);
+  $(document).on("pointerlockchange", function(event) {});
+  $(document).on("webkitpointerlockchange", function(event) {});
+  $(document).on("mozpointerlockchange", function(event) {});
   $(document).on("pointerlockerror", function(event) {});
   $(document).on("webkitpointerlockerror", function(event) {});
   $(document).on("mozpointerlockerror", function(event) {});
-  blockfort.blocker.click(blockfort.pointerLockClick);
+  blockfort.blocker.click(blockfort.blockerClick);
   blockfort.menu.click(function(event) { event.stopPropagation(); });
 
   blockfort.block_color.get(0).color.fromString("D4AF37");
