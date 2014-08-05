@@ -130,14 +130,14 @@ func save(w http.ResponseWriter, r *http.Request) {
   key, world, err = getWorld(c, cur_user, name)
   if err == nil {
     world.Data = data
-    _, err = datastore.Put(c, key, world)
+    key, err = datastore.Put(c, key, world)
   } else {
     world.User = cur_user
     world.Name = name
     world.Version = 2
     world.Data = data
     key = datastore.NewIncompleteKey(c, "world", nil)
-    _, err = datastore.Put(c, key, world)
+    key, err = datastore.Put(c, key, world)
   }
   if err != nil {
     c.Errorf("Could not save world %s for user %s with error: %s",
