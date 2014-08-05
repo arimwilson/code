@@ -133,7 +133,6 @@ blockfort.buildClick = function(event) {
   var ray = new t.Raycaster(controls.getObject().position, direction);
   var intersects = ray.intersectObjects(blockfort.objects);
 
-  console.log(event);
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
       var intersectPoint = intersects[0].point.sub(
