@@ -1,8 +1,9 @@
 /**
  * @author mrdoob / http://mrdoob.com/
+ * @author ariwilson / http://www.ariwilson.com/
  */
 
-THREE.PointerLockControls = function ( camera ) {
+THREE.FirstPersonControls = function ( camera ) {
 
   var scope = this;
 

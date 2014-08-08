@@ -226,6 +226,14 @@ blockfort.share = function(event) {
   alert(window.location.origin + "?id=" + blockfort.id);
 }
 
+blockfort.graphics = function(event) {
+  if ($(this).val() == "3D") {
+    blockfort.threed = true;
+  } else {
+    blockfort.threed = false;
+  }
+}
+
 blockfort.start = function() {
   t = THREE;
   renderer = new t.WebGLRenderer();
@@ -243,6 +251,8 @@ blockfort.start = function() {
   $("#save").click(blockfort.save);
   $("#load").click(blockfort.load);
   $("#share").click(blockfort.share);
+  blockfort.threed = false;
+  $("input[name=graphics]").click(blockfort.graphics);
 
   // World options.
   blockfort.block_color = $("#block_color");
@@ -284,7 +294,7 @@ blockfort.start = function() {
       1,  // Near plane
       10000  // Far plane
   );
-  controls = new t.PointerLockControls(camera);
+  controls = new t.FirstPersonControls(camera);
   cameraOrtho = new THREE.OrthographicCamera(
       -width / 2, width / 2, height / 2, -height / 2, 1, 10);
   cameraOrtho.position.z = 10;
