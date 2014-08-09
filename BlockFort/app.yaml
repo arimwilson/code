@@ -22,6 +22,10 @@ handlers:
 # JSColor.
 - url: /jscolor
   static_dir: jscolor
+# List user's worlds.
+- url: /list
+  script: _go_app
+  login: required
 # Load either named or IDed world.
 - url: /load
   script: _go_app

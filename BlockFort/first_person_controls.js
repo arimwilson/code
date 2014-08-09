@@ -218,7 +218,6 @@ THREE.FirstPersonControls = function ( camera ) {
         } else {
           ev.which = 3;
         }
-        // TODO(ariw): How can I not reference blockfort in controls JavaScript?
         blockfort.buildClick(ev);
         delete createTouches[touch.identifier];
       }
@@ -227,18 +226,33 @@ THREE.FirstPersonControls = function ( camera ) {
 
   this.enabled = false;
 
-  document.addEventListener( 'mousemove', onMouseMove, false );
-  document.addEventListener( 'keydown', onKeyDown, false );
-  document.addEventListener( 'keyup', onKeyUp, false );
-  document.addEventListener( 'touchstart', onTouchStart, false);
-  document.addEventListener( 'touchmove', onTouchMove, false);
-  document.addEventListener( 'touchend', onTouchEnd, false);
-
   this.getObject = function () {
 
     return yawObject;
 
   };
+
+  this.connect = function() {
+    document.addEventListener( 'click', blockfort.buildClick, false );
+    document.addEventListener( 'mousemove', onMouseMove, false );
+    document.addEventListener( 'keydown', onKeyDown, false );
+    document.addEventListener( 'keyup', onKeyUp, false );
+    document.addEventListener( 'touchstart', onTouchStart, false);
+    document.addEventListener( 'touchmove', onTouchMove, false);
+    document.addEventListener( 'touchend', onTouchEnd, false);
+    scope.enabled = true;
+  }
+
+  this.disconnect = function() {
+    scope.enabled = false;
+    document.removeEventListener( 'click', blockfort.buildClick, false);
+    document.removeEventListener( 'mousemove', onMouseMove, false );
+    document.removeEventListener( 'keydown', onKeyDown, false );
+    document.removeEventListener( 'keyup', onKeyUp, false );
+    document.removeEventListener( 'touchstart', onTouchStart, false);
+    document.removeEventListener( 'touchmove', onTouchMove, false);
+    document.removeEventListener( 'touchend', onTouchEnd, false);
+  }
 
   this.update = function ( delta ) {
 

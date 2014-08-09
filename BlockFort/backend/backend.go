@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+  http.HandleFunc("/list", list)
   http.HandleFunc("/load", load)
   http.HandleFunc("/save", save)
 }
@@ -16,6 +17,29 @@ type World struct {
   Name string
   Version int
   Data []byte  // Zipped world data received from user.
+}
+
+func list(w http.ResponseWriter, r *http.Request) {
+  c := appengine.NewContext(r)
+  cur_user := user.Current(c).String()
+  query := datastore.NewQuery("world").
+      Project("Name").
+      Filter("User =", cur_user)
+  var worlds []World
+  _, err := query.GetAll(c, &worlds)
+  if err != nil {
+    c.Errorf("Could not load list of worlds for user %s: %s.", cur_user,
+             err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  worldNames := make([]string, len(worlds))
+  for i, world := range worlds {
+    worldNames[i] = world.Name
+  }
+
+  encoder := json.NewEncoder(w)
+  encoder.Encode(worldNames)
 }
 
 func getWorld(c appengine.Context, cur_user string, name string) (
@@ -56,8 +80,8 @@ func load(w http.ResponseWriter, r *http.Request) {
   if name != "" {
     key, world, err = getWorld(c, cur_user, name)
     if err != nil {
-       c.Infof("Could not load world %s for user %s: %s.", name, cur_user,
-               err.Error())
+       c.Errorf("Could not load world %s for user %s: %s.", name, cur_user,
+                err.Error())
       if err == datastore.Done {
         http.Error(w, err.Error(), http.StatusBadRequest)
       } else {

@@ -47,14 +47,11 @@ blockfort.update = function() {
 
 blockfort.changeControls = function(enabled) {
   if (enabled) {
-    controls.enabled = true;
-    $(document).click(blockfort.buildClick);
+    controls.connect();
 
     blockfort.blocker.hide();
   } else {
-    controls.enabled = false;
-    $(document).off("click");
-    $(document).off("keypress");
+    controls.disconnect();
 
     blockfort.blocker.show();
   }
@@ -135,10 +132,9 @@ blockfort.buildClick = function(event) {
 
   if (intersects.length > 0) {
     if (event.which === 1) { // left click
-      var intersectPoint = intersects[0].point.sub(
-          direction.multiplyScalar(blockfort.unitSize));
+      var intersectPoint = intersects[0].point.sub(direction);
       var cube = blockfort.createCube(
-          blockfort.gridCoordinates(intersects[0].point),
+          blockfort.gridCoordinates(intersectPoint),
           "#" + blockfort.block_color.val());
       scene.add(cube);
       blockfort.objects.push(cube);
@@ -211,8 +207,20 @@ blockfort.deserialize = function(world) {
   }
 }
 
-blockfort.load = function(event) {
-  blockfort.name = prompt("World name to load?", blockfort.name);
+blockfort.list = function(event) {
+  $.ajax({
+      url: "list", type: "POST", async: false, success: blockfort.load,
+  });
+}
+
+blockfort.load = function(worldNames) {
+  worldPrompt = "Available worlds:\n";
+  worldNames = JSON.parse(worldNames);
+  for (var i = 0; i < worldNames.length; i++) {
+    worldPrompt += worldNames[i] + "\n";
+  }
+  worldPrompt += "\nWorld name to load?"
+  blockfort.name = prompt(worldPrompt, blockfort.name);
   if (blockfort.name === null) return;
   $.ajax({
       url: "load", type: "POST", async: false,
@@ -226,12 +234,16 @@ blockfort.share = function(event) {
   alert(window.location.origin + "?id=" + blockfort.id);
 }
 
-blockfort.graphics = function(event) {
-  if ($(this).val() == "3D") {
+blockfort.graphics = function(val) {
+  if (val == "3D") {
     blockfort.threed = true;
   } else {
     blockfort.threed = false;
   }
+}
+
+blockfort.graphicsClick = function(event) {
+  graphics($(this).val());
 }
 
 blockfort.start = function() {
@@ -249,12 +261,13 @@ blockfort.start = function() {
   blockfort.blocker = $("#blocker");
   blockfort.menu = $("#menu");
   $("#save").click(blockfort.save);
-  $("#load").click(blockfort.load);
+  $("#load").click(blockfort.list);
   $("#share").click(blockfort.share);
-  blockfort.threed = false;
-  $("input[name=graphics]").click(blockfort.graphics);
+  $("input[name=graphics]").click(blockfort.graphicsClick);
 
   // World options.
+  blockfort.threed = blockfort.graphics(
+      $("input[name=graphics]:checked").val());;
   blockfort.block_color = $("#block_color");
   blockfort.unitSize = 64;
   blockfort.units = 1000;
