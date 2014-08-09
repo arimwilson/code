@@ -1,6 +1,6 @@
 // Generic three.js objects are in the global namespace.
-var t, renderer, scene, sceneOrtho, width, height, camera, cameraOrtho,
-    controls, time;
+var t, renderer, scene, sceneOrtho, width, height, effect, camera, cameraOrtho,
+    controls, time, stats;
 
 onWindowResize = function() {
   width = window.innerWidth;
@@ -18,6 +18,9 @@ onWindowResize = function() {
   blockfort.crosshair.position.set(0, 0, 1);
 
   renderer.setSize(width, height);
+  if (effect) {
+    effect.setSize(width, height);
+  }
 }
 
 cameraDirection = function() {
@@ -39,10 +42,18 @@ blockfort.update = function() {
   renderer.render(scene, camera);
   renderer.clearDepth();
   renderer.render(sceneOrtho, cameraOrtho);
+  if (effect) {
+    effect.render(scene, camera);
+  }
 
   // Update controls.
   controls.update(Date.now() - time);
   time = Date.now();
+
+  if (stats) {
+    // Update stats.
+    stats.update();
+  }
 }
 
 blockfort.changeControls = function(enabled) {
@@ -236,14 +247,14 @@ blockfort.share = function(event) {
 
 blockfort.graphics = function(val) {
   if (val == "3D") {
-    blockfort.threed = true;
+    effect = new t.StereoEffect(renderer);
   } else {
-    blockfort.threed = false;
+    effect = null;
   }
 }
 
 blockfort.graphicsClick = function(event) {
-  graphics($(this).val());
+  blockfort.graphics($(this).val());
 }
 
 blockfort.start = function() {
@@ -256,6 +267,11 @@ blockfort.start = function() {
   scene = new t.Scene();
   sceneOrtho = new t.Scene();
   time = Date.now();
+  // stats = new Stats();
+  if (stats) {
+    stats.domElement.style.position = "absolute";
+    stats.domElement.style.top = "0px";
+  }
 
   // Menu.
   blockfort.blocker = $("#blocker");
@@ -266,8 +282,7 @@ blockfort.start = function() {
   $("input[name=graphics]").click(blockfort.graphicsClick);
 
   // World options.
-  blockfort.threed = blockfort.graphics(
-      $("input[name=graphics]:checked").val());;
+  blockfort.graphics($("input[name=graphics]:checked").val());;
   blockfort.block_color = $("#block_color");
   blockfort.unitSize = 64;
   blockfort.units = 1000;
@@ -333,6 +348,7 @@ blockfort.start = function() {
 
   // Get the window ready.
   $(document.body).append(renderer.domElement);
+  if (stats) $(document.body).append(stats.domElement);
   $(window).on("resize", onWindowResize);
 
   // Load world if previously specified.

@@ -128,7 +128,6 @@ THREE.FirstPersonControls = function ( camera ) {
   var createTouches = {};
 
   var onTouchStart = function(event) {
-    if ( scope.enabled === false ) return;
     var width = window.innerWidth;
     var height = window.innerHeight;
     for (var i = 0; i < event.changedTouches.length; i++) {
