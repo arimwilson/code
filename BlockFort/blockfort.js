@@ -1,6 +1,6 @@
 // Generic three.js objects are in the global namespace.
 var t, renderer, scene, sceneOrtho, width, height, effect, camera, cameraOrtho,
-    controls, time, stats;
+    controls, clock, stats;
 
 onWindowResize = function() {
   width = window.innerWidth;
@@ -47,8 +47,7 @@ blockfort.update = function() {
   }
 
   // Update controls.
-  controls.update(Date.now() - time);
-  time = Date.now();
+  controls.update(clock.getDelta() * 1000);
 
   if (stats) {
     // Update stats.
@@ -245,8 +244,8 @@ blockfort.share = function(event) {
   alert(window.location.origin + "?id=" + blockfort.id);
 }
 
-blockfort.graphics = function(val) {
-  if (val == "3D") {
+blockfort.graphicsChange = function(val) {
+  if (val === "3D") {
     effect = new t.StereoEffect(renderer);
   } else {
     effect = null;
@@ -254,7 +253,21 @@ blockfort.graphics = function(val) {
 }
 
 blockfort.graphicsClick = function(event) {
-  blockfort.graphics($(this).val());
+  blockfort.graphicsChange($(this).val());
+}
+
+blockfort.controlsChange = function(val) {
+  if (val === "1") {
+    controls = new t.FirstPersonControls(camera);
+    scene.add(controls.getObject());
+  } else {
+    controls = new t.DeviceOrientationControls(camera, true);
+    controls.autoForward = true;
+  }
+}
+
+blockfort.controlsClick = function(event) {
+  blockfort.controlsChange($(this).val());
 }
 
 blockfort.start = function() {
@@ -266,7 +279,7 @@ blockfort.start = function() {
   renderer.autoClear = false;
   scene = new t.Scene();
   sceneOrtho = new t.Scene();
-  time = Date.now();
+  clock = new t.Clock();
   // stats = new Stats();
   if (stats) {
     stats.domElement.style.position = "absolute";
@@ -280,9 +293,10 @@ blockfort.start = function() {
   $("#load").click(blockfort.list);
   $("#share").click(blockfort.share);
   $("input[name=graphics]").click(blockfort.graphicsClick);
+  $("input[name=controls]").click(blockfort.controlsClick);
 
   // World options.
-  blockfort.graphics($("input[name=graphics]:checked").val());;
+  blockfort.graphicsChange($("input[name=graphics]:checked").val());
   blockfort.block_color = $("#block_color");
   blockfort.unitSize = 64;
   blockfort.units = 1000;
@@ -315,18 +329,17 @@ blockfort.start = function() {
   // Blue background color.
   renderer.setClearColor(0x00BFFF);
 
-  // Set up cameras and controls.
+  // Set up cameras.
   camera = new t.PerspectiveCamera(
       60,  // Field of view
       width / height,  // Aspect ratio
       1,  // Near plane
       10000  // Far plane
   );
-  controls = new t.FirstPersonControls(camera);
+  blockfort.controlsChange($("input[name=controls]:checked").val());;
   cameraOrtho = new THREE.OrthographicCamera(
       -width / 2, width / 2, height / 2, -height / 2, 1, 10);
   cameraOrtho.position.z = 10;
-  scene.add(controls.getObject());
 
   blockfort.element = document.body;
   $(document).on("fullscreenchange", blockfort.fullScreenChange);
