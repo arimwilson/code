@@ -1,5 +1,0 @@
-backends:
-- name: solver
-  class: B8
-  options: dynamic, public
-

@@ -1,0 +1,41 @@
+api_version: go1
+application: scrabblish
+basic_scaling:
+  max_instances: '1'
+handlers:
+- login: required
+  secure: optional
+  static_files: scrabblish.html
+  upload: scrabblish.html
+  url: /
+- secure: optional
+  static_files: favicon.ico
+  upload: favicon.ico
+  url: /favicon.ico
+- secure: optional
+  static_files: style.css
+  upload: style.css
+  url: /style.css
+- secure: optional
+  static_files: scrabblish/twl.txt
+  upload: scrabblish/twl.txt
+  url: /twl
+- login: required
+  script: _go_app
+  secure: optional
+  url: /save
+- login: required
+  script: _go_app
+  secure: optional
+  url: /list
+- script: _go_app
+  secure: optional
+  url: /solve
+- login: admin
+  script: _go_app
+  secure: optional
+  url: /_ah/(start|stop)
+instance_class: B8
+module: solver
+runtime: go
+version: '1'
