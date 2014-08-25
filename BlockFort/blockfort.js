@@ -217,20 +217,8 @@ blockfort.deserialize = function(world) {
   }
 }
 
-blockfort.list = function(event) {
-  $.ajax({
-      url: "list", type: "POST", async: false, success: blockfort.load,
-  });
-}
-
-blockfort.load = function(worldNames) {
-  worldPrompt = "Available worlds:\n";
-  worldNames = JSON.parse(worldNames);
-  for (var i = 0; i < worldNames.length; i++) {
-    worldPrompt += worldNames[i] + "\n";
-  }
-  worldPrompt += "\nWorld name to load?"
-  blockfort.name = prompt(worldPrompt, blockfort.name);
+blockfort.load = function(world_name) {
+  blockfort.name = world_name;
   if (blockfort.name === null) return;
   $.ajax({
       url: "load", type: "POST", async: false,
@@ -290,8 +278,19 @@ blockfort.start = function() {
   blockfort.blocker = $("#blocker");
   blockfort.menu = $("#menu");
   $("#save").click(blockfort.save);
-  $("#load").click(blockfort.list);
   $("#share").click(blockfort.share);
+  var worlds = $("#worlds");
+  $.ajax({
+      url: "list", type: "POST", async: false, success: function(world_names) {
+        world_names = JSON.parse(world_names);
+        for (var i = 0; i < world_names.length; i++) {
+          worlds.append($("<option></option>").html(world_names[i]));
+        }
+      },
+  });
+  worlds.change(function() {
+    blockfort.load(worlds.val());
+  });
   $("input[name=graphics]").click(blockfort.graphicsClick);
   $("input[name=controls]").click(blockfort.controlsClick);
 
