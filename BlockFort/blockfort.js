@@ -55,7 +55,7 @@ blockfort.update = function() {
   }
 }
 
-blockfort.changeControls = function(enabled) {
+blockfort.enableControls = function(enabled) {
   if (enabled) {
     controls.connect();
 
@@ -71,7 +71,7 @@ blockfort.fullScreenChange = function(event) {
   var enabled = document.fullscreenElement ||
                 document.webkitFullscreenElement ||
                 document.mozFullScreenElement;
-  blockfort.changeControls(enabled);
+  blockfort.enableControls(enabled);
   blockfort.element.requestPointerLock =
       blockfort.element.requestPointerLock ||
       blockfort.element.webkitRequestPointerLock ||
@@ -288,6 +288,8 @@ blockfort.start = function() {
         }
       },
   });
+  // Don't have a world selected to load by default.
+  worlds.prop("selectedIndex", -1);
   worlds.change(function() {
     blockfort.load(worlds.val());
   });
