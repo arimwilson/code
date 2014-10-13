@@ -10,6 +10,6 @@ Ari Wilson's code, including a variety of projects:
 
 [BlockFort](http://blockfort3d.appspot.com/) is a web-based game similar to Minecraft but with less gameplay and more world-building :). Saves are backed up to the cloud.
 
-[Falldown](https://apps.getpebble.com/applications/52b5584420fef47f82000011) is a [Pebble watch](http://getpebble.com/) game that plays like the old [FallDown Forever](http://www.ticalc.org/pub/86/asm/games/fd2.zip) game for TI calculators. High scores are recorded in [PebbleScores](http://pebblescores.appspot.com/list?game=Falldown2).
+[PebbleScores](http://pebblescores.appspot.com/list?game=Falldown2) records high scores for [Pebble watch](http://getpebble.com/) games.
 
 Design docs for these projects are stored [here](https://docs.google.com/leaf?id=0B2y1ljk8ZP3tNDAzODRkNmItOWEwOS00ZDA2LTgxMjUtMGYwOTFiODdkYzVi&hl=en_US).
