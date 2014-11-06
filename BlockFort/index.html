@@ -22,22 +22,47 @@
   <body onload="blockfort.start()">
     <div id="blocker">
       <div id="menu">
-      <table>
-        <tr><td><h1>Blockfort</h1></td></tr>
-        <tr><td><button type="button" id="save"
-            class="menu-button">Save</button></td></tr>
-        <tr><td><button type="button" id="share"
-            class="menu-button">Share</button></td></tr>
-        <tr><td>Worlds: <select id="worlds"></select></td></tr>
-        <tr><td><input class="color" id="block_color"></td></tr>
-        <tr><td>Graphics:
-            <input type="radio" name="graphics" value="2D" checked>2D
-            <input type="radio" name="graphics" value="3D">3D</td></tr>
-        <tr><td>Controls:
-            <input type="radio" name="controls" value="1" checked>First person
-            <input type="radio" name="controls" value="2">Device orientation
-        </td></tr>
-      </table>
+        <div id="main">
+        <table>
+          <tr><td><h1>Blockfort</h1></td></tr>
+          <tr><td><button type="button" id="saveb" class="menu-button">Save
+              </button></td></tr>
+          <tr><td><button type="button" id="loadb" class="menu-button">Load
+              </button></td></tr>
+          <tr><td><button type="button" id="shareb" class="menu-button">Share
+              </button></td></tr>
+          <tr><td><button type="button" id="optionsb" class="menu-button">
+                Options</button></td></tr>
+        </table>
+        </div>
+        <div id="load" style="display:none">
+        <table>
+          <tr><td><h1>Load</h1></td></tr>
+          <tr><td>World: <select id="worlds"></select></td></tr>
+          <tr><td><button type="button" id="backb" class="menu-button">Back
+              </button></td></tr>
+        </table>
+        </div>
+        <div id="options" style="display:none">
+        <table>
+          <tr><td><h1>Options</h1></td></tr>
+          <tr><td>Block color: <input class="color" id="block_color"></td></tr>
+          <tr><td>Window mode:
+              <input type="radio" name="window" value="Windowed" checked>
+                  Windowed
+              <input type="radio" name="window" value="Fullscreen">Fullscreen
+          <tr><td>Stereoscopic display:
+              <input type="radio" name="stereoscopic" value="Off" checked>Off
+              <input type="radio" name="stereoscopic" value="On">On
+          </td></tr>
+          <tr><td>Control type:
+              <input type="radio" name="controls" value="1" checked>First person
+              <input type="radio" name="controls" value="2">Device orientation
+          </td></tr>
+          <tr><td><button type="button" id="backb2" class="menu-button">Back
+              </button></td></tr>
+        </table>
+        </div>
       </div>
     </div>
   </body>

@@ -71,7 +71,6 @@ blockfort.fullScreenChange = function(event) {
   var enabled = document.fullscreenElement ||
                 document.webkitFullscreenElement ||
                 document.mozFullScreenElement;
-  blockfort.enableControls(enabled);
   blockfort.element.requestPointerLock =
       blockfort.element.requestPointerLock ||
       blockfort.element.webkitRequestPointerLock ||
@@ -79,12 +78,23 @@ blockfort.fullScreenChange = function(event) {
   blockfort.element.requestPointerLock();
 }
 
+blockfort.pointerLockChange = function(event) {
+  var enabled = document.pointerLockElement === blockfort.element ||
+                document.webkitPointerLockElement === blockfort.element ||
+                document.mozPointerLockElement === blockfort.element;
+  blockfort.enableControls(enabled);
+}
+
 blockfort.blockerClick = function(event) {
-  blockfort.element.requestFullscreen =
-      blockfort.element.requestFullscreen ||
-      blockfort.element.webkitRequestFullscreen ||
-      blockfort.element.mozRequestFullScreen;
-  blockfort.element.requestFullscreen();
+  if ($("input[name=window]:checked").val() === "Windowed") {
+    blockfort.fullScreenChange(event);
+  } else {
+    blockfort.element.requestFullscreen =
+        blockfort.element.requestFullscreen ||
+        blockfort.element.webkitRequestFullscreen ||
+        blockfort.element.mozRequestFullScreen;
+    blockfort.element.requestFullscreen();
+  }
 }
 
 // Given world coordinates, return grid coordinates.
@@ -232,16 +242,16 @@ blockfort.share = function(event) {
   alert(window.location.origin + "?id=" + blockfort.id);
 }
 
-blockfort.graphicsChange = function(val) {
-  if (val === "3D") {
+blockfort.stereoscopicChange = function(val) {
+  if (val === "On") {
     effect = new t.StereoEffect(renderer);
   } else {
     effect = null;
   }
 }
 
-blockfort.graphicsClick = function(event) {
-  blockfort.graphicsChange($(this).val());
+blockfort.stereoscopicClick = function(event) {
+  blockfort.stereoscopicChange($(this).val());
 }
 
 blockfort.controlsChange = function(val) {
@@ -274,11 +284,20 @@ blockfort.start = function() {
     stats.domElement.style.top = "0px";
   }
 
-  // Menu.
+  // Main menu.
   blockfort.blocker = $("#blocker");
-  blockfort.menu = $("#menu");
-  $("#save").click(blockfort.save);
-  $("#share").click(blockfort.share);
+  $("#saveb").click(blockfort.save);
+  $("#loadb").click(function(event) {
+    $("#main").hide();
+    $("#load").show();
+  });
+  $("#shareb").click(blockfort.share);
+  $("#optionsb").click(function(event) {
+    $("#main").hide();
+    $("#options").show();
+  });
+
+  // Load menu.
   var worlds = $("#worlds");
   $.ajax({
       url: "list", type: "POST", async: false, success: function(world_names) {
@@ -293,11 +312,21 @@ blockfort.start = function() {
   worlds.change(function() {
     blockfort.load(worlds.val());
   });
-  $("input[name=graphics]").click(blockfort.graphicsClick);
+  $("#backb").click(function(event) {
+    $("#load").hide();
+    $("#main").show();
+  })
+
+  // Options menu.
+  $("input[name=stereoscopic]").click(blockfort.stereoscopicClick);
   $("input[name=controls]").click(blockfort.controlsClick);
+  $("#backb2").click(function(event) {
+    $("#options").hide();
+    $("#main").show();
+  })
 
   // World options.
-  blockfort.graphicsChange($("input[name=graphics]:checked").val());
+  blockfort.stereoscopicChange($("input[name=stereoscopic]:checked").val());
   blockfort.block_color = $("#block_color");
   blockfort.unitSize = 64;
   blockfort.units = 1000;
@@ -341,6 +370,7 @@ blockfort.start = function() {
   cameraOrtho = new THREE.OrthographicCamera(
       -width / 2, width / 2, height / 2, -height / 2, 1, 10);
   cameraOrtho.position.z = 10;
+  blockfort.block_color.get(0).color.fromString("D4AF37");
 
   blockfort.element = document.body;
   $(document).on("fullscreenchange", blockfort.fullScreenChange);
@@ -349,16 +379,15 @@ blockfort.start = function() {
   $(document).on("fullscreenerror", function(event) {});
   $(document).on("webkitfullscreenerror", function(event) {});
   $(document).on("mozfullscreenerror", function(event) {});
-  $(document).on("pointerlockchange", function(event) {});
-  $(document).on("webkitpointerlockchange", function(event) {});
-  $(document).on("mozpointerlockchange", function(event) {});
+  $(document).on("pointerlockchange", blockfort.pointerLockChange);
+  $(document).on("webkitpointerlockchange", blockfort.pointerLockChange);
+  $(document).on("mozpointerlockchange", blockfort.pointerLockChange);
   $(document).on("pointerlockerror", function(event) {});
   $(document).on("webkitpointerlockerror", function(event) {});
   $(document).on("mozpointerlockerror", function(event) {});
   blockfort.blocker.click(blockfort.blockerClick);
-  blockfort.menu.click(function(event) { event.stopPropagation(); });
+  $("#menu").click(function(event) { event.stopPropagation(); });
 
-  blockfort.block_color.get(0).color.fromString("D4AF37");
 
   // Get the window ready.
   $(document.body).append(renderer.domElement);
