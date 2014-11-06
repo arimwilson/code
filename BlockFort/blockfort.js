@@ -278,7 +278,8 @@ blockfort.start = function() {
   scene = new t.Scene();
   sceneOrtho = new t.Scene();
   clock = new t.Clock();
-  // stats = new Stats();
+  // TODO(ariw): Comment this out in production.
+  stats = new Stats();
   if (stats) {
     stats.domElement.style.position = "absolute";
     stats.domElement.style.top = "0px";
