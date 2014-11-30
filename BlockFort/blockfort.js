@@ -133,6 +133,8 @@ blockfort.createCube = function(v, color) {
   var cube = new t.Mesh(blockfort.cubeGeo, blockfort.cubeMat);
   cube.position.set((v.x + 0.5) * blockfort.unitSize, (v.y + 0.5) * blockfort.unitSize,
                     (v.z + 0.5) * blockfort.unitSize);
+  cube.matrixAutoUpdate = false;
+  cube.updateMatrix();
   return cube;
 }
 
