@@ -1,6 +1,6 @@
 // Generic three.js objects are in the global namespace.
 var t, renderer, scene, sceneOrtho, width, height, effect, camera, cameraOrtho,
-    controls, clock, stats;
+    controls, clock;
 
 onWindowResize = function() {
   width = window.innerWidth;
@@ -48,11 +48,6 @@ blockfort.update = function() {
 
   // Update controls.
   controls.update(clock.getDelta() * 1000);
-
-  if (stats) {
-    // Update stats.
-    stats.update();
-  }
 }
 
 blockfort.enableControls = function(enabled) {
@@ -280,12 +275,6 @@ blockfort.start = function() {
   scene = new t.Scene();
   sceneOrtho = new t.Scene();
   clock = new t.Clock();
-  // TODO(ariw): Comment this out in production.
-  stats = new Stats();
-  if (stats) {
-    stats.domElement.style.position = "absolute";
-    stats.domElement.style.top = "0px";
-  }
 
   // Main menu.
   blockfort.blocker = $("#blocker");
@@ -394,7 +383,6 @@ blockfort.start = function() {
 
   // Get the window ready.
   $(document.body).append(renderer.domElement);
-  if (stats) $(document.body).append(stats.domElement);
   $(window).on("resize", onWindowResize);
 
   // Load world if previously specified.
