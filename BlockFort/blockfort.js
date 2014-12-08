@@ -63,14 +63,18 @@ blockfort.enableControls = function(enabled) {
 }
 
 blockfort.fullScreenChange = function(event) {
-  var enabled = document.fullscreenElement ||
-                document.webkitFullscreenElement ||
-                document.mozFullScreenElement;
-  blockfort.element.requestPointerLock =
-      blockfort.element.requestPointerLock ||
-      blockfort.element.webkitRequestPointerLock ||
-      blockfort.element.mozRequestPointerLock;
-  blockfort.element.requestPointerLock();
+  if ($("input[name=controls]:checked").val() !== "1") {
+    var enabled = document.fullscreenElement ||
+                  document.webkitFullscreenElement ||
+                  document.mozFullScreenElement;
+    blockfort.enableControls(enabled);
+  } else {
+    blockfort.element.requestPointerLock =
+        blockfort.element.requestPointerLock ||
+        blockfort.element.webkitRequestPointerLock ||
+        blockfort.element.mozRequestPointerLock;
+    blockfort.element.requestPointerLock();
+  }
 }
 
 blockfort.pointerLockChange = function(event) {
@@ -81,7 +85,10 @@ blockfort.pointerLockChange = function(event) {
 }
 
 blockfort.blockerClick = function(event) {
-  if ($("input[name=window]:checked").val() === "Windowed") {
+  if ($("input[name=window]:checked").val() === "Windowed" &&
+      $("input[name=controls]:checked").val() !== "1") {
+    blockfort.enableControls(true);
+  } else if ($("input[name=window]:checked").val() === "Windowed") {
     blockfort.fullScreenChange(event);
   } else {
     blockfort.element.requestFullscreen =
@@ -252,10 +259,10 @@ blockfort.stereoscopicClick = function(event) {
 }
 
 blockfort.controlsChange = function(val) {
-  if (val === "1") {
-    controls = new t.FirstPersonControls(camera);
+  if (val === "1" || val === "2") {
+    controls = new t.FirstPersonControls(camera, val === "1");
     scene.add(controls.getObject());
-  } else {
+  } else if (val === "3") {
     controls = new t.DeviceOrientationControls(camera, true);
     controls.autoForward = true;
   }

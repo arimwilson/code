@@ -3,7 +3,7 @@
  * @author ariwilson / http://www.ariwilson.com/
  */
 
-THREE.FirstPersonControls = function ( camera ) {
+THREE.FirstPersonControls = function ( camera, kbm ) {
 
   var scope = this;
 
@@ -233,24 +233,30 @@ THREE.FirstPersonControls = function ( camera ) {
 
   this.connect = function() {
     document.addEventListener( 'click', blockfort.buildClick, false );
-    document.addEventListener( 'mousemove', onMouseMove, false );
-    document.addEventListener( 'keydown', onKeyDown, false );
-    document.addEventListener( 'keyup', onKeyUp, false );
-    document.addEventListener( 'touchstart', onTouchStart, false);
-    document.addEventListener( 'touchmove', onTouchMove, false);
-    document.addEventListener( 'touchend', onTouchEnd, false);
+    if (kbm) {
+      document.addEventListener( 'mousemove', onMouseMove, false );
+      document.addEventListener( 'keydown', onKeyDown, false );
+      document.addEventListener( 'keyup', onKeyUp, false );
+    } else {
+      document.addEventListener( 'touchstart', onTouchStart, false);
+      document.addEventListener( 'touchmove', onTouchMove, false);
+      document.addEventListener( 'touchend', onTouchEnd, false);
+    }
     scope.enabled = true;
   }
 
   this.disconnect = function() {
     scope.enabled = false;
     document.removeEventListener( 'click', blockfort.buildClick, false);
-    document.removeEventListener( 'mousemove', onMouseMove, false );
-    document.removeEventListener( 'keydown', onKeyDown, false );
-    document.removeEventListener( 'keyup', onKeyUp, false );
-    document.removeEventListener( 'touchstart', onTouchStart, false);
-    document.removeEventListener( 'touchmove', onTouchMove, false);
-    document.removeEventListener( 'touchend', onTouchEnd, false);
+    if (kbm) {
+      document.removeEventListener( 'mousemove', onMouseMove, false );
+      document.removeEventListener( 'keydown', onKeyDown, false );
+      document.removeEventListener( 'keyup', onKeyUp, false );
+    } else {
+      document.removeEventListener( 'touchstart', onTouchStart, false);
+      document.removeEventListener( 'touchmove', onTouchMove, false);
+      document.removeEventListener( 'touchend', onTouchEnd, false);
+    }
   }
 
   this.update = function ( delta ) {
