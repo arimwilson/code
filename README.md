@@ -1,3 +1,5 @@
+Copyright 2009-2015 Ari Wilson, All Rights Reserved
+
 Ari Wilson's code, including a variety of projects:
 
 [KeeStand](http://keestand.appspot.com/) is a locally-secured cloud password storage web application, designed so that you can securely store and access the many passwords you need to run your daily Internet life in one place.
