@@ -242,6 +242,10 @@ blockfort.share = function(event) {
   alert(window.location.origin + "?id=" + blockfort.id);
 }
 
+blockfort.windowClick = function(event) {
+  localStorage["window"] = $(this).val();
+}
+
 blockfort.stereoscopicChange = function(val) {
   if (val === "On") {
     effect = new t.StereoEffect(renderer);
@@ -252,6 +256,7 @@ blockfort.stereoscopicChange = function(val) {
 
 blockfort.stereoscopicClick = function(event) {
   blockfort.stereoscopicChange($(this).val());
+  localStorage["stereoscopic"] = $(this).val();
 }
 
 blockfort.controlsChange = function(val) {
@@ -266,6 +271,7 @@ blockfort.controlsChange = function(val) {
 
 blockfort.controlsClick = function(event) {
   blockfort.controlsChange($(this).val());
+  localStorage["controls"] = $(this).val();
 }
 
 blockfort.start = function() {
@@ -312,7 +318,22 @@ blockfort.start = function() {
     $("#main").show();
   })
 
+  // Setting restoration.
+  if ("window" in localStorage) {
+    $("input[name=window][value="+localStorage["window"]+"]").prop(
+        "checked", true);
+  }
+  if ("stereoscopic" in localStorage) {
+    $("input[name=stereoscopic][value="+localStorage["stereoscopic"]+"]").prop(
+        "checked", true);
+  }
+  if ("controls" in localStorage) {
+    $("input[name=controls][value="+localStorage["controls"]+"]").prop(
+        "checked", true);
+  }
+
   // Options menu.
+  $("input[name=window]").click(blockfort.windowClick);
   $("input[name=stereoscopic]").click(blockfort.stereoscopicClick);
   $("input[name=controls]").click(blockfort.controlsClick);
   $("#backb2").click(function(event) {
