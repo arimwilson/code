@@ -23,13 +23,6 @@ onWindowResize = function() {
   }
 }
 
-cameraDirection = function() {
-  // Transform point in front of camera in camera space into global space to
-  // find the direction of the camera.
-  return new t.Vector3(0, 0, -1).applyMatrix4(camera.matrixWorld).sub(
-      controls.getObject().position).normalize();
-}
-
 // Global object for scene-specific stuff.
 var blockfort = {
 }
@@ -133,7 +126,8 @@ blockfort.createCube = function(v, color) {
     blockfort.cubeMat.ambient = blockfort.cubeMat.color = cubeColor;
   }
   var cube = new t.Mesh(blockfort.cubeGeo, blockfort.cubeMat);
-  cube.position.set((v.x + 0.5) * blockfort.unitSize, (v.y + 0.5) * blockfort.unitSize,
+  cube.position.set((v.x + 0.5) * blockfort.unitSize,
+                    (v.y + 0.5) * blockfort.unitSize,
                     (v.z + 0.5) * blockfort.unitSize);
   cube.matrixAutoUpdate = false;
   cube.updateMatrix();
@@ -150,8 +144,10 @@ blockfort.createLine = function(u, v) {
 
 // Build block / destroy block controls.
 blockfort.buildClick = function(event) {
-  var direction = cameraDirection();
-  var ray = new t.Raycaster(controls.getObject().position, direction);
+  var direction = new THREE.Vector3();
+  controls.getDirection(direction);
+  var ray = new t.Raycaster(controls.getObject().position,
+                            direction);
   var intersects = ray.intersectObjects(blockfort.objects);
 
   if (intersects.length > 0) {

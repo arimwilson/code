@@ -5,7 +5,7 @@
 
 THREE.FirstPersonControls = function ( camera, kbm ) {
 
-  var scope = this;
+  var enabled = false;
 
   var pitchObject = new THREE.Object3D();
   pitchObject.add( camera );
@@ -21,12 +21,10 @@ THREE.FirstPersonControls = function ( camera, kbm ) {
   var flyUp = false;
   var flyDown = false;
 
-  var velocity = new THREE.Vector3();
-
   var PI_2 = Math.PI / 2;
 
   var look = function(movementX, movementY) {
-    if ( scope.enabled === false ) return;
+    if ( this.enabled === false ) return;
 
     yawObject.rotation.y -= movementX * 0.002;
     pitchObject.rotation.x -= movementY * 0.002;
@@ -212,7 +210,7 @@ THREE.FirstPersonControls = function ( camera, kbm ) {
         delete lookTouches[touch.identifier];
       } else if (touch.identifier in createTouches) {
         var ev = new Object();
-        if (new Date().getTime() - createTouches[touch.identifier] < 1000) {
+        if (new Date().getTime() - createTouches[touch.identifier] < 500) {
           ev.which = 1;
         } else {
           ev.which = 3;
@@ -223,11 +221,51 @@ THREE.FirstPersonControls = function ( camera, kbm ) {
     }
   };
 
-  this.enabled = false;
-
   this.getObject = function () {
 
     return yawObject;
+
+  };
+
+  this.getDirection = function() {
+
+    // assumes the camera itself is not rotated
+
+    var direction = new THREE.Vector3( 0, 0, -1 );
+    var rotation = new THREE.Euler( 0, 0, 0, "YXZ" );
+
+    return function( v ) {
+
+      rotation.set( pitchObject.rotation.x, yawObject.rotation.y, 0 );
+
+      v.copy( direction ).applyEuler( rotation );
+
+      return v;
+
+    }
+
+  }();
+
+  this.update = function ( delta ) {
+
+    if ( this.enabled === false ) return;
+
+    var velocity = 0.128;
+    if ( moveForward ) yawObject.translateZ( -velocity * delta);
+    if ( moveBackward ) yawObject.translateZ( velocity * delta);
+
+    if ( flyDown ) yawObject.translateY( -velocity * delta);
+    if ( flyUp ) yawObject.translateY( velocity * delta);
+
+    if ( moveLeft ) yawObject.translateX( -velocity * delta);
+    if ( moveRight ) yawObject.translateX( velocity * delta);
+
+
+    if ( yawObject.position.y < 32 ) {
+
+      yawObject.position.y = 32;
+
+    }
 
   };
 
@@ -242,11 +280,11 @@ THREE.FirstPersonControls = function ( camera, kbm ) {
       document.addEventListener( 'touchmove', onTouchMove, false);
       document.addEventListener( 'touchend', onTouchEnd, false);
     }
-    scope.enabled = true;
+    this.enabled = true;
   }
 
   this.disconnect = function() {
-    scope.enabled = false;
+    this.enabled = false;
     document.removeEventListener( 'click', blockfort.buildClick, false);
     if (kbm) {
       document.removeEventListener( 'mousemove', onMouseMove, false );
@@ -258,37 +296,5 @@ THREE.FirstPersonControls = function ( camera, kbm ) {
       document.removeEventListener( 'touchend', onTouchEnd, false);
     }
   }
-
-  this.update = function ( delta ) {
-
-    if ( scope.enabled === false ) return;
-
-    delta *= 0.5;
-
-    velocity.x += ( - velocity.x ) * 0.08 * delta;
-    velocity.z += ( - velocity.z ) * 0.08 * delta;
-    velocity.y += ( - velocity.y ) * 0.08 * delta;
-
-    if ( moveForward ) velocity.z -= 0.12 * delta;
-    if ( moveBackward ) velocity.z += 0.12 * delta;
-
-    if ( moveLeft ) velocity.x -= 0.12 * delta;
-    if ( moveRight ) velocity.x += 0.12 * delta;
-
-    if ( flyUp ) velocity.y += 0.12 * delta;
-    if ( flyDown ) velocity.y -= 0.12 * delta;
-
-    yawObject.translateX( velocity.x );
-    yawObject.translateY( velocity.y );
-    yawObject.translateZ( velocity.z );
-
-    if ( yawObject.position.y < 32 ) {
-
-      velocity.y = 0;
-      yawObject.position.y = 32;
-
-    }
-
-  };
 
 };

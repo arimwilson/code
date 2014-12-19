@@ -21,7 +21,7 @@ THREE.DeviceOrientationControls = function(object) {
 
   this.object.rotation.reorder('YXZ');
 
-  this.freeze = true;
+  this.enabled = true;
 
   this.movementSpeed = 1.0;
   this.rollSpeed = 0.005;
@@ -71,7 +71,7 @@ THREE.DeviceOrientationControls = function(object) {
       case 'portrait-primary':
         return 0;
     }
-    // this returns 90 if width is greater then height 
+    // this returns 90 if width is greater then height
     // and window orientation is undefined OR 0
     // if (!window.orientation && window.innerWidth > window.innerHeight)
     //   return 90;
@@ -84,14 +84,48 @@ THREE.DeviceOrientationControls = function(object) {
 
   }).bind(this);
 
+  this.align = function() {
+
+    tempVector3
+      .set(0, 0, -1)
+      .applyQuaternion( tempQuaternion.copy(this.orientationQuaternion).inverse(), 'ZXY' );
+
+    tempEuler.setFromQuaternion(
+      tempQuaternion.setFromRotationMatrix(
+        tempMatrix4.lookAt(tempVector3, v0, up)
+     )
+   );
+
+    tempEuler.set(0, tempEuler.y, 0);
+    this.alignQuaternion.setFromEuler(tempEuler);
+
+  };
+
+  this.getDirection = function() {
+
+    // assumes the camera itself is not rotated
+
+    var direction = new THREE.Vector3( 0, 0, -1 );
+
+    return function( v ) {
+
+      v.copy( direction ).applyEuler( euler );
+
+      return v;
+
+    }
+
+  }();
+
+  // delta is in ms
   this.update = function(delta) {
 
     return function() {
 
-      if (this.freeze) return;
+      if (this.enabled) return;
 
       // should not need this
-      var orientation = getOrientation(); 
+      var orientation = getOrientation();
       if (orientation !== this.screenOrientation) {
         this.screenOrientation = orientation;
         this.autoAlign = true;
@@ -154,24 +188,7 @@ THREE.DeviceOrientationControls = function(object) {
   // //debug
   // window.addEventListener('click', (function(){
   //   this.align();
-  // }).bind(this)); 
-
-  this.align = function() {
-
-    tempVector3
-      .set(0, 0, -1)
-      .applyQuaternion( tempQuaternion.copy(this.orientationQuaternion).inverse(), 'ZXY' );
-
-    tempEuler.setFromQuaternion(
-      tempQuaternion.setFromRotationMatrix(
-        tempMatrix4.lookAt(tempVector3, v0, up)
-     )
-   );
-
-    tempEuler.set(0, tempEuler.y, 0);
-    this.alignQuaternion.setFromEuler(tempEuler);
-
-  };
+  // }).bind(this));
 
   this.connect = function() {
 
@@ -181,7 +198,7 @@ THREE.DeviceOrientationControls = function(object) {
     // window.addEventListener('orientationchange', this.onScreenOrientationChangeEvent, false);
     window.addEventListener('deviceorientation', this.onDeviceOrientationChangeEvent, false);
 
-    this.freeze = false;
+    this.enabled = false;
 
     return this;
 
@@ -189,13 +206,12 @@ THREE.DeviceOrientationControls = function(object) {
 
   this.disconnect = function() {
 
-    this.freeze = true;
+    this.enabled = true;
 
     // window.removeEventListener('orientationchange', this.onScreenOrientationChangeEvent, false);
     window.removeEventListener('deviceorientation', this.onDeviceOrientationChangeEvent, false);
 
   };
-
 
 };
 
