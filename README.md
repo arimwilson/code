@@ -4,7 +4,7 @@ Ari Wilson's code, including a variety of projects:
 
 [BlockFort](http://blockfort3d.appspot.com/) is a web-based game similar to Minecraft but with less gameplay and more world-building :). Saves are backed up to the cloud.
 
-[PebbleScores](http://pebblescores.appspot.com/list?game=Falldown2) records high scores for [Pebble watch](http://getpebble.com/) games. I use it to in my [Falldown](https://github.com/evilrobot69/Falldown) game.
+[PebbleScores](http://pebblescores.appspot.com/list?game=Falldown2) records high scores for [Pebble watch](http://getpebble.com/) games. I use it in my [Falldown](https://github.com/evilrobot69/Falldown) game.
 
 [KeeStand](http://keestand.appspot.com/) is a locally-secured cloud password storage web application, designed so that you can securely store and access the many passwords you need to run your daily Internet life in one place.
 
