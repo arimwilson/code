@@ -15,6 +15,9 @@
 
 import argparse, sqlite3
 
+def match_buyer(currency_id, user_location, amount_of_currency, conn):
+  pass
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
       description = "Bidding currency seller / user market, like MyMoncy.")
@@ -24,4 +27,6 @@ if __name__ == "__main__":
   parser.add_argument("--database", default="market.db")
   args = parser.parse_args()
 
-  conn = sqlite3.connect(args.database)
+  print match_buyer(
+      args.currency_id, args.user_location, args.amount_of_currency,
+      sqlite3.connect(args.database))
