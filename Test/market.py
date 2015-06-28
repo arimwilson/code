@@ -57,7 +57,6 @@ def match_buyer(currency_buying, currency_selling, user_location, quantity_sold,
   scores = {}
   for offer in offers:
     scores[offer[2]] = offer_score(offer[1], average_ratings.get(offer[2]))
-  print scores
   # Sort seller offers by score, ascending.
   offers.sort(key=lambda offer: scores[offer[2]], reverse=True)
   # Remove ids from offers before return.
