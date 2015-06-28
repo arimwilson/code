@@ -45,7 +45,7 @@ VALUES (1, 5), (1, 5), (2, 1), (3, 5), (4, 4);
 
 class MarketTest(unittest.TestCase):
   def setUp(self):
-    self.conn = sqlite3.connect(":memory")
+    self.conn = sqlite3.connect(":memory:")
     self.conn.executescript(CREATE_DB_SQL)
     self.conn.executescript(INSERT_TEST_SQL)
 
