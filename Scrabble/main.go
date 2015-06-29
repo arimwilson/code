@@ -2,7 +2,7 @@
 // outputs all legal moves ranked by point value.
 //
 // Sample usage:
-// ./scrabblish -b empty_wordfeud.txt -t ABCDEFG
+// go run main.go -b empty_wordfeud.txt -t ABCDEFG
 
 package main
 
