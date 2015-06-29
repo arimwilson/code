@@ -3,14 +3,14 @@
 
 package main
 
-import ("encoding/json"; "flag"; "fmt"; "log"; "math"; "math/rand")
+import ("encoding/json"; "flag"; "fmt"; "io/ioutil"; "log"; "math"; "math/rand")
 
 var trainingExamplesFlag = flag.String(
-  "training", "",
-  "JSON-formatted array of training examples with values.")
+  "training_file", "",
+  "File with JSON-formatted array of training examples with values.")
 var testingExamplesFlag = flag.String(
-  "testing", "",
-  "JSON-formatted array of testing examples with values.")
+  "testing_file", "",
+  "File with JSON-formatted array of testing examples with values.")
 
 // ReLU neuron.
 type Neuron struct {
@@ -75,7 +75,8 @@ func Forward(neuralNetwork [][]Neuron, datapoint Datapoint) {
 func Train(datapoints []Datapoint) [][]Neuron {
   // Set up an example fully connected network with 2 layers: 2 hidden neurons
   //  1 output neuron.
-  neuralNetwork := make([][]Neuron, 2)
+  // TODO(ariw): Modularize input, output, layer, neural network.
+  neuralNetwork := make([][]Neuron, 3)
   neuralNetwork[0] = append(neuralNetwork[0], *NewNeuron(2))
   neuralNetwork[0] = append(neuralNetwork[0], *NewNeuron(2))
   neuralNetwork[1] = append(neuralNetwork[1], *NewNeuron(2))
@@ -97,21 +98,26 @@ func Evaluate(neuralNetwork [][]Neuron, datapoints []Datapoint) {
   }
 }
 
+func ReadDatapointsOrDie(filename string) []Datapoint {
+  bytes, err := ioutil.ReadFile(filename)
+  if err != nil {
+    log.Fatal(err)
+  }
+  datapoints := make([]Datapoint, 0)
+  err = json.Unmarshal(bytes, &datapoints)
+  if err != nil {
+    log.Fatal(err)
+  }
+  return datapoints
+}
+
 func main() {
   flag.Parse()
   // Train the model.
-  trainingExamples := make([]Datapoint, 0)
-  err := json.Unmarshal([]byte(*trainingExamplesFlag), &trainingExamples)
-  if err != nil {
-    log.Fatal(err)
-  }
+  trainingExamples := ReadDatapointsOrDie(*trainingExamplesFlag)
   neuralNetwork := Train(trainingExamples)
 
   // Test the model.
-  testingExamples := make([]Datapoint, 0)
-  err = json.Unmarshal([]byte(*testingExamplesFlag), &testingExamples)
-  if err != nil {
-    log.Fatal(err)
-  }
+  testingExamples := ReadDatapointsOrDie(*testingExamplesFlag)
   Evaluate(neuralNetwork, testingExamples)
 }
