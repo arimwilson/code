@@ -1,4 +1,4 @@
-package neuron
+package neural
 
 import ("math"; "math/rand")
 
