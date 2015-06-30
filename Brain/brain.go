@@ -3,8 +3,8 @@
 
 package main
 
-import ("encoding/json"; "flag"; "fmt"; "io/ioutil"; "log"; "neuron"; "math";
-        "math/rand")
+import ("encoding/json"; "flag"; "fmt"; "io/ioutil"; "log";
+        "./neuron")
 
 var trainingExamplesFlag = flag.String(
   "training_file", "",

@@ -1,5 +1,7 @@
 package neuron
 
+import ("math"; "math/rand")
+
 // ReLU neuron.
 type Neuron struct {
   Inputs []float64
@@ -47,3 +49,4 @@ func (self *Neuron) Update() {
     self.Parameters[i] += stepSize * self.Gradients[i]
   }
 }
+
