@@ -1,6 +1,7 @@
 package neuron
 
-import ("math"; "math/rand")
+import ("math"; "math/rand";
+        "./synapse")
 
 // ReLU neuron.
 type Neuron struct {
@@ -10,11 +11,11 @@ type Neuron struct {
   Output float64
 }
 
-// n is number of parameters for the neuron.
-func NewNeuron(n int) *Neuron {
+// parameters is number ffor the neuron.
+func New(parameters int) *Neuron {
   neuron := new(Neuron)
   // Initialize parameters randomly from (-0.5, 0.5).
-  for i := 0; i < n; i++ {
+  for i := 0; i < parameters; i++ {
     neuron.Parameters = append(neuron.Parameters, rand.Float64() - 0.5)
     neuron.Gradients = append(neuron.Gradients, 0.0)
   }

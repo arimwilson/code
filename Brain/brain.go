@@ -1,10 +1,13 @@
 // Neural network training & execution on a simple supervised regression
 // problem.
+//
+// Sample usage:
+// go run brain.go -training_file training.txt -testing_file testing.txt
 
 package main
 
 import ("encoding/json"; "flag"; "fmt"; "io/ioutil"; "log";
-        "./neuron")
+        "./neural")
 
 var trainingExamplesFlag = flag.String(
   "training_file", "",
@@ -30,9 +33,9 @@ func Train(datapoints []Datapoint) [][]neuron.Neuron {
   //  1 output neuron.
   // TODO(ariw): Modularize input, output, layer, neural network.
   neuralNetwork := make([][]neuron.Neuron, 3)
-  neuralNetwork[0] = append(neuralNetwork[0], *neuron.NewNeuron(2))
-  neuralNetwork[0] = append(neuralNetwork[0], *neuron.NewNeuron(2))
-  neuralNetwork[1] = append(neuralNetwork[1], *neuron.NewNeuron(2))
+  neuralNetwork[0] = append(neuralNetwork[0], *neuron.New(2))
+  neuralNetwork[0] = append(neuralNetwork[0], *neuron.New(2))
+  neuralNetwork[1] = append(neuralNetwork[1], *neuron.New(2))
   for i := 0; i < len(datapoints); i++ {
     Forward(neuralNetwork, datapoints[i])
     neuralNetwork[1][0].Backward(
