@@ -1,7 +1,6 @@
 package neuron
 
-import ("math"; "math/rand";
-        "./synapse")
+import ("math"; "math/rand")
 
 // ReLU neuron.
 type Neuron struct {
@@ -11,8 +10,8 @@ type Neuron struct {
   Output float64
 }
 
-// parameters is number ffor the neuron.
-func New(parameters int) *Neuron {
+// parameters is number for the neuron.
+func NewNeuron(parameters int) *Neuron {
   neuron := new(Neuron)
   // Initialize parameters randomly from (-0.5, 0.5).
   for i := 0; i < parameters; i++ {
