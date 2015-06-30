@@ -47,7 +47,7 @@ func (self *Neuron) Backward(pull float64) {
    return
   }
   i := 0
-  for ; i < len(self.Inputs); i++ {
+  for ; i < len(self.Parameters) - 1; i++ {
     self.Gradients[i] = self.Inputs[i] * pull - self.Parameters[i]
   }
   self.Gradients[i] = pull - self.Parameters[i]
@@ -84,8 +84,8 @@ func Train(datapoints []Datapoint) [][]Neuron {
     Forward(neuralNetwork, datapoints[i])
     neuralNetwork[1][0].Backward(
         datapoints[i].Value - neuralNetwork[1][0].Output)
-    neuralNetwork[0][0].Backward(neuralNetwork[1][1].Gradients[0])
-    neuralNetwork[0][1].Backward(neuralNetwork[1][1].Gradients[1])
+    neuralNetwork[0][0].Backward(neuralNetwork[1][0].Gradients[0])
+    neuralNetwork[0][1].Backward(neuralNetwork[1][0].Gradients[1])
   }
   return neuralNetwork
 }
@@ -93,7 +93,7 @@ func Train(datapoints []Datapoint) [][]Neuron {
 func Evaluate(neuralNetwork [][]Neuron, datapoints []Datapoint) {
   for i := 0; i < len(datapoints); i++ {
    Forward(neuralNetwork, datapoints[i])
-   fmt.Printf("Training example %v: actual value %v, model value %v",
+   fmt.Printf("Training example %v: actual value %v, model value %v\n",
               i, datapoints[i].Value, neuralNetwork[1][0].Output)
   }
 }
