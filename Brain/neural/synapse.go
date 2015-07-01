@@ -13,8 +13,9 @@ func NewSynapse(weight float64) *Synapse {
 func NewSynapseFromTo(from, to *Neuron, weight float64) *Synapse {
   synapse := NewSynapse(weight)
 
-  from.OutSynapses = append(from.OutSynapses, synapse)
-  from.InSynapses = append(to.InSynapses, synapse)
+//  from.OutSynapses = append(from.OutSynapses, synapse)
+//  from.InSynapses = append(to.InSynapses, synapse)
+  return synapse
 }
 
 func (synapse *Synapse) Signal(value float64) {
