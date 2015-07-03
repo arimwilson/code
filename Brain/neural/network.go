@@ -3,7 +3,7 @@ package neural
 import ("math/rand")
 
 func NewNetwork(
-    inputs int, layers []int, function ActivationFunction) *Network{
+    inputs int, layers []int, function string) *Network{
   network := new(Network)
   for i := 0; i < inputs; i++ {
     network.Inputs = append(network.Inputs, NewInput())
@@ -37,18 +37,14 @@ func (self *Network) RandomizeSynapses() {
   }
 }
 
-func (self *Network) Forward() {
-  for _, layer := range self.Layers {
-    layer.Forward()
-  }
-}
-
 func (self *Network) Calculate(inputs []float64) []float64 {
   for i, input := range inputs {
     self.Inputs[i].Input = input
     self.Inputs[i].Forward()
   }
-  self.Forward()
+  for _, layer := range self.Layers {
+    layer.Forward()
+  }
   outputLayer := self.Layers[len(self.Layers) - 1]
   outputs := make([]float64, len(outputLayer.Neurons))
   for i, neuron := range(outputLayer.Neurons) {
@@ -57,3 +53,16 @@ func (self *Network) Calculate(inputs []float64) []float64 {
   return outputs
 }
 
+func (self *Network) Train(inputs []float64, values []float64, speed float64) {
+  self.Calculate(inputs)
+  outputLayer := self.Layers[len(self.Layers) - 1]
+  for i, neuron := range outputLayer.Neurons {
+    neuron.BackwardOutput(values[i])
+  }
+  for i := len(self.Layers) - 2; i >= 0; i-- {
+    self.Layers[i].Backward()
+  }
+  for _, layer := range self.Layers {
+    layer.Update(speed)
+  }
+}

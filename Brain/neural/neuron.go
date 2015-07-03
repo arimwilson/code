@@ -1,6 +1,6 @@
 package neural
 
-func NewNeuron(function ActivationFunction) *Neuron {
+func NewNeuron(function string) *Neuron {
   neuron := new(Neuron)
   neuron.ActivationFunction = function
   return neuron
@@ -9,7 +9,7 @@ func NewNeuron(function ActivationFunction) *Neuron {
 type Neuron struct {
   InputSynapses []*Synapse
   OutputSynapses []*Synapse
-  ActivationFunction ActivationFunction
+  ActivationFunction string
   Output float64
 }
 
@@ -24,9 +24,34 @@ func (self *Neuron) Forward() {
   for _, synapse := range self.InputSynapses {
     output += synapse.Output
   }
-  self.Output = self.ActivationFunction(output)
+  self.Output = ActivationFunction(self.ActivationFunction, output)
   for _, synapse := range self.OutputSynapses {
     synapse.Signal(self.Output)
   }
 }
 
+func (self* Neuron) Backward() {
+  gradient := 0.0
+  for _, synapse := range self.OutputSynapses {
+    gradient += synapse.Weight * synapse.Gradient
+  }
+  gradient =
+      DActivationFunction(self.ActivationFunction, self.Output) * gradient
+  for _, synapse := range self.InputSynapses {
+    synapse.Feedback(gradient)
+  }
+}
+
+func (self* Neuron) BackwardOutput(value float64) {
+  gradient := DActivationFunction(self.ActivationFunction, self.Output) *
+              (value - self.Output)
+  for _, synapse := range self.InputSynapses {
+    synapse.Feedback(gradient)
+  }
+}
+
+func (self* Neuron) Update(speed float64) {
+  for _, synapse := range self.InputSynapses {
+    synapse.Update(speed)
+  }
+}

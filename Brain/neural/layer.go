@@ -1,6 +1,6 @@
 package neural
 
-func NewLayer(neurons int, function ActivationFunction) *Layer {
+func NewLayer(neurons int, function string) *Layer {
   layer := new(Layer)
   for i := 0; i < neurons; i++ {
     layer.Neurons = append(layer.Neurons, NewNeuron(function))
@@ -24,5 +24,17 @@ func (self* Layer) ConnectTo(layer *Layer) {
 func (self* Layer) Forward() {
   for _, neuron := range self.Neurons {
     neuron.Forward()
+  }
+}
+
+func (self* Layer) Backward() {
+  for _, neuron := range self.Neurons {
+    neuron.Backward()
+  }
+}
+
+func (self* Layer) Update(speed float64) {
+  for _, neuron := range self.Neurons {
+    neuron.Update(speed)
   }
 }

@@ -23,11 +23,12 @@ type Datapoint struct {
 
 func Train(neuralNetwork *neural.Network, datapoints []Datapoint) {
   // Train on some number of iterations of permuted versions of the input.
-  for iter := 0; iter < 100; iter++ {
+  for iter := 0; iter < 10; iter++ {
     perm := rand.Perm(len(datapoints))
     for _, index := range perm {
-      neuralNetwork.Calculate(datapoints[index].Features)
-      // stepSize := 0.001
+      neuralNetwork.Train(
+          datapoints[index].Features, []float64{datapoints[index].Value},
+          0.001)
     }
   }
 }
@@ -59,7 +60,7 @@ func main() {
 
   // Set up an example fully connected network with 2 layers: 2 hidden neural.
   //  1 output neural.
-  neuralNetwork := neural.NewNetwork(2, []int{2, 1}, neural.ReLUFunction)
+  neuralNetwork := neural.NewNetwork(2, []int{2, 1}, "Logistic")
   neuralNetwork.RandomizeSynapses()
 
   // Train the model.
