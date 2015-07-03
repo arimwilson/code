@@ -1,6 +1,6 @@
 package neural
 
-import "math"
+import ("math")
 
 type ActivationFunction func(float64) float64
 
