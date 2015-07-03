@@ -21,17 +21,15 @@ type Datapoint struct {
   Value float64
 }
 
-func Train(datapoints []Datapoint) *neural.Network {
-  // Set up an example fully connected network with 2 layers: 2 hidden neural.
-  //  1 output neural.
-  neuralNetwork := neural.NewNetwork(2, []int{2, 1}, neural.ReLUFunction)
-  neuralNetwork.RandomizeSynapses()
-  for iter := 0; iter < 1000; iter++ {
-    i := rand.Int() % len(datapoints)
-    neuralNetwork.Calculate(datapoints[i].Features)
-    // stepSize := 0.001
+func Train(neuralNetwork *neural.Network, datapoints []Datapoint) {
+  // Train on some number of iterations of permuted versions of the input.
+  for iter := 0; iter < 100; iter++ {
+    perm := rand.Perm(len(datapoints))
+    for _, index := range perm {
+      neuralNetwork.Calculate(datapoints[index].Features)
+      // stepSize := 0.001
+    }
   }
-  return neuralNetwork
 }
 
 func Evaluate(neuralNetwork *neural.Network, datapoints []Datapoint) {
@@ -59,9 +57,14 @@ func main() {
   flag.Parse()
   rand.Seed(time.Now().UTC().UnixNano())
 
+  // Set up an example fully connected network with 2 layers: 2 hidden neural.
+  //  1 output neural.
+  neuralNetwork := neural.NewNetwork(2, []int{2, 1}, neural.ReLUFunction)
+  neuralNetwork.RandomizeSynapses()
+
   // Train the model.
   trainingExamples := ReadDatapointsOrDie(*trainingExamplesFlag)
-  neuralNetwork := Train(trainingExamples)
+  Train(neuralNetwork, trainingExamples)
 
   // Test the model.
   testingExamples := ReadDatapointsOrDie(*testingExamplesFlag)
