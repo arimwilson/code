@@ -28,16 +28,16 @@ func Train(neuralNetwork *neural.Network, datapoints []Datapoint) {
     for _, index := range perm {
       neuralNetwork.Train(
           datapoints[index].Features, []float64{datapoints[index].Value},
-          0.001)
+          0.01)
     }
   }
 }
 
 func Evaluate(neuralNetwork *neural.Network, datapoints []Datapoint) {
   for _, datapoint := range datapoints {
-   output := neuralNetwork.Calculate(datapoint.Features)
+   output := neuralNetwork.Evaluate(datapoint.Features)
    fmt.Printf("Testing example %v: actual value %v, model value %v\n",
-              datapoint.Features, datapoint.Value, output)
+              datapoint.Features, datapoint.Value, output[0])
   }
 }
 
@@ -58,9 +58,11 @@ func main() {
   flag.Parse()
   rand.Seed(time.Now().UTC().UnixNano())
 
-  // Set up an example fully connected network with 2 layers: 2 hidden neural.
-  //  1 output neural.
-  neuralNetwork := neural.NewNetwork(2, []int{2, 1}, "Logistic")
+  // Set up an example fully connected network with 2 inputs and 2 layers.
+  // Layer 1 consists of 2 hidden ReLU neurons and layer consists of one output
+  // linear neuron.
+  neuralNetwork := neural.NewNetwork(2, []int{2, 1},
+                                     []string{"ReLU", "Linear"})
   neuralNetwork.RandomizeSynapses()
 
   // Train the model.

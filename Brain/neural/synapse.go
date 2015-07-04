@@ -21,5 +21,5 @@ func (self *Synapse) Feedback(gradient float64) {
 }
 
 func (self *Synapse) Update(speed float64) {
-  self.Weight *= speed * self.Gradient * self.Input
+  self.Weight += speed * self.Gradient * self.Input
 }

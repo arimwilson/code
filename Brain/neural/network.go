@@ -1,15 +1,15 @@
 package neural
 
-import ("math/rand")
+import ("encoding/json"; "math/rand")
 
 func NewNetwork(
-    inputs int, layers []int, function string) *Network{
+    inputs int, layers []int, functions []string) *Network{
   network := new(Network)
   for i := 0; i < inputs; i++ {
     network.Inputs = append(network.Inputs, NewInput())
   }
-  for _, count := range layers {
-    layer := NewLayer(count, function)
+  for i, count := range layers {
+    layer := NewLayer(count, functions[i])
     network.Layers = append(network.Layers, layer)
   }
   // Connect all the layers.
@@ -37,7 +37,7 @@ func (self *Network) RandomizeSynapses() {
   }
 }
 
-func (self *Network) Calculate(inputs []float64) []float64 {
+func (self *Network) Evaluate(inputs []float64) []float64 {
   for i, input := range inputs {
     self.Inputs[i].Input = input
     self.Inputs[i].Forward()
@@ -54,7 +54,7 @@ func (self *Network) Calculate(inputs []float64) []float64 {
 }
 
 func (self *Network) Train(inputs []float64, values []float64, speed float64) {
-  self.Calculate(inputs)
+  self.Evaluate(inputs)
   outputLayer := self.Layers[len(self.Layers) - 1]
   for i, neuron := range outputLayer.Neurons {
     neuron.BackwardOutput(values[i])
@@ -65,4 +65,32 @@ func (self *Network) Train(inputs []float64, values []float64, speed float64) {
   for _, layer := range self.Layers {
     layer.Update(speed)
   }
+}
+
+type SerializedNetwork struct {
+  Inputs int
+  ActivationFunctions []string
+  Weights [][][]float64
+}
+
+func (self *Network) Serialize() []byte {
+  serialized_network := &SerializedNetwork{
+      Inputs: len(self.Inputs),
+      Weights: make([][][]float64, len(self.Layers))}
+  for i, layer := range self.Layers {
+    // All neurons in the same layer have the same activation function.
+    serialized_network.ActivationFunctions = append(
+        serialized_network.ActivationFunctions,
+        layer.Neurons[0].ActivationFunction)
+    serialized_network.Weights[i] = make([][]float64, len(layer.Neurons))
+    for j, neuron := range layer.Neurons {
+      serialized_network.Weights[i][j] = make(
+          []float64, len(neuron.InputSynapses))
+      for k, synapse := range neuron.InputSynapses {
+        serialized_network.Weights[i][j][k] = synapse.Weight
+      }
+    }
+  }
+  string_network, _ := json.Marshal(serialized_network)
+  return string_network
 }
