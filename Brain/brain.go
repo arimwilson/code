@@ -23,14 +23,17 @@ type Datapoint struct {
 
 func Train(neuralNetwork *neural.Network, datapoints []Datapoint) {
   // Train on some number of iterations of permuted versions of the input.
-  for iter := 0; iter < 100; iter++ {
+  for iter := 0; iter < 1000; iter++ {
     perm := rand.Perm(len(datapoints))
     for _, index := range perm {
       neuralNetwork.Train(
           datapoints[index].Features, []float64{datapoints[index].Value},
           0.01)
     }
-    fmt.Printf("Training error: %v\n", Evaluate(neuralNetwork, datapoints))
+    if iter % 25 == 0 {
+      fmt.Printf("Training error on iter %v: %v\n", iter,
+                 Evaluate(neuralNetwork, datapoints))
+    }
   }
 }
 
