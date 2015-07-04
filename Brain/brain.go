@@ -23,22 +23,25 @@ type Datapoint struct {
 
 func Train(neuralNetwork *neural.Network, datapoints []Datapoint) {
   // Train on some number of iterations of permuted versions of the input.
-  for iter := 0; iter < 10; iter++ {
+  for iter := 0; iter < 100; iter++ {
     perm := rand.Perm(len(datapoints))
     for _, index := range perm {
       neuralNetwork.Train(
           datapoints[index].Features, []float64{datapoints[index].Value},
           0.01)
     }
+    fmt.Printf("Training error: %v\n", Evaluate(neuralNetwork, datapoints))
   }
 }
 
-func Evaluate(neuralNetwork *neural.Network, datapoints []Datapoint) {
+func Evaluate(neuralNetwork *neural.Network, datapoints []Datapoint) float64 {
+  square_error := 0.0
   for _, datapoint := range datapoints {
-   output := neuralNetwork.Evaluate(datapoint.Features)
-   fmt.Printf("Testing example %v: actual value %v, model value %v\n",
-              datapoint.Features, datapoint.Value, output[0])
+    output := neuralNetwork.Evaluate(datapoint.Features)
+    square_error += (datapoint.Value - output[0]) *
+                    (datapoint.Value - output[0])
   }
+  return square_error / float64(len(datapoints))
 }
 
 func ReadDatapointsOrDie(filename string) []Datapoint {
@@ -71,5 +74,5 @@ func main() {
 
   // Test the model.
   testingExamples := ReadDatapointsOrDie(*testingExamplesFlag)
-  Evaluate(neuralNetwork, testingExamples)
+  fmt.Printf("Testing error: %v\n", Evaluate(neuralNetwork, testingExamples))
 }
