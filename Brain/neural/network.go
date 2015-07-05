@@ -5,7 +5,7 @@ import ("encoding/json"; "math/rand")
 func NewNetwork(
     inputs int, layers []int, functions []string) *Network{
   network := new(Network)
-  initNetwork(inputs, layers, functions, network)
+  network.init(inputs, layers, functions)
   return network
 }
 
@@ -85,23 +85,37 @@ func (self *Network) Serialize() []byte {
 func (self *Network) Deserialize(byte_network []byte) {
   serialized_network := &SerializedNetwork{}
   json.Unmarshal(byte_network, serialized_network)
-  // initNetwork(serialized_network.Inputs, test, self.ActivationFunctions, self)
+  layers := make([]int, len(serialized_network.Weights))
+  for i, layer := range serialized_network.Weights {
+    layers[i] =len(layer)
+  }
+  self.init(serialized_network.Inputs, layers,
+            serialized_network.ActivationFunctions)
+  // Now initialize all the weights.
+  for i, layer := range self.Layers {
+    for j, neuron := range layer.Neurons {
+      for k, synapse := range neuron.InputSynapses {
+        synapse.Weight = serialized_network.Weights[i][j][k]
+      }
+    }
+  }
 }
 
-func initNetwork(inputs int, layers []int, functions []string,
-                 network *Network) {
+func (self *Network) init(inputs int, layers []int, functions []string) {
+  self.Inputs = []*Input{}
   for i := 0; i < inputs; i++ {
-    network.Inputs = append(network.Inputs, NewInput())
+    self.Inputs = append(self.Inputs, NewInput())
   }
+  self.Layers = []*Layer{}
   for i, count := range layers {
     layer := NewLayer(count, functions[i])
-    network.Layers = append(network.Layers, layer)
+    self.Layers = append(self.Layers, layer)
   }
   // Connect all the layers.
-  for _, input := range network.Inputs {
-    input.ConnectTo(network.Layers[0])
+  for _, input := range self.Inputs {
+    input.ConnectTo(self.Layers[0])
   }
-  for i := 0; i < len(network.Layers) - 1; i++ {
-    network.Layers[i].ConnectTo(network.Layers[i+1])
+  for i := 0; i < len(self.Layers) - 1; i++ {
+    self.Layers[i].ConnectTo(self.Layers[i+1])
   }
 }
