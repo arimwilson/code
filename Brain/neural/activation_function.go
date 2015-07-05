@@ -9,6 +9,8 @@ func ActivationFunction(name string, x float64) float64 {
     return math.Max(0, x)
   } else if (name == "Logistic") {
     return 1 / (1 + math.Exp(-x))
+  } else if (name == "Tanh") {
+    return math.Tanh(x)
   } else {
     return 0
   }
@@ -25,6 +27,8 @@ func DActivationFunction(name string, y float64) float64 {
   } else if (name == "Logistic") {
     logistic := ActivationFunction(name, y)
     return logistic * (1 - logistic)
+  } else if (name == "Tanh") {
+    return 1 - math.Tan(y) * math.Tan(y)
   } else {
     return 0
   }

@@ -87,5 +87,7 @@ func main() {
 
   // Test the model.
   testingExamples := ReadDatapointsOrDie(*testingExamplesFlag)
-  fmt.Printf("Testing error: %v\n", Evaluate(neuralNetwork, testingExamples))
+  fmt.Printf("Testing error: %v\nFinal network: %v\n",
+             Evaluate(neuralNetwork, testingExamples),
+             string(neuralNetwork.Serialize()))
 }
