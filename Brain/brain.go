@@ -12,6 +12,15 @@ import ("encoding/json"; "flag"; "fmt"; "io/ioutil"; "log"; "math/rand";
 var trainingExamplesFlag = flag.String(
   "training_file", "",
   "File with JSON-formatted array of training examples with values.")
+var hiddenNeuronsNumberFlag = flag.Int(
+  "hidden_neurons_number", 10,
+  "Number of hidden neurons in the network.")
+var hiddenNeuronsFunctionFlag = flag.String(
+  "hidden_neurons_function", "ReLU",
+  "Activation functino for hidden neurons.")
+var trainingIterationsFlag = flag.Int(
+  "training_iterations", 1000,
+  "Number of training iterations.")
 var testingExamplesFlag = flag.String(
   "testing_file", "",
   "File with JSON-formatted array of testing examples with values.")
@@ -21,17 +30,17 @@ type Datapoint struct {
   Value float64
 }
 
-func Train(neuralNetwork *neural.Network, datapoints []Datapoint) {
+func Train(neuralNetwork *neural.Network, datapoints []Datapoint, iter int) {
   // Train on some number of iterations of permuted versions of the input.
-  for iter := 0; iter < 1000; iter++ {
+  for i := 0; i < iter; i++ {
     perm := rand.Perm(len(datapoints))
     for _, index := range perm {
       neuralNetwork.Train(
           datapoints[index].Features, []float64{datapoints[index].Value},
-          0.01)
+          0.001)
     }
-    if iter % 25 == 0 {
-      fmt.Printf("Training error on iter %v: %v\n", iter,
+    if (i + 1)  % (iter / 4) == 0 {
+      fmt.Printf("Training error on iteration %v: %v\n", i + 1,
                  Evaluate(neuralNetwork, datapoints))
     }
   }
@@ -65,15 +74,16 @@ func main() {
   rand.Seed(time.Now().UTC().UnixNano())
 
   // Set up an example fully connected network with 2 inputs and 2 layers.
-  // Layer 1 consists of 2 hidden ReLU neurons and layer consists of one output
+  // Layer 1 consists of n hidden ReLU neurons and layer consists of one output
   // linear neuron.
-  neuralNetwork := neural.NewNetwork(2, []int{2, 1},
-                                     []string{"ReLU", "Linear"})
+  neuralNetwork := neural.NewNetwork(2, []int{*hiddenNeuronsNumberFlag, 1},
+                                     []string{*hiddenNeuronsFunctionFlag,
+                                              "Linear"})
   neuralNetwork.RandomizeSynapses()
 
   // Train the model.
   trainingExamples := ReadDatapointsOrDie(*trainingExamplesFlag)
-  Train(neuralNetwork, trainingExamples)
+  Train(neuralNetwork, trainingExamples, *trainingIterationsFlag)
 
   // Test the model.
   testingExamples := ReadDatapointsOrDie(*testingExamplesFlag)
