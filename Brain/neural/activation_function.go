@@ -28,7 +28,7 @@ func DActivationFunction(name string, y float64) float64 {
     logistic := ActivationFunction(name, y)
     return logistic * (1 - logistic)
   } else if (name == "Tanh") {
-    return 1 - math.Tan(y) * math.Tan(y)
+    return 1 - ActivationFunction(name, y) * ActivationFunction(name, y)
   } else {
     return 0
   }
