@@ -13,14 +13,13 @@ var trainingExamplesFlag = flag.String(
   "training_file", "",
   "File with JSON-formatted array of training examples with values.")
 var hiddenNeuronsNumberFlag = flag.Int(
-  "hidden_neurons_number", 10,
-  "Number of hidden neurons in the network.")
+  "hidden_neurons_number", 10, "Number of hidden neurons in the network.")
 var hiddenNeuronsFunctionFlag = flag.String(
-  "hidden_neurons_function", "ReLU",
-  "Activation functino for hidden neurons.")
+  "hidden_neurons_function", "ReLU", "Activation function for hidden neurons.")
 var trainingIterationsFlag = flag.Int(
-  "training_iterations", 1000,
-  "Number of training iterations.")
+  "training_iterations", 1000, "Number of training iterations.")
+var trainingSpeedFlag = flag.Float64(
+  "training_speed", 0.001, "Speed of training.")
 var testingExamplesFlag = flag.String(
   "testing_file", "",
   "File with JSON-formatted array of testing examples with values.")
@@ -37,7 +36,7 @@ func Train(neuralNetwork *neural.Network, datapoints []Datapoint, iter int) {
     for _, index := range perm {
       neuralNetwork.Train(
           datapoints[index].Features, []float64{datapoints[index].Value},
-          0.001)
+          *trainingSpeedFlag)
     }
     if (i + 1)  % (iter / 4) == 0 {
       fmt.Printf("Training error on iteration %v: %v\n", i + 1,
