@@ -2,6 +2,9 @@ package neural
 
 func NewNeuron(function string) *Neuron {
   neuron := new(Neuron)
+  // Add bias term as first input.
+  synapse := NewSynapse(0, 1)
+  neuron.InputSynapses = append(neuron.InputSynapses, synapse)
   neuron.ActivationFunction = function
   return neuron
 }
@@ -14,7 +17,7 @@ type Neuron struct {
 }
 
 func (self *Neuron) ConnectTo(to *Neuron) {
-  synapse := NewSynapse(0)
+  synapse := NewSynapse(0, 0)
   self.OutputSynapses = append(self.OutputSynapses, synapse)
   to.InputSynapses = append(to.InputSynapses, synapse)
 }

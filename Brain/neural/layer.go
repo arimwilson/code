@@ -5,7 +5,6 @@ func NewLayer(neurons int, function string) *Layer {
   for i := 0; i < neurons; i++ {
     layer.Neurons = append(layer.Neurons, NewNeuron(function))
   }
-  // TODO(ariw): Probably need a bias term.
   return layer
 }
 
