@@ -2,12 +2,12 @@
 // regression problem.
 //
 // Sample usage:
-// go run cmdline/cmdline.go -training_file training.txt -testing_file testing.txt
+// go run cmdline.go -training_file training.txt -testing_file testing.txt
 
 package main
 
 import ("encoding/json"; "flag"; "fmt"; "io/ioutil"; "log"; "math/rand";
-        "time"; "../neural")
+        "time"; "./appengine/neural")
 
 var trainingExamplesFlag = flag.String(
   "training_file", "",

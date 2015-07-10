@@ -61,41 +61,41 @@ type SerializedNetwork struct {
 }
 
 func (self *Network) Serialize() []byte {
-  serialized_network := &SerializedNetwork{
+  serializedNetwork := &SerializedNetwork{
       Inputs: len(self.Inputs),
       Weights: make([][][]float64, len(self.Layers))}
   for i, layer := range self.Layers {
     // All neurons in the same layer have the same activation function.
-    serialized_network.ActivationFunctions = append(
-        serialized_network.ActivationFunctions,
+    serializedNetwork.ActivationFunctions = append(
+        serializedNetwork.ActivationFunctions,
         layer.Neurons[0].ActivationFunction)
-    serialized_network.Weights[i] = make([][]float64, len(layer.Neurons))
+    serializedNetwork.Weights[i] = make([][]float64, len(layer.Neurons))
     for j, neuron := range layer.Neurons {
-      serialized_network.Weights[i][j] = make(
+      serializedNetwork.Weights[i][j] = make(
           []float64, len(neuron.InputSynapses))
       for k, synapse := range neuron.InputSynapses {
-        serialized_network.Weights[i][j][k] = synapse.Weight
+        serializedNetwork.Weights[i][j][k] = synapse.Weight
       }
     }
   }
-  byte_network, _ := json.Marshal(serialized_network)
-  return byte_network
+  byteNetwork, _ := json.Marshal(serializedNetwork)
+  return byteNetwork
 }
 
-func (self *Network) Deserialize(byte_network []byte) {
-  serialized_network := &SerializedNetwork{}
-  json.Unmarshal(byte_network, serialized_network)
-  layers := make([]int, len(serialized_network.Weights))
-  for i, layer := range serialized_network.Weights {
+func (self *Network) Deserialize(byteNetwork []byte) {
+  serializedNetwork := &SerializedNetwork{}
+  json.Unmarshal(byteNetwork, serializedNetwork)
+  layers := make([]int, len(serializedNetwork.Weights))
+  for i, layer := range serializedNetwork.Weights {
     layers[i] =len(layer)
   }
-  self.init(serialized_network.Inputs, layers,
-            serialized_network.ActivationFunctions)
+  self.init(serializedNetwork.Inputs, layers,
+            serializedNetwork.ActivationFunctions)
   // Now initialize all the weights.
   for i, layer := range self.Layers {
     for j, neuron := range layer.Neurons {
       for k, synapse := range neuron.InputSynapses {
-        synapse.Weight = serialized_network.Weights[i][j][k]
+        synapse.Weight = serializedNetwork.Weights[i][j][k]
       }
     }
   }

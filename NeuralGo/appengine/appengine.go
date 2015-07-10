@@ -1,19 +1,19 @@
 package appengine
 
 import ("appengine"; "appengine/memcache"; "encoding/json"; "fmt"; "math/rand";
-        "net/http"; "time"; "neural")
+        "net/http"; "strconv"; "time"; "neural")
 
 func init() {
   http.HandleFunc("/train", train)
   http.HandleFunc("/test", test)
 }
 
-func unmarshal(data []byte, v interface{}, c *appengine.Context,
+func unmarshal(data []byte, v interface{}, c appengine.Context,
                w http.ResponseWriter) bool {
   err := json.Unmarshal(data, v)
   if err != nil {
     c.Errorf("Could not unmarshal data with error: %s", err.Error())
-    http.Error(w, err.Error(), httpStatusInternalServerError)
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return false
   }
   return true
@@ -37,7 +37,8 @@ func train(w http.ResponseWriter, r *http.Request) {
     return
   }
   neuronsFunction := make([]string, 0)
-  if !unmarshal([]byte(r.FormValue("neuronsString")), &neuronsString, c, w) {
+  if !unmarshal([]byte(r.FormValue("neuronsFunction")), &neuronsFunction, c,
+                w) {
     return
   }
   trainingExamples := make([]neural.Datapoint, 0)
@@ -49,12 +50,26 @@ func train(w http.ResponseWriter, r *http.Request) {
   neuralNetwork := neural.NewNetwork(
       len(trainingExamples[0].Features), neuronsNumber, neuronsFunction)
   neuralNetwork.RandomizeSynapses()
+  var trainingIterations int
+  trainingIterations, err = strconv.Atoi(r.FormValue("trainingIterations"))
+  if err != nil {
+    c.Errorf("Could not parse trainingIterations with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  var trainingSpeed float64
+  trainingSpeed, err = strconv.ParseFloat(r.FormValue("trainingSpeed"), 64)
+  if err != nil {
+    c.Errorf("Could not parse trainingSpeed with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
 
   // Train the model.
-  neural.Train(neuralNetwork, trainingExamples,
-               r.FormValue("trainingIterations"), r.FormValue("trainingSpeed"))
+  neural.Train(neuralNetwork, trainingExamples, trainingIterations,
+               trainingSpeed)
   item := &memcache.Item{
-    Key: timeNano,
+    Key: strconv.FormatInt(timeNano, 10),
     Value: neuralNetwork.Serialize(),
   }
   if err = memcache.Add(c, item); err != nil {
@@ -79,8 +94,8 @@ func test(w http.ResponseWriter, r *http.Request) {
   testingExamples := make([]neural.Datapoint, 0)
 
   // Test the model.
-  byte_network = make([]byte, 0)
-  if byte_network, err = memcache.Get(c, r.FormValue("modelId")); err != nil {
+  var byteNetwork *memcache.Item
+  if byteNetwork, err = memcache.Get(c, r.FormValue("modelId")); err != nil {
     c.Errorf("Could not retrieve neural network with error: %s", err.Error())
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
@@ -90,9 +105,9 @@ func test(w http.ResponseWriter, r *http.Request) {
     return
   }
   var neuralNetwork neural.Network
-  neuralNetwork.Deserialize(byte_network)
+  neuralNetwork.Deserialize(byteNetwork.Value)
   w.Write([]byte(fmt.Sprintf(
     "Testing error: %v\nFinal network: %v\n",
-    neural.Evaluate(neuralNetwork, testingExamples), byte_network)))
+    neural.Evaluate(&neuralNetwork, testingExamples), byteNetwork.Value)))
 }
 
