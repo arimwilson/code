@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Brain</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script type="text/javascript">
+modelId = -1;
+
+function train(form) {
+  reader = new FileReader();
+  reader.onload = function(event) {
+    trainingExamples = event.target.result;
+    $.post("/train",
+           { trainingExamples: trainingExamples,
+             neuronsNumber: form.neuronsNumber.value,
+             neuronsFunction: form.neuronsFunction.value,
+             trainingIterations: form.trainingIterations.value,
+             trainingSpeed: form.trainingSpeed.value },
+           function(data) {
+             modelId = data["modelId"]
+             $("#output").val($("#output").val() + data["output"]);
+           });
+  }
+  reader.readAsText(form.trainingExamples.files[0]);
+}
+
+function test(form) {
+  reader = new FileReader();
+  reader.onload = function(event) {
+    testingExamples = event.target.result;
+    $.post("/test",
+           { modelId: modelId,
+             testingExamples: testingExamples },
+           function(data) {
+             $("#output").val($("#output").val() + data);
+           });
+  }
+  reader.readAsText(form.testingExamples.files[0]);
+}
+</script>
+</head>
+<body>
+<form action="javascript:train(this)">
+Training file: <input type="file" id="trainingExamples"><br>
+Layers & number of neurons: <input type="text" id="neuronsNumber" value="[10, 1]"><br>
+Neuron activation function by layer: <input type="text" id="neuronsFunction" value='["ReLU", "Linear"]'><br>
+Training iterations: <input type="number" id="trainingIterations" value=1000><br>
+Training speed: <input type="number" id="trainingSpeed" value=0.001><br>
+<input type="submit" value="Train">
+</form><br><br>
+<form action="javascript:test(this)">
+Testing file: <input type="file" id="testingExamples"><br>
+<input type="submit" value="Test"><br><br>
+Output:<br><textarea id="output" readonly></textonly>
+</form>
+</body>
+</html>
+

@@ -1,9 +1,0 @@
-[{"Features": [0.5, 0.5], "Value": 0.5},
- {"Features": [-0.5, 0.5], "Value": 0.5},
- {"Features": [0.5, -0.5], "Value": 0.5},
- {"Features": [-0.5, -0.5], "Value": 0.5},
- {"Features": [1.0, 1.0], "Value": 2.0},
- {"Features": [1.0, -1.0], "Value": 2.0},
- {"Features": [-1.0, 1.0], "Value": 2.0},
- {"Features": [-1.0, -1.0], "Value": 2.0},
- {"Features": [0.25, 0.25], "Value": 0.125}]

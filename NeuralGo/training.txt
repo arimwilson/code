@@ -1,0 +1,9 @@
+[{"Features": [0.5, 0.5], "Values": [0.5]},
+ {"Features": [-0.5, 0.5], "Values": [0.5]},
+ {"Features": [0.5, -0.5], "Values": [0.5]},
+ {"Features": [-0.5, -0.5], "Values": [0.5]},
+ {"Features": [1.0, 1.0], "Values": [2.0]},
+ {"Features": [1.0, -1.0], "Values": [2.0]},
+ {"Features": [-1.0, 1.0], "Values": [2.0]},
+ {"Features": [-1.0, -1.0], "Values": [2.0]},
+ {"Features": [0.25, 0.25], "Values": [0.125]}]

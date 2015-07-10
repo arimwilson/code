@@ -44,29 +44,31 @@ func main() {
   flag.Parse()
   rand.Seed(time.Now().UTC().UnixNano())
 
-  // Set up an example neural network with 2 inputs and 1 output.
+  // Set up neural network using flags.
   neuronsNumber := make([]int, 0)
   err := json.Unmarshal([]byte(*neuronsNumberFlag), &neuronsNumber)
   if err != nil {
     log.Fatal(err)
-  } else if neuronsNumber[len(neuronsNumber) - 1] != 1 {
-    log.Fatal("Unexpected number of output neurons; expected 1!")
   }
   neuronsFunction := make([]string, 0)
   err = json.Unmarshal([]byte(*neuronsFunctionFlag), &neuronsFunction)
   if err != nil {
     log.Fatal(err)
   }
-  neuralNetwork := neural.NewNetwork(2, neuronsNumber, neuronsFunction)
+  trainingExamples := ReadDatapointsOrDie(*trainingExamplesFlag)
+  // Use the first training example to decide how many features we have.
+  neuralNetwork := neural.NewNetwork(
+      len(trainingExamples[0].Features), neuronsNumber, neuronsFunction)
   neuralNetwork.RandomizeSynapses()
+  testingExamples := ReadDatapointsOrDie(*testingExamplesFlag)
 
   // Train the model.
-  trainingExamples := ReadDatapointsOrDie(*trainingExamplesFlag)
   neural.Train(neuralNetwork, trainingExamples, *trainingIterationsFlag,
-        *trainingSpeedFlag)
+               *trainingSpeedFlag)
+  fmt.Printf("Training error: %v\n",
+             neural.Evaluate(neuralNetwork, trainingExamples))
 
   // Test the model.
-  testingExamples := ReadDatapointsOrDie(*testingExamplesFlag)
   fmt.Printf("Testing error: %v\nFinal network: %v\n",
              neural.Evaluate(neuralNetwork, testingExamples),
              string(neuralNetwork.Serialize()))
