@@ -68,8 +68,8 @@ func main() {
   fmt.Printf("Training error: %v\n",
              neural.Evaluate(neuralNetwork, trainingExamples))
 
-  // Test the model.
-  fmt.Printf("Testing error: %v\nFinal network: %v\n",
+  // Test & print the model.
+  fmt.Printf("Testing error: %v\nNetwork: %v\n",
              neural.Evaluate(neuralNetwork, testingExamples),
              string(neuralNetwork.Serialize()))
 }

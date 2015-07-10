@@ -6,6 +6,7 @@ import ("appengine"; "appengine/memcache"; "encoding/json"; "fmt"; "math/rand";
 func init() {
   http.HandleFunc("/train", train)
   http.HandleFunc("/test", test)
+  http.HandleFunc("/get", get)
 }
 
 func unmarshal(data []byte, v interface{}, c appengine.Context,
@@ -108,8 +109,25 @@ func test(w http.ResponseWriter, r *http.Request) {
   var neuralNetwork neural.Network
   neuralNetwork.Deserialize(byteNetwork.Value)
   w.Write([]byte(fmt.Sprintf(
-    "Testing error: %v\nFinal network: %v\n",
-    neural.Evaluate(&neuralNetwork, testingExamples),
-    string(byteNetwork.Value))))
+    "Testing error: %v\n", neural.Evaluate(&neuralNetwork, testingExamples))))
 }
 
+func get(w http.ResponseWriter, r *http.Request) {
+  c := appengine.NewContext(r)
+  // Get params from request.
+  err := r.ParseForm()
+  if err != nil {
+    c.Errorf("Could not parse form with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+
+  // Get the model.
+  var byteNetwork *memcache.Item
+  if byteNetwork, err = memcache.Get(c, r.FormValue("modelId")); err != nil {
+    c.Errorf("Could not retrieve neural network with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  w.Write([]byte(fmt.Sprintf("Network: %v\n", string(byteNetwork.Value))))
+}

@@ -4,62 +4,83 @@
 <title>NeuralGo</title>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script type="text/javascript">
-modelId = -1;
+modelId = "";
 
-function train(form) {
+trainingExamples = ""
+function getTrainingExamples(event) {
+  reader = new FileReader();
+  reader.onload = function() {
+    trainingExamples = reader.result;
+  }
+  reader.readAsText(event.target.files[0]);
+}
+
+testingExamples = ""
+function getTestingExamples(event) {
   reader = new FileReader();
   reader.onload = function(event) {
-    trainingExamples = event.target.result;
-    $.post(
-        "/train",
-        { trainingExamples: trainingExamples,
-          neuronsNumber: form.neuronsNumber.value,
-          neuronsFunction: form.neuronsFunction.value,
-          trainingIterations: form.trainingIterations.value,
-          trainingSpeed: form.trainingSpeed.value },
-        function(data) {
-          modelId = data["modelId"];
-          $("#output").val($("#output").val() + data["output"]);
-        },
-        "json");
+    testingExamples = reader.result;
   }
-  reader.readAsText(form.trainingExamples.files[0]);
+  reader.readAsText(event.target.files[0]);
+}
+
+function train(form) {
+  $.post(
+      "/train",
+      { trainingExamples: trainingExamples,
+        neuronsNumber: form.neuronsNumber.value,
+        neuronsFunction: form.neuronsFunction.value,
+        trainingIterations: form.trainingIterations.value,
+        trainingSpeed: form.trainingSpeed.value },
+      function(data) {
+        modelId = data["modelId"];
+        $("#output").val($("#output").val() + data["output"]);
+      },
+      "json");
 }
 
 function test(form) {
-  reader = new FileReader();
-  reader.onload = function(event) {
-    testingExamples = event.target.result;
-    $.post(
-        "/test",
-        { modelId: modelId,
-          testingExamples: testingExamples },
-        function(data) {
-          $("#output").val($("#output").val() + data);
-        },
-        "text");
-  }
-  reader.readAsText(form.testingExamples.files[0]);
+  $.post(
+      "/test",
+      { modelId: modelId,
+        testingExamples: testingExamples },
+      function(data) {
+        $("#output").val($("#output").val() + data);
+      },
+      "text");
+}
+
+function get(form) {
+  $.post(
+      "/get",
+      { modelId: modelId },
+      function(data) {
+        $("#output").val($("#output").val() + data);
+      },
+      "text");
 }
 </script>
 </head>
 <body>
 <form action="javascript:train(this)">
 <b>1. Training the network</b><br>
-Training file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/big_training.txt">example</a>): <input type="file" id="trainingExamples"><br>
+Training file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/big_training.txt">example</a>): <input type="file" id="trainingExamples" onchange="getTrainingExamples(event)"><br>
 Layers & number of neurons: <input type="text" id="neuronsNumber" value="[10, 1]"><br>
 Neuron activation function by layer: <input type="text" id="neuronsFunction" value='["ReLU", "Linear"]'><br>
-Training iterations: <input type="number" id="trainingIterations" value=1000><br>
-Training speed: <input type="number" id="trainingSpeed" value=0.001><br>
+Training iterations: <input type="number" id="trainingIterations" value=1000 min=0><br>
+Training speed: <input type="number" id="trainingSpeed" value=0.001 step="any" min=0><br>
 <input type="submit" value="Train">
 </form><br><br>
 <b>2. Testing the network</b><br>
 <form action="javascript:test(this)">
-Testing file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/testing.txt">example</a>): <input type="file" id="testingExamples"><br>
-<input type="submit" value="Test"><br><br>
-</form>
-<b>3. Output<br></b>
-<textarea id="output" cols=80 rows=20 readonly></textarea>
+Testing file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/testing.txt">example</a>): <input type="file" id="testingExamples" onchange="getTestingExamples(event)"><br>
+<input type="submit" value="Test">
+</form><br><br>
+<b>3. Output</b><br>
+<form action="javascript:get(this)">
+<input type="submit" value="Get network">
+</form><br>
+<textarea id="output" cols=80 rows=40 readonly></textarea>
 </body>
 </html>
 
