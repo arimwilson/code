@@ -1,7 +1,7 @@
 package appengine
 
 import ("appengine"; "appengine/memcache"; "encoding/json"; "fmt"; "math/rand";
-        "net/http"; "time"; "./neural")
+        "net/http"; "time"; "neural")
 
 func init() {
   http.HandleFunc("/train", train)
