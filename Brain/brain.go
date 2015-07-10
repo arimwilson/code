@@ -1,5 +1,5 @@
-// Neural network training & execution on a simple supervised regression
-// problem.
+// Feed-forward neural network training & execution on a simple supervised
+// regression problem.
 //
 // Sample usage:
 // go run brain.go -training_file training.txt -testing_file testing.txt
@@ -12,10 +12,13 @@ import ("encoding/json"; "flag"; "fmt"; "io/ioutil"; "log"; "math/rand";
 var trainingExamplesFlag = flag.String(
   "training_file", "",
   "File with JSON-formatted array of training examples with values.")
-var hiddenNeuronsNumberFlag = flag.Int(
-  "hidden_neurons_number", 10, "Number of hidden neurons in the network.")
-var hiddenNeuronsFunctionFlag = flag.String(
-  "hidden_neurons_function", "ReLU", "Activation function for hidden neurons.")
+var neuronsNumberFlag = flag.String(
+  "neurons_number", "[10, 1]",
+  "JSON-formatted array of number of neurons for each layer in the network.")
+var neuronsFunctionFlag = flag.String(
+  "neurons_function", "[\"ReLU\", \"Linear\"]",
+  "JSON-formatted array of activation function for neurons each layer in the " +
+  "network.")
 var trainingIterationsFlag = flag.Int(
   "training_iterations", 1000, "Number of training iterations.")
 var trainingSpeedFlag = flag.Float64(
@@ -72,12 +75,20 @@ func main() {
   flag.Parse()
   rand.Seed(time.Now().UTC().UnixNano())
 
-  // Set up an example fully connected network with 2 inputs and 2 layers.
-  // Layer 1 consists of n hidden ReLU neurons and layer consists of one output
-  // linear neuron.
-  neuralNetwork := neural.NewNetwork(2, []int{*hiddenNeuronsNumberFlag, 1},
-                                     []string{*hiddenNeuronsFunctionFlag,
-                                              "Linear"})
+  // Set up an example neural network with 2 inputs and 1 output.
+  neuronsNumber := make([]int, 0)
+  err := json.Unmarshal([]byte(*neuronsNumberFlag), &neuronsNumber)
+  if err != nil {
+    log.Fatal(err)
+  } else if neuronsNumber[len(neuronsNumber) - 1] != 1 {
+    log.Fatal("Unexpected number of output neurons; expected 1!")
+  }
+  neuronsFunction := make([]string, 0)
+  err = json.Unmarshal([]byte(*neuronsFunctionFlag), &neuronsFunction)
+  if err != nil {
+    log.Fatal(err)
+  }
+  neuralNetwork := neural.NewNetwork(2, neuronsNumber, neuronsFunction)
   neuralNetwork.RandomizeSynapses()
 
   // Train the model.
