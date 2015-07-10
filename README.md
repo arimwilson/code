@@ -14,4 +14,6 @@ Ari Wilson's code, including a variety of projects:
 
 [Seismo](https://play.google.com/store/apps/details?id=com.ariwilson.seismo) is an Android application that measures the strength of vibration, shaking, and movement around you, much like a real [seismograph](http://en.wikipedia.org/wiki/Seismometer). [Seismo Wallpaper](https://play.google.com/store/apps/details?id=com.ariwilson.seismowallpaper) is a live wallpaper adaptation of Seismo.
 
+[NeuralGo](http://neuralgo.appspot.com/) is a service providing neural network training and evaluation. It is also available in command-line form [here](https://github.com/evilrobot69/code/blob/master/NeuralGo/cmdline.go).
+
 Design docs for these projects are stored [here](https://docs.google.com/leaf?id=0B2y1ljk8ZP3tNDAzODRkNmItOWEwOS00ZDA2LTgxMjUtMGYwOTFiODdkYzVi&hl=en_US).
