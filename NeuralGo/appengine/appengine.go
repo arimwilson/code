@@ -68,8 +68,9 @@ func train(w http.ResponseWriter, r *http.Request) {
   // Train the model.
   neural.Train(neuralNetwork, trainingExamples, trainingIterations,
                trainingSpeed)
+  modelId := strconv.FormatInt(timeNano, 10)
   item := &memcache.Item{
-    Key: strconv.FormatInt(timeNano, 10),
+    Key: modelId,
     Value: neuralNetwork.Serialize(),
   }
   if err = memcache.Add(c, item); err != nil {
@@ -78,8 +79,8 @@ func train(w http.ResponseWriter, r *http.Request) {
     return
   }
   w.Write([]byte(fmt.Sprintf(
-      "{\"modelId\": %v, \"output\": \"Training error: %v\n\"", timeNano,
-      neural.Evaluate(neuralNetwork, trainingExamples))))
+      "{\"modelId\": \"%v\", \"output\": \"Training error: %v\\n\"}",
+      modelId, neural.Evaluate(neuralNetwork, trainingExamples))))
 }
 
 func test(w http.ResponseWriter, r *http.Request) {
@@ -108,6 +109,7 @@ func test(w http.ResponseWriter, r *http.Request) {
   neuralNetwork.Deserialize(byteNetwork.Value)
   w.Write([]byte(fmt.Sprintf(
     "Testing error: %v\nFinal network: %v\n",
-    neural.Evaluate(&neuralNetwork, testingExamples), byteNetwork.Value)))
+    neural.Evaluate(&neuralNetwork, testingExamples),
+    string(byteNetwork.Value))))
 }
 

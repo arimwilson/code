@@ -10,16 +10,18 @@ function train(form) {
   reader = new FileReader();
   reader.onload = function(event) {
     trainingExamples = event.target.result;
-    $.post("/train",
-           { trainingExamples: trainingExamples,
-             neuronsNumber: form.neuronsNumber.value,
-             neuronsFunction: form.neuronsFunction.value,
-             trainingIterations: form.trainingIterations.value,
-             trainingSpeed: form.trainingSpeed.value },
-           function(data) {
-             modelId = data["modelId"]
-             $("#output").val($("#output").val() + data["output"]);
-           });
+    $.post(
+        "/train",
+        { trainingExamples: trainingExamples,
+          neuronsNumber: form.neuronsNumber.value,
+          neuronsFunction: form.neuronsFunction.value,
+          trainingIterations: form.trainingIterations.value,
+          trainingSpeed: form.trainingSpeed.value },
+        function(data) {
+          modelId = data["modelId"];
+          $("#output").val($("#output").val() + data["output"]);
+        },
+        "json");
   }
   reader.readAsText(form.trainingExamples.files[0]);
 }
@@ -28,12 +30,14 @@ function test(form) {
   reader = new FileReader();
   reader.onload = function(event) {
     testingExamples = event.target.result;
-    $.post("/test",
-           { modelId: modelId,
-             testingExamples: testingExamples },
-           function(data) {
-             $("#output").val($("#output").val() + data);
-           });
+    $.post(
+        "/test",
+        { modelId: modelId,
+          testingExamples: testingExamples },
+        function(data) {
+          $("#output").val($("#output").val() + data);
+        },
+        "text");
   }
   reader.readAsText(form.testingExamples.files[0]);
 }
@@ -55,7 +59,7 @@ Testing file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master
 <input type="submit" value="Test"><br><br>
 </form>
 <b>3. Output<br></b>
-<textarea id="output" readonly></texarea>
+<textarea id="output" cols=80 rows=20 readonly></textarea>
 </body>
 </html>
 
