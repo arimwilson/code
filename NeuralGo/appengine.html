@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
-<title>Brain</title>
+<title>NeuralGo</title>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script type="text/javascript">
 modelId = -1;
@@ -41,18 +41,21 @@ function test(form) {
 </head>
 <body>
 <form action="javascript:train(this)">
-Training file: <input type="file" id="trainingExamples"><br>
+<b>1. Training the network</b><br>
+Training file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/big_training.txt">example</a>): <input type="file" id="trainingExamples"><br>
 Layers & number of neurons: <input type="text" id="neuronsNumber" value="[10, 1]"><br>
 Neuron activation function by layer: <input type="text" id="neuronsFunction" value='["ReLU", "Linear"]'><br>
 Training iterations: <input type="number" id="trainingIterations" value=1000><br>
 Training speed: <input type="number" id="trainingSpeed" value=0.001><br>
 <input type="submit" value="Train">
 </form><br><br>
+<b>2. Testing the network</b><br>
 <form action="javascript:test(this)">
-Testing file: <input type="file" id="testingExamples"><br>
+Testing file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/testing.txt">example</a>): <input type="file" id="testingExamples"><br>
 <input type="submit" value="Test"><br><br>
-Output:<br><textarea id="output" readonly></textonly>
 </form>
+<b>3. Output<br></b>
+<textarea id="output" readonly></texarea>
 </body>
 </html>
 
