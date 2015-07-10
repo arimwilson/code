@@ -2,7 +2,7 @@
 // regression problem.
 //
 // Sample usage:
-// go run brain.go -training_file training.txt -testing_file testing.txt
+// go run cmdline.go -training_file training.txt -testing_file testing.txt
 
 package main
 
@@ -27,43 +27,12 @@ var testingExamplesFlag = flag.String(
   "testing_file", "",
   "File with JSON-formatted array of testing examples with values.")
 
-type Datapoint struct {
-  Features []float64
-  Value float64
-}
-
-func Train(neuralNetwork *neural.Network, datapoints []Datapoint, iter int) {
-  // Train on some number of iterations of permuted versions of the input.
-  for i := 0; i < iter; i++ {
-    perm := rand.Perm(len(datapoints))
-    for _, index := range perm {
-      neuralNetwork.Train(
-          datapoints[index].Features, []float64{datapoints[index].Value},
-          *trainingSpeedFlag)
-    }
-    if (i + 1)  % (iter / 4) == 0 {
-      fmt.Printf("Training error on iteration %v: %v\n", i + 1,
-                 Evaluate(neuralNetwork, datapoints))
-    }
-  }
-}
-
-func Evaluate(neuralNetwork *neural.Network, datapoints []Datapoint) float64 {
-  square_error := 0.0
-  for _, datapoint := range datapoints {
-    output := neuralNetwork.Evaluate(datapoint.Features)
-    square_error += (datapoint.Value - output[0]) *
-                    (datapoint.Value - output[0])
-  }
-  return square_error / float64(len(datapoints))
-}
-
-func ReadDatapointsOrDie(filename string) []Datapoint {
+func ReadDatapointsOrDie(filename string) []neural.Datapoint {
   bytes, err := ioutil.ReadFile(filename)
   if err != nil {
     log.Fatal(err)
   }
-  datapoints := make([]Datapoint, 0)
+  datapoints := make([]neural.Datapoint, 0)
   err = json.Unmarshal(bytes, &datapoints)
   if err != nil {
     log.Fatal(err)
@@ -93,11 +62,12 @@ func main() {
 
   // Train the model.
   trainingExamples := ReadDatapointsOrDie(*trainingExamplesFlag)
-  Train(neuralNetwork, trainingExamples, *trainingIterationsFlag)
+  neural.Train(neuralNetwork, trainingExamples, *trainingIterationsFlag,
+        *trainingSpeedFlag)
 
   // Test the model.
   testingExamples := ReadDatapointsOrDie(*testingExamplesFlag)
   fmt.Printf("Testing error: %v\nFinal network: %v\n",
-             Evaluate(neuralNetwork, testingExamples),
+             neural.Evaluate(neuralNetwork, testingExamples),
              string(neuralNetwork.Serialize()))
 }
