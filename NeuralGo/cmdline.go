@@ -12,6 +12,10 @@ import ("encoding/json"; "flag"; "fmt"; "io/ioutil"; "log"; "math/rand";
 var trainingExamplesFlag = flag.String(
   "training_file", "",
   "File with JSON-formatted array of training examples with values.")
+var serializedNetworkFileFlag = flag.String(
+  "serialized_network_file", "",
+  "File with serialized version of neural network. If present, overrides " +
+  "--neurons_number and --neurons_function.")
 var neuronsNumberFlag = flag.String(
   "neurons_number", "[10, 1]",
   "JSON-formatted array of number of neurons for each layer in the network.")
@@ -45,21 +49,31 @@ func main() {
   rand.Seed(time.Now().UTC().UnixNano())
 
   // Set up neural network using flags.
-  neuronsNumber := make([]int, 0)
-  err := json.Unmarshal([]byte(*neuronsNumberFlag), &neuronsNumber)
-  if err != nil {
-    log.Fatal(err)
-  }
-  neuronsFunction := make([]string, 0)
-  err = json.Unmarshal([]byte(*neuronsFunctionFlag), &neuronsFunction)
-  if err != nil {
-    log.Fatal(err)
-  }
+  var neuralNetwork *neural.Network
   trainingExamples := ReadDatapointsOrDie(*trainingExamplesFlag)
-  // Use the first training example to decide how many features we have.
-  neuralNetwork := neural.NewNetwork(
-      len(trainingExamples[0].Features), neuronsNumber, neuronsFunction)
-  neuralNetwork.RandomizeSynapses()
+  if *serializedNetworkFileFlag != "" {
+    byteNetwork, err := ioutil.ReadFile(*serializedNetworkFileFlag)
+    if err != nil {
+      log.Fatal(err)
+    }
+    neuralNetwork = new(neural.Network)
+    neuralNetwork.Deserialize(byteNetwork)
+  } else {
+    neuronsNumber := make([]int, 0)
+    err := json.Unmarshal([]byte(*neuronsNumberFlag), &neuronsNumber)
+    if err != nil {
+      log.Fatal(err)
+    }
+    neuronsFunction := make([]string, 0)
+    err = json.Unmarshal([]byte(*neuronsFunctionFlag), &neuronsFunction)
+    if err != nil {
+      log.Fatal(err)
+    }
+    // Use the first training example to decide how many features we have.
+    neuralNetwork = neural.NewNetwork(
+        len(trainingExamples[0].Features), neuronsNumber, neuronsFunction)
+    neuralNetwork.RandomizeSynapses()
+  }
   testingExamples := ReadDatapointsOrDie(*testingExamplesFlag)
 
   // Train the model.

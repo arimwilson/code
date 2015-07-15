@@ -64,7 +64,7 @@ function get(form) {
 <body>
 <form action="javascript:train(this)">
 <b>1. Training the network</b><br>
-Training file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/big_training.txt">example</a>): <input type="file" id="trainingExamples" onchange="getTrainingExamples(event)"><br>
+Training file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/examples/circle/training.txt">example</a>): <input type="file" id="trainingExamples" onchange="getTrainingExamples(event)"><br>
 Layers & number of neurons: <input type="text" id="neuronsNumber" value="[10, 1]"><br>
 Neuron activation function by layer: <input type="text" id="neuronsFunction" value='["ReLU", "Linear"]'><br>
 Training iterations: <input type="number" id="trainingIterations" value=1000 min=0><br>
@@ -73,7 +73,7 @@ Training speed: <input type="number" id="trainingSpeed" value=0.001 step="any" m
 </form><br><br>
 <b>2. Testing the network</b><br>
 <form action="javascript:test(this)">
-Testing file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/testing.txt">example</a>): <input type="file" id="testingExamples" onchange="getTestingExamples(event)"><br>
+Testing file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/examples/circle/testing.txt">example</a>): <input type="file" id="testingExamples" onchange="getTestingExamples(event)"><br>
 <input type="submit" value="Test">
 </form><br><br>
 <b>3. Output</b><br>
