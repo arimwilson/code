@@ -3,7 +3,7 @@ package neural
 func NewNeuron(function string) *Neuron {
   neuron := new(Neuron)
   // Add bias term as first input.
-  synapse := NewSynapse(0, 1)
+  synapse := NewSynapse(0)
   neuron.InputSynapses = append(neuron.InputSynapses, synapse)
   neuron.ActivationFunction = function
   return neuron
@@ -17,14 +17,18 @@ type Neuron struct {
 }
 
 func (self *Neuron) ConnectTo(to *Neuron) {
-  synapse := NewSynapse(0, 0)
+  synapse := NewSynapse(0)
   self.OutputSynapses = append(self.OutputSynapses, synapse)
   to.InputSynapses = append(to.InputSynapses, synapse)
 }
 
 func (self *Neuron) Forward() {
   output := 0.0
-  for _, synapse := range self.InputSynapses {
+  for i, synapse := range self.InputSynapses {
+    // Bias term is not activated by previous layer; we need to manually signal.
+    if i == 0 {
+      synapse.Signal(1)
+    }
     output += synapse.Output
   }
   self.Output = ActivationFunction(self.ActivationFunction, output)

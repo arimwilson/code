@@ -24,8 +24,8 @@ func Evaluate(neuralNetwork *Network, datapoints []Datapoint) float64 {
   for _, datapoint := range datapoints {
     output := neuralNetwork.Evaluate(datapoint.Features)
     for i, value := range datapoint.Values {
-      square_error += (value - output[i]) * (value - output[i])
+      square_error += (value - output[i]) * (value - output[i]) / 2
     }
   }
-  return square_error / float64(len(datapoints))
+  return square_error
 }

@@ -7,8 +7,8 @@ type Synapse struct {
   Gradient float64
 }
 
-func NewSynapse(weight float64, input float64) *Synapse {
-  return &Synapse{Weight: weight, Input: input}
+func NewSynapse(weight float64) *Synapse {
+  return &Synapse{Weight: weight}
 }
 
 func (self *Synapse) Signal(value float64) {

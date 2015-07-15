@@ -12,7 +12,7 @@ type Input struct {
 func (self *Input) ConnectTo(layer *Layer) {
   // All inputs connect to all neurons in the first layer.
   for _, neuron := range layer.Neurons {
-    synapse := NewSynapse(0, 0)
+    synapse := NewSynapse(0)
     self.OutputSynapses = append(self.OutputSynapses, synapse)
     neuron.InputSynapses = append(neuron.InputSynapses, synapse)
   }
