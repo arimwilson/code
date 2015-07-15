@@ -65,11 +65,10 @@ func main() {
   // Train the model.
   neural.Train(neuralNetwork, trainingExamples, *trainingIterationsFlag,
                *trainingSpeedFlag)
-  fmt.Printf("Training error: %v\n",
-             neural.Evaluate(neuralNetwork, trainingExamples))
 
-  // Test & print the model.
-  fmt.Printf("Testing error: %v\nNetwork: %v\n",
+  // Test & print model:
+  fmt.Printf("Training error: %v\nTesting error: %v\nNetwork: %v\n",
+             neural.Evaluate(neuralNetwork, trainingExamples),
              neural.Evaluate(neuralNetwork, testingExamples),
              string(neuralNetwork.Serialize()))
 }
