@@ -19,7 +19,7 @@ func Train(neuralNetwork *Network, datapoints []Datapoint, iter int,
   }
 }
 
-func Evaluate(neuralNetwork *Network, datapoints []Datapoint) float64 {
+func Evaluate(neuralNetwork Network, datapoints []Datapoint) float64 {
   square_error := 0.0
   for _, datapoint := range datapoints {
     output := neuralNetwork.Evaluate(datapoint.Features)

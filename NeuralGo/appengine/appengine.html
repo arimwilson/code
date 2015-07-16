@@ -6,6 +6,15 @@
 <script type="text/javascript">
 modelId = "";
 
+serializedNetwork = ""
+function getSerializedNetwork(event) {
+  reader = new FileReader();
+  reader.onload = function() {
+    serializedNetwork = reader.result;
+  }
+  reader.readAsText(event.target.files[0]);
+}
+
 trainingExamples = ""
 function getTrainingExamples(event) {
   reader = new FileReader();
@@ -24,19 +33,30 @@ function getTestingExamples(event) {
   reader.readAsText(event.target.files[0]);
 }
 
+function create(form) {
+  $.post(
+      "/create",
+      { serializedNetwork: serializedNetwork,
+        inputs: form.inputs.value,
+        neuronsNumber: form.neuronsNumber.value,
+        neuronsFunction: form.neuronsFunction.value },
+      function(data) {
+        modelId = data;
+      },
+      "text");
+}
+
 function train(form) {
   $.post(
       "/train",
-      { trainingExamples: trainingExamples,
-        neuronsNumber: form.neuronsNumber.value,
-        neuronsFunction: form.neuronsFunction.value,
+      { modelId: modelId,
+        trainingExamples: trainingExamples,
         trainingIterations: form.trainingIterations.value,
         trainingSpeed: form.trainingSpeed.value },
       function(data) {
-        modelId = data["modelId"];
-        $("#output").val($("#output").val() + data["output"]);
+        $("#output").val($("#output").val() + data);
       },
-      "json");
+      "text");
 }
 
 function test(form) {
@@ -62,21 +82,27 @@ function get(form) {
 </script>
 </head>
 <body>
-<form action="javascript:train(this)">
-<b>1. Training the network</b><br>
-Training file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/examples/circle/training.txt">example</a>): <input type="file" id="trainingExamples" onchange="getTrainingExamples(event)"><br>
+<form action="javascript:create(this)">
+<b>1. Create the network</b><br>
+Serialized network file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/examples/simple/network.txt">example</a>): <input type="file" id="serializedNetwork" onchange="getSerializedNetwork(event)"> <b>or</b><br>
+Number of inputs: <input type="number" id="inputs" value=2 min=1><br>
 Layers & number of neurons: <input type="text" id="neuronsNumber" value="[10, 1]"><br>
 Neuron activation function by layer: <input type="text" id="neuronsFunction" value='["ReLU", "Linear"]'><br>
+<input type="submit" value="Create">
+</form><br><br>
+<form action="javascript:train(this)">
+<b>2. Train the network</b><br>
+Training file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/examples/circle/training.txt">example</a>): <input type="file" id="trainingExamples" onchange="getTrainingExamples(event)"><br>
 Training iterations: <input type="number" id="trainingIterations" value=1000 min=0><br>
 Training speed: <input type="number" id="trainingSpeed" value=0.001 step="any" min=0><br>
 <input type="submit" value="Train">
 </form><br><br>
-<b>2. Testing the network</b><br>
+<b>3. Test the network</b><br>
 <form action="javascript:test(this)">
 Testing file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/examples/circle/testing.txt">example</a>): <input type="file" id="testingExamples" onchange="getTestingExamples(event)"><br>
 <input type="submit" value="Test">
 </form><br><br>
-<b>3. Output</b><br>
+<b>Output</b><br>
 <form action="javascript:get(this)">
 <input type="submit" value="Get network">
 </form><br>

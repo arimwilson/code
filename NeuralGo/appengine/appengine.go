@@ -4,6 +4,7 @@ import ("appengine"; "appengine/memcache"; "encoding/json"; "fmt"; "math/rand";
         "net/http"; "strconv"; "time"; "neural")
 
 func init() {
+  http.HandleFunc("/create", create)
   http.HandleFunc("/train", train)
   http.HandleFunc("/test", test)
   http.HandleFunc("/get", get)
@@ -20,6 +21,85 @@ func unmarshal(data []byte, v interface{}, c appengine.Context,
   return true
 }
 
+func getModelFromCache(
+    modelId string, c appengine.Context, w http.ResponseWriter) (
+    neuralNetwork neural.Network, success bool) {
+  var byteNetwork *memcache.Item
+  var err error
+  if byteNetwork, err = memcache.Get(c, modelId); err != nil {
+    c.Errorf("Could not retrieve neural network with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    success = false
+    return
+  }
+  neuralNetwork.Deserialize(byteNetwork.Value)
+  success = true
+  return
+}
+
+// neuralNetwork will be placed into memcache with key modelId, unless modelId
+// is empty, in which case the current time will be used.
+func putModelIntoCache(
+    modelId string, neuralNetwork neural.Network, c appengine.Context,
+    w http.ResponseWriter) (newModelId string, success bool) {
+  // Copy modelId into return if it was provided.
+  if len(modelId) == 0 {
+    newModelId = strconv.FormatInt(time.Now().UTC().UnixNano(), 10)
+  } else {
+    newModelId = modelId
+  }
+  item := &memcache.Item{
+    Key: newModelId,
+    Value: neuralNetwork.Serialize(),
+  }
+  if err := memcache.Set(c, item); err != nil {
+    c.Errorf("Could not store neural network with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    success = false
+    return
+  }
+  success = true
+  return
+}
+
+func create(w http.ResponseWriter, r *http.Request) {
+  c := appengine.NewContext(r)
+  // Get params from request.
+  err := r.ParseForm()
+  rand.Seed(time.Now().UTC().UnixNano())
+
+  var neuralNetwork *neural.Network
+  c.Infof(fmt.Sprintf("%v", len(r.FormValue("serializedNetwork"))))
+  if len(r.FormValue("serializedNetwork")) > 0 {
+    neuralNetwork = new(neural.Network)
+    neuralNetwork.Deserialize([]byte(r.FormValue("serializedNetwork")))
+  } else {
+    var inputs int
+    if inputs, err = strconv.Atoi(r.FormValue("inputs")); err != nil {
+      c.Errorf("Could not parse inputs with error: %s", err.Error())
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+    neuronsNumber := make([]int, 0)
+    if !unmarshal([]byte(r.FormValue("neuronsNumber")), &neuronsNumber, c, w) {
+      return
+    }
+    neuronsFunction := make([]string, 0)
+    if !unmarshal([]byte(r.FormValue("neuronsFunction")), &neuronsFunction, c,
+                  w) {
+      return
+    }
+    neuralNetwork = neural.NewNetwork(inputs, neuronsNumber, neuronsFunction)
+    neuralNetwork.RandomizeSynapses()
+  }
+  var modelId string
+  var success bool
+  if modelId, success = putModelIntoCache("", *neuralNetwork, c, w); !success {
+    return
+  }
+  w.Write([]byte(modelId))
+}
+
 func train(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
   // Get params from request.
@@ -29,17 +109,11 @@ func train(w http.ResponseWriter, r *http.Request) {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
-  timeNano := time.Now().UTC().UnixNano()
-  rand.Seed(timeNano)
 
-  // Set up neural network using form values.
-  neuronsNumber := make([]int, 0)
-  if !unmarshal([]byte(r.FormValue("neuronsNumber")), &neuronsNumber, c, w) {
-    return
-  }
-  neuronsFunction := make([]string, 0)
-  if !unmarshal([]byte(r.FormValue("neuronsFunction")), &neuronsFunction, c,
-                w) {
+  var neuralNetwork neural.Network
+  var success bool
+  if neuralNetwork, success = getModelFromCache(r.FormValue("modelId"), c, w);
+     !success {
     return
   }
   trainingExamples := make([]neural.Datapoint, 0)
@@ -47,10 +121,6 @@ func train(w http.ResponseWriter, r *http.Request) {
                 w) {
     return
   }
-  // Use the first training example to decide how many features we have.
-  neuralNetwork := neural.NewNetwork(
-      len(trainingExamples[0].Features), neuronsNumber, neuronsFunction)
-  neuralNetwork.RandomizeSynapses()
   var trainingIterations int
   trainingIterations, err = strconv.Atoi(r.FormValue("trainingIterations"))
   if err != nil {
@@ -67,21 +137,15 @@ func train(w http.ResponseWriter, r *http.Request) {
   }
 
   // Train the model.
-  neural.Train(neuralNetwork, trainingExamples, trainingIterations,
+  neural.Train(&neuralNetwork, trainingExamples, trainingIterations,
                trainingSpeed)
-  modelId := strconv.FormatInt(timeNano, 10)
-  item := &memcache.Item{
-    Key: modelId,
-    Value: neuralNetwork.Serialize(),
-  }
-  if err = memcache.Add(c, item); err != nil {
-    c.Errorf("Could not store neural network with error: %s", err.Error())
-    http.Error(w, err.Error(), http.StatusInternalServerError)
+  if _, success := putModelIntoCache(
+         r.FormValue("modelId"), neuralNetwork, c, w); !success {
     return
   }
   w.Write([]byte(fmt.Sprintf(
-      "{\"modelId\": \"%v\", \"output\": \"Training error: %v\\n\"}",
-      modelId, neural.Evaluate(neuralNetwork, trainingExamples))))
+      "Training error: %v\n",
+      neural.Evaluate(neuralNetwork, trainingExamples))))
 }
 
 func test(w http.ResponseWriter, r *http.Request) {
@@ -93,23 +157,22 @@ func test(w http.ResponseWriter, r *http.Request) {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
-  testingExamples := make([]neural.Datapoint, 0)
 
-  // Test the model.
-  var byteNetwork *memcache.Item
-  if byteNetwork, err = memcache.Get(c, r.FormValue("modelId")); err != nil {
-    c.Errorf("Could not retrieve neural network with error: %s", err.Error())
-    http.Error(w, err.Error(), http.StatusInternalServerError)
+  var neuralNetwork neural.Network
+  var success bool
+  if neuralNetwork, success = getModelFromCache(r.FormValue("modelId"), c, w);
+     !success {
     return
   }
+  testingExamples := make([]neural.Datapoint, 0)
   if !unmarshal([]byte(r.FormValue("testingExamples")), &testingExamples, c,
                 w) {
     return
   }
-  var neuralNetwork neural.Network
-  neuralNetwork.Deserialize(byteNetwork.Value)
+
+  // Test the model.
   w.Write([]byte(fmt.Sprintf(
-    "Testing error: %v\n", neural.Evaluate(&neuralNetwork, testingExamples))))
+    "Testing error: %v\n", neural.Evaluate(neuralNetwork, testingExamples))))
 }
 
 func get(w http.ResponseWriter, r *http.Request) {
@@ -123,6 +186,7 @@ func get(w http.ResponseWriter, r *http.Request) {
   }
 
   // Get the model.
+  // TODO(ariw): Switch this to getModelFromCache?
   var byteNetwork *memcache.Item
   if byteNetwork, err = memcache.Get(c, r.FormValue("modelId")); err != nil {
     c.Errorf("Could not retrieve neural network with error: %s", err.Error())

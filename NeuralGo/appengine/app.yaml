@@ -7,9 +7,5 @@ handlers:
 - url: /
   static_files: appengine.html
   upload: appengine.html
-- url: /train
-  script: _go_app
-- url: /test
-  script: _go_app
-- url: /get
+- url: /.*
   script: _go_app
