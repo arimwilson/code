@@ -70,6 +70,17 @@ function test(form) {
       "text");
 }
 
+
+function evaluate(form) {
+  $.post(
+      "/evaluate",
+      { modelId: modelId, features: form.features.value },
+      function(data) {
+        $("#output").val($("#output").val() + data);
+      },
+      "text");
+}
+
 function get(form) {
   $.post(
       "/get",
@@ -83,7 +94,7 @@ function get(form) {
 </head>
 <body>
 <form action="javascript:create(this)">
-<b>1. Create the network</b><br>
+<b>Create the network</b><br>
 Serialized network file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/examples/simple/network.txt">example</a>): <input type="file" id="serializedNetwork" onchange="getSerializedNetwork(event)"> <b>or</b><br>
 Number of inputs: <input type="number" id="inputs" value=2 min=1><br>
 Layers & number of neurons: <input type="text" id="neuronsNumber" value="[10, 1]"><br>
@@ -91,16 +102,21 @@ Neuron activation function by layer: <input type="text" id="neuronsFunction" val
 <input type="submit" value="Create">
 </form><br><br>
 <form action="javascript:train(this)">
-<b>2. Train the network</b><br>
+<b>Train the network</b><br>
 Training file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/examples/circle/training.txt">example</a>): <input type="file" id="trainingExamples" onchange="getTrainingExamples(event)"><br>
 Training iterations: <input type="number" id="trainingIterations" value=1000 min=0><br>
 Training speed: <input type="number" id="trainingSpeed" value=0.001 step="any" min=0><br>
 <input type="submit" value="Train">
 </form><br><br>
-<b>3. Test the network</b><br>
+<b>Test the network</b><br>
 <form action="javascript:test(this)">
 Testing file (<a href="https://raw.githubusercontent.com/evilrobot69/code/master/NeuralGo/examples/circle/testing.txt">example</a>): <input type="file" id="testingExamples" onchange="getTestingExamples(event)"><br>
 <input type="submit" value="Test">
+</form><br><br>
+<b>Evaluate the neural network at a point</b><br>
+<form action="javascript:evaluate(this)">
+<input type="text" id="features" value="[1, 1]">
+<input type="submit" value="Evaluate">
 </form><br><br>
 <b>Output</b><br>
 <form action="javascript:get(this)">

@@ -7,6 +7,7 @@ func init() {
   http.HandleFunc("/create", create)
   http.HandleFunc("/train", train)
   http.HandleFunc("/test", test)
+  http.HandleFunc("/evaluate", evaluate)
   http.HandleFunc("/get", get)
 }
 
@@ -173,6 +174,31 @@ func test(w http.ResponseWriter, r *http.Request) {
   // Test the model.
   w.Write([]byte(fmt.Sprintf(
     "Testing error: %v\n", neural.Evaluate(neuralNetwork, testingExamples))))
+}
+
+func evaluate(w http.ResponseWriter, r *http.Request) {
+  c := appengine.NewContext(r)
+  // Get params from request.
+  err := r.ParseForm()
+  if err != nil {
+    c.Errorf("Could not parse form with error: %s", err.Error())
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  var neuralNetwork neural.Network
+  var success bool
+  if neuralNetwork, success = getModelFromCache(r.FormValue("modelId"), c, w);
+     !success {
+    return
+  }
+  features := make([]float64, 0)
+  if !unmarshal([]byte(r.FormValue("features")), &features, c, w) {
+    return
+  }
+
+  // Test the model.
+  w.Write([]byte(fmt.Sprintf(
+    "Evaluation: %v\n", neuralNetwork.Evaluate(features))))
 }
 
 func get(w http.ResponseWriter, r *http.Request) {
