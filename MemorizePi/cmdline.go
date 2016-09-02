@@ -1,4 +1,5 @@
 // +build !appengine
+
 package main
 
 import ("flag"; "fmt"; "os";)
@@ -14,7 +15,7 @@ func compare(real_pi *os.File, guessed_pi string) {
       case nr > 0:
         for i := 0; i < nr && pos < len(guessed_pi); i++ {
           if string(&buf)[i] != guessed_pi[pos] {
-            fmt.Printf("Wrong on digit %d. You typed %s but it should have "
+            fmt.Printf("Wrong on digit %d. You typed %s but it should have " +
                        "been %s.", pos + 1, string(guessed_pi[pos]),
                        string(buf[i]));
             return;

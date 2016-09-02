@@ -5,7 +5,10 @@ api_version: go1
 
 handlers:
 - url: /
-  static_files: memorizepi.html
-  upload: memorizepi.html
-- url: /.*
+  static_files: appengine.html
+  upload: appengine.html
+- url: /pi
+  static_files: pi.txt
+  upload: pi.txt
+- url: /compare
   script: _go_app

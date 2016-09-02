@@ -1,0 +1,26 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>MemorizePi</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script type="text/javascript">
+function compare(form) {
+  $.post(
+      "/compare",
+      { guessedPi : form.guessedPi.value },
+      function(data) {
+        $("#output").text(data);
+        // TODO(ariw): Should we clear the input value? $("#guessedPi").val("");
+      },
+      "text");
+}
+</script>
+</head>
+<body>
+<form action="javascript:compare(this)">
+Guess for &#120529;: <input id="guessedPi"><br>
+</form>
+<span id="output"></span>
+</body>
+</html>
+
