@@ -1,4 +1,4 @@
--- Run with runhaskell mempi <guess for pi>
+-- Run with runhaskell mempi <file with pi> <guess for pi>
 
 import System.Environment
 import System.Exit
@@ -6,11 +6,12 @@ import Text.Printf
 
 main = do
     args <- getArgs
-    if (length args) /= 1
-      then do putStrLn "Error: should have exactly one argument (guess for pi)."
+    if (length args) /= 2
+      then do putStrLn "Error: should have exactly two arguments (file \
+                       \with pi, guess for pi)."
               exitWith (ExitFailure 1)
-      else do real_pi <- readFile "pi.txt"
-              putStrLn (memorizeNumber (init real_pi) (head args) 1)
+      else do real_pi <- readFile (head args)
+              putStrLn (memorizeNumber (init real_pi) (head (tail args)) 1)
 
 memorizeNumber :: String -> String -> Int -> String
 memorizeNumber (x:xs) (y:ys) digits

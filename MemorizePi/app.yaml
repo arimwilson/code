@@ -1,0 +1,11 @@
+application: memorizepi
+version: 1
+runtime: go
+api_version: go1
+
+handlers:
+- url: /
+  static_files: memorizepi.html
+  upload: memorizepi.html
+- url: /.*
+  script: _go_app
