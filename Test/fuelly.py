@@ -69,19 +69,20 @@ def read(fuelly_csv_file):
     dataset.data[indices] = np.take(averages, indices[1])
     return dataset
 
+X = tf.placeholder(tf.float32)
 def model(dataset):
-    X = tf.placeholder(tf.float32)
     # Linear model with weight and bias term.
     W = tf.Variable(np.random.randn())
     b = tf.Variable(np.random.randn())
-    return X, tf.add(tf.mul(W, X), b)
+    return tf.add(tf.mul(W, X), b)
 
+Y = tf.placeholder(tf.float32)
 def train(sess, model, dataset):
     training_step = tf.train.GradientDescentOptimizer(
         FLAGS.learning_rate).minimize(
-            tf.reduce_mean(tf.square(dataset.target - model[1])))
+            tf.reduce_mean(tf.square(dataset.target - Y)))
     for i in range(10):
-        sess.run(training_step, feed_dict={model[0]: , Y: model[1]})
+        sess.run(training_step, feed_dict={X: dataset.data, Y: model[1]})
 
 def evaluate(sess, model, dataset):
     pass
