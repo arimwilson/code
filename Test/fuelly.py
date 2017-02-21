@@ -53,6 +53,11 @@ def seconds_in_past(date_str):
     return (datetime.datetime.now() -
             datetime.datetime.strptime(date_str, "%Y-%m-%d")).total_seconds()
 
+def feature_normalize(dataset):
+    mu = np.mean(dataset, axis=0)
+    sigma = np.std(dataset, axis=0)
+    return (dataset - mu) / sigma
+
 def read(fuelly_csv_file):
     # Format is car name, model, mpg, miles, gallons, price, city percentage
     # fuelup date, date added, tags, notes, missed fuelup, partial fuelup
@@ -67,22 +72,10 @@ def read(fuelly_csv_file):
     averages = np.nanmean(dataset.data, axis=0)
     indices = np.where(np.isnan(dataset.data))
     dataset.data[indices] = np.take(averages, indices[1])
+    # Normalize all features to mean 0 & distance from standard deviation.
+    sigma = np.std(dataset.data, axis=0)
+    dataset.data[...] = (dataset.data - averages) / sigma
     return dataset
-
-X = tf.placeholder(tf.float32)
-def model(dataset):
-    # Linear model with weight and bias term.
-    W = tf.Variable(np.random.randn())
-    b = tf.Variable(np.random.randn())
-    return tf.add(tf.mul(W, X), b)
-
-Y = tf.placeholder(tf.float32)
-def train(sess, model, dataset):
-    training_step = tf.train.GradientDescentOptimizer(
-        FLAGS.learning_rate).minimize(
-            tf.reduce_mean(tf.square(dataset.target - Y)))
-    for i in range(10):
-        sess.run(training_step, feed_dict={X: dataset.data, Y: model[1]})
 
 def evaluate(sess, model, dataset):
     pass
@@ -91,11 +84,21 @@ def main(_):
     # Read & parse file into appropriate features & value.
     dataset = read(FLAGS.fuelly_csv_file)
 
-    # Train & eval model.
+    # Train & eval model
+    # Linear model with weight term.
+    dim = dataset.data.shape[1]
+    X = tf.placeholder(tf.float32, [None, dim])
+    Y = tf.placeholder(tf.float32, [None, 1])
+    W = tf.Variable(np.random.randn(dim, 1), dtype=tf.float32)
+    model = tf.matmul(X, W)
     with tf.Session() as sess:
         tf.global_variables_initializer().run()
-        trained_model = train(sess, model(dataset), dataset)
-        evaluate(sess, trained_model, dataset)
+        training_step = tf.train.GradientDescentOptimizer(
+            FLAGS.learning_rate).minimize(
+                tf.reduce_mean(tf.square(model - Y)))
+        for i in range(FLAGS.num_epochs):
+            sess.run(training_step, feed_dict={X: dataset.data, Y: dataset.target})
+        evaluate(sess, model, dataset)
         # TODO(ariw): Add capability to test trained model on new examples.
 
 if __name__ == '__main__':
@@ -106,5 +109,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--learning_rate', type=float, default=0.01,
         help='Learning rate for gradient descent optimization.')
+    parser.add_argument(
+        '--num_epochs', type=int, default=10,
+        help='Number of training epochs.')
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
