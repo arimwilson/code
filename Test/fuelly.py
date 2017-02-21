@@ -88,16 +88,21 @@ def main(_):
     # Linear model with weight term.
     dim = dataset.data.shape[1]
     X = tf.placeholder(tf.float32, [None, dim])
-    Y = tf.placeholder(tf.float32, [None, 1])
-    W = tf.Variable(np.random.randn(dim, 1), dtype=tf.float32)
+    Y = tf.placeholder(tf.float32)
+    W = tf.Variable(tf.zeros([dim, 1]))
     model = tf.matmul(X, W)
     with tf.Session() as sess:
         tf.global_variables_initializer().run()
+        loss = tf.reduce_mean(tf.square(model - Y))
         training_step = tf.train.GradientDescentOptimizer(
-            FLAGS.learning_rate).minimize(
-                tf.reduce_mean(tf.square(model - Y)))
+            FLAGS.learning_rate).minimize(loss)
         for i in range(FLAGS.num_epochs):
-            sess.run(training_step, feed_dict={X: dataset.data, Y: dataset.target})
+            feed_dict = {X: dataset.data, Y: dataset.target}
+            sess.run(training_step, feed_dict=feed_dict)
+            if i % 10 == 0:
+                print(sess.run(tf.Print(W, [W], "Weights: ")),
+                      sess.run(loss, feed_dict=feed_dict))
+                #sess.run(tf.Print(model, [model], "model: ")),
         evaluate(sess, model, dataset)
         # TODO(ariw): Add capability to test trained model on new examples.
 
