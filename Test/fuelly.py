@@ -8,7 +8,9 @@ import collections
 import csv
 import sys
 
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 
 FLAGS = None
@@ -24,10 +26,9 @@ def load_csv_with_header(filename,
   """Load dataset from CSV file with a header row."""
   with tf.platform.gfile.Open(filename) as csv_file:
     data_file = csv.reader(csv_file)
-    header = next(data_file)
     target = []
     data = []
-    data_file.next()
+    next(data_file)
     for row in data_file:
         features = []
         for j, feature in enumerate(row):
@@ -53,10 +54,42 @@ def seconds_in_past(date_str):
     return (datetime.datetime.now() -
             datetime.datetime.strptime(date_str, "%Y-%m-%d")).total_seconds()
 
-def feature_normalize(dataset):
-    mu = np.mean(dataset, axis=0)
-    sigma = np.std(dataset, axis=0)
-    return (dataset - mu) / sigma
+def describe_data(data):
+    dataframe = pd.DataFrame(
+        data,
+        columns= ['miles', 'price', 'city_percentage', 'fuelup_date',
+                  'partial_fuelup'])
+    print(dataframe.describe())
+    return dataframe
+
+def remove_partial_fuelups(data):
+    summed_rows = 0
+    summary_row = None
+    mile_sum = 0
+    price_sum = 0
+    city_percentage_sum = 0
+    date_sum = 0
+    describe_data(data)
+    for row in data:
+        if row[4]:
+            summed_rows += 1
+            mile_sum += row[0]
+            price_sum += row[1]
+            city_percentage_sum += row[2]
+            date_sum += row[3]
+        else:
+            if summed_rows > 0:
+                summary_row[0] = mile_sum / summed_rows
+                summary_row[1] = price_sum / summed_rows
+                summary_row[2] = city_percentage_sum / summed_rows
+                summary_row[3] = date_sum / summed_rows
+            summed_rows = 0
+            summary_row = row
+            mile_sum = row[0]
+            price_sum = row[1]
+            city_percentage_sum = row[2]
+            date_sum = row[3]
+    describe_data(data)
 
 def read(fuelly_csv_file):
     # Format is car name, model, mpg, miles, gallons, price, city percentage
@@ -66,14 +99,17 @@ def read(fuelly_csv_file):
     # We use miles, price, city percentage, and fuelup date as features and
     # mpg as target.
     dataset = load_csv_with_header(
-        fuelly_csv_file, np.float32, np.float32, 2, [3, 5, 6, 7],
-        [None, None, float32_or_none, seconds_in_past])
+        fuelly_csv_file, np.float32, np.float32, 2, [3, 5, 6, 7, 12],
+        [None, None, float32_or_none, seconds_in_past, None])
     # Fill in missing city percentages with sample mean (MCAR approach).
     averages = np.nanmean(dataset.data, axis=0)
+    sigma = np.nanstd(dataset.data, axis=0)
     indices = np.where(np.isnan(dataset.data))
     dataset.data[indices] = np.take(averages, indices[1])
+    # Sum up partial fuelups into following fuelup (assuming CSV ordered by
+    # fuelup date, descending), recalculating miles, price, and city_percentage.
+    remove_partial_fuelups(dataset.data)
     # Normalize all features to mean 0 & distance from standard deviation.
-    sigma = np.std(dataset.data, axis=0)
     dataset.data[...] = (dataset.data - averages) / sigma
     return dataset
 
@@ -83,6 +119,12 @@ def evaluate(sess, model, dataset):
 def main(_):
     # Read & parse file into appropriate features & value.
     dataset = read(FLAGS.fuelly_csv_file)
+    if FLAGS.analyze:
+        dataframe = describe_data(dataset.data)
+        dataframe['mpg'] = dataset.target
+        dataframe = dataframe.sort_values('miles', axis=0)
+        dataframe.plot(x='miles', y='mpg')
+        plt.show()
 
     # Train & eval model
     # Linear model with weight term.
@@ -117,5 +159,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--num_epochs', type=int, default=10,
         help='Number of training epochs.')
+    parser.add_argument(
+        '--analyze', type=bool, default=False,
+        help='Whether to describe data before/during training.')
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
