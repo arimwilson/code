@@ -3,9 +3,9 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import datetime
-import collections
 import csv
+import datetime
+import math
 import sys
 
 import matplotlib.pyplot as plt
@@ -15,7 +15,10 @@ import tensorflow as tf
 
 FLAGS = None
 
-Dataset = collections.namedtuple('Dataset', ['data', 'target'])
+class Dataset:
+    def __init__(self, data, target):
+        self.data = data
+        self.target = target
 
 def load_csv_with_header(filename,
                          target_dtype,
@@ -54,42 +57,53 @@ def seconds_in_past(date_str):
     return (datetime.datetime.now() -
             datetime.datetime.strptime(date_str, "%Y-%m-%d")).total_seconds()
 
-def describe_data(data):
-    dataframe = pd.DataFrame(
-        data,
-        columns= ['miles', 'price', 'city_percentage', 'fuelup_date',
-                  'partial_fuelup'])
+def describe_dataset(dataset):
+    dataframe = pd.DataFrame(dataset.data)
+    dataframe['target'] = dataset.target
     print(dataframe.describe())
     return dataframe
 
-def remove_partial_fuelups(data):
-    summed_rows = 0
-    summary_row = None
+# Sum up partial fuelups into following fuelup, averaging miles, price,
+# city_percentage, and date. Assumes fuelups are ordered by date, descending,
+# and that fuelups already have summed mpg values (mpgs are not recalculated).
+# If there is no following fuelup (last fuelup is partial), partial fuelups will
+# be dropped.
+def aggregate_partial_fuelups(dataset):
+    aggregated_rows = 0
     mile_sum = 0
     price_sum = 0
+    has_city_percentage_sum = True
     city_percentage_sum = 0
     date_sum = 0
-    describe_data(data)
-    for row in data:
-        if row[4]:
-            summed_rows += 1
+    partial_rows = []
+    reversed_data = dataset.data[::-1]
+    for i, row in enumerate(reversed_data):
+        if row[4]:  # Did we have a partial fuelup?
+            aggregated_rows += 1
             mile_sum += row[0]
             price_sum += row[1]
-            city_percentage_sum += row[2]
+            if math.isnan(row[2]):
+                has_city_percentage_sum = False
+                city_percentage_sum += row[2]
             date_sum += row[3]
+            partial_rows.append(len(reversed_data) - i - 1)
         else:
-            if summed_rows > 0:
-                summary_row[0] = mile_sum / summed_rows
-                summary_row[1] = price_sum / summed_rows
-                summary_row[2] = city_percentage_sum / summed_rows
-                summary_row[3] = date_sum / summed_rows
-            summed_rows = 0
-            summary_row = row
-            mile_sum = row[0]
-            price_sum = row[1]
-            city_percentage_sum = row[2]
-            date_sum = row[3]
-    describe_data(data)
+            if aggregated_rows > 0:
+                row[0] = (row[0] + mile_sum) / aggregated_rows
+                row[1] = (row[1] + price_sum) / aggregated_rows
+                if has_city_percentage_sum and not math.isnan(row[2]):
+                    row[2] = (row[2] + city_percentage_sum) / aggregated_rows
+                else:
+                    row[2] = float('NaN')
+                row[3] = (row[3] + date_sum) / aggregated_rows
+            aggregated_rows = 0
+            mile_sum = 0
+            price_sum = 0
+            has_city_percentage_sum = True
+            city_percentage_sum = 0
+            date_sum = 0
+    dataset.data = np.delete(dataset.data, partial_rows, axis=0)
+    dataset.target = np.delete(dataset.target, partial_rows, axis=0)
 
 def read(fuelly_csv_file):
     # Format is car name, model, mpg, miles, gallons, price, city percentage
@@ -101,14 +115,15 @@ def read(fuelly_csv_file):
     dataset = load_csv_with_header(
         fuelly_csv_file, np.float32, np.float32, 2, [3, 5, 6, 7, 12],
         [None, None, float32_or_none, seconds_in_past, None])
+    # Sum up partial fuelups.
+    aggregate_partial_fuelups(dataset)
+    # Delete partial fuelup field.
+    dataset.data = np.delete(dataset.data, [4,], axis=1)
     # Fill in missing city percentages with sample mean (MCAR approach).
     averages = np.nanmean(dataset.data, axis=0)
     sigma = np.nanstd(dataset.data, axis=0)
     indices = np.where(np.isnan(dataset.data))
     dataset.data[indices] = np.take(averages, indices[1])
-    # Sum up partial fuelups into following fuelup (assuming CSV ordered by
-    # fuelup date, descending), recalculating miles, price, and city_percentage.
-    remove_partial_fuelups(dataset.data)
     # Normalize all features to mean 0 & distance from standard deviation.
     dataset.data[...] = (dataset.data - averages) / sigma
     return dataset
@@ -120,8 +135,7 @@ def main(_):
     # Read & parse file into appropriate features & value.
     dataset = read(FLAGS.fuelly_csv_file)
     if FLAGS.analyze:
-        dataframe = describe_data(dataset.data)
-        dataframe['mpg'] = dataset.target
+        dataframe = describe_data(dataset)
         dataframe = dataframe.sort_values('miles', axis=0)
         dataframe.plot(x='miles', y='mpg')
         plt.show()
