@@ -105,6 +105,7 @@ def aggregate_partial_fuelups(dataset):
     dataset.data = np.delete(dataset.data, partial_rows, axis=0)
     dataset.target = np.delete(dataset.target, partial_rows, axis=0)
 
+# Read a Fuelly CSV file into a TensorFlow-usable Dataset.
 def read(fuelly_csv_file):
     # Format is car name, model, mpg, miles, gallons, price, city percentage
     # fuelup date, date added, tags, notes, missed fuelup, partial fuelup
@@ -125,7 +126,8 @@ def read(fuelly_csv_file):
     indices = np.where(np.isnan(dataset.data))
     dataset.data[indices] = np.take(averages, indices[1])
     # Normalize all features to mean 0 & distance from standard deviation.
-    dataset.data[...] = (dataset.data - averages) / sigma
+    # TODO(ariw): Re-add this.
+    #dataset.data[...] = (dataset.data - averages) / sigma
     return dataset
 
 def evaluate(sess, model, dataset):
@@ -135,9 +137,9 @@ def main(_):
     # Read & parse file into appropriate features & value.
     dataset = read(FLAGS.fuelly_csv_file)
     if FLAGS.analyze:
-        dataframe = describe_data(dataset)
-        dataframe = dataframe.sort_values('miles', axis=0)
-        dataframe.plot(x='miles', y='mpg')
+        dataframe = describe_dataset(dataset)
+        dataframe = dataframe.sort_values(0, axis=0)
+        dataframe.plot(x=0, y='target')
         plt.show()
 
     # Train & eval model
