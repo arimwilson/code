@@ -20,6 +20,13 @@ class Dataset:
         self.data = data
         self.target = target
 
+    # Calculate and store averages and standard deviations of data and target.
+    def summary_statistics(self):
+        self.data_averages = np.nanmean(self.data, axis=0)
+        self.data_std = np.nanstd(self.data, axis=0)
+        self.target_averages = np.nanmean(self.target, axis=0)
+        self.target_std = np.nanstd(self.target, axis=0)
+
 def load_csv_with_header(filename,
                          target_dtype,
                          features_dtype,
@@ -56,12 +63,6 @@ def float32_or_none(float_str):
 def seconds_in_past(date_str):
     return (datetime.datetime.now() -
             datetime.datetime.strptime(date_str, "%Y-%m-%d")).total_seconds()
-
-def describe_dataset(dataset):
-    dataframe = pd.DataFrame(dataset.data)
-    dataframe['target'] = dataset.target
-    print(dataframe.describe())
-    return dataframe
 
 # Sum up partial fuelups into following fuelup, averaging miles, price,
 # city_percentage, and date. Assumes fuelups are ordered by date, descending,
@@ -121,13 +122,16 @@ def read(fuelly_csv_file):
     # Delete partial fuelup field.
     dataset.data = np.delete(dataset.data, [4,], axis=1)
     # Fill in missing city percentages with sample mean (MCAR approach).
-    averages = np.nanmean(dataset.data, axis=0)
-    sigma = np.nanstd(dataset.data, axis=0)
+    dataset.summary_statistics()
     indices = np.where(np.isnan(dataset.data))
-    dataset.data[indices] = np.take(averages, indices[1])
+    dataset.data[indices] = np.take(dataset.data_averages, indices[1])
     # Normalize all features to mean 0 & distance from standard deviation.
-    # TODO(ariw): Re-add this.
-    #dataset.data[...] = (dataset.data - averages) / sigma
+    dataset.data[...] = \
+            (dataset.data - dataset.data_averages) / dataset.data_std
+    # Normalize all MPGs to mean 0 & distance from standard deviation.
+    dataset.target[...] = \
+            (dataset.target - dataset.target_averages) / dataset.target_std
+    print(dataset.data_averages)
     return dataset
 
 def evaluate(sess, model, dataset):
@@ -136,8 +140,10 @@ def evaluate(sess, model, dataset):
 def main(_):
     # Read & parse file into appropriate features & value.
     dataset = read(FLAGS.fuelly_csv_file)
-    if FLAGS.analyze:
-        dataframe = describe_dataset(dataset)
+    if FLAGS.describe:
+        dataframe = pd.DataFrame(dataset.data)
+        dataframe['target'] = dataset.target
+        print(dataframe.describe())
         dataframe = dataframe.sort_values(0, axis=0)
         dataframe.plot(x=0, y='target')
         plt.show()
@@ -147,22 +153,26 @@ def main(_):
     dim = dataset.data.shape[1]
     X = tf.placeholder(tf.float32, [None, dim])
     Y = tf.placeholder(tf.float32)
-    W = tf.Variable(tf.zeros([dim, 1]))
+    W = tf.Variable(tf.truncated_normal(
+        [dim, 1], mean=0.0, stddev=1.0, dtype=tf.float32))
     model = tf.matmul(X, W)
+    cost = tf.reduce_mean(tf.square(Y - model))
+    training_step = tf.train.GradientDescentOptimizer(
+        FLAGS.learning_rate).minimize(cost)
     with tf.Session() as sess:
-        tf.global_variables_initializer().run()
-        loss = tf.reduce_mean(tf.square(model - Y))
-        training_step = tf.train.GradientDescentOptimizer(
-            FLAGS.learning_rate).minimize(loss)
+        sess.run(tf.global_variables_initializer())
         for i in range(FLAGS.num_epochs):
             feed_dict = {X: dataset.data, Y: dataset.target}
             sess.run(training_step, feed_dict=feed_dict)
             if i % 10 == 0:
                 print(sess.run(tf.Print(W, [W], "Weights: ")),
-                      sess.run(loss, feed_dict=feed_dict))
-                #sess.run(tf.Print(model, [model], "model: ")),
+                      sess.run(cost, feed_dict=feed_dict))
         evaluate(sess, model, dataset)
-        # TODO(ariw): Add capability to test trained model on new examples.
+        # TODO(ariw): Make this easier to use to test new examples.
+        test_fuelup = [300, 2.5, 100, seconds_in_past('2013-07-06')]
+        test_fuelup = (test_fuelup - dataset.data_averages) / dataset.data_std
+        test_mpg = sess.run(model, feed_dict={X: [test_fuelup]})
+        print(test_mpg * dataset.target_std + dataset.target_averages)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -176,7 +186,7 @@ if __name__ == '__main__':
         '--num_epochs', type=int, default=10,
         help='Number of training epochs.')
     parser.add_argument(
-        '--analyze', type=bool, default=False,
+        '--describe', type=bool, default=False,
         help='Whether to describe data before/during training.')
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
