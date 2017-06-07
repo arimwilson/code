@@ -20,8 +20,9 @@ class Dataset:
         self.data = data
         self.target = target
 
-    # Calculate and store averages and standard deviations of data and target.
-    def summary_statistics(self):
+    # Calculate and store averages and standard deviations of data and target
+    # for standardization.
+    def standardize_stats(self):
         self.data_averages = np.nanmean(self.data, axis=0)
         self.data_std = np.nanstd(self.data, axis=0)
         self.target_averages = np.nanmean(self.target, axis=0)
@@ -121,20 +122,22 @@ def read(fuelly_csv_file):
     aggregate_partial_fuelups(dataset)
     # Delete partial fuelup field.
     dataset.data = np.delete(dataset.data, [4,], axis=1)
+    # TODO(ariw): Append bias terms to data a la
+    # https://aqibsaeed.github.io/2016-07-07-TensorflowLR/.
     # Fill in missing city percentages with sample mean (MCAR approach).
-    dataset.summary_statistics()
+    dataset.standardize_stats()
     indices = np.where(np.isnan(dataset.data))
     dataset.data[indices] = np.take(dataset.data_averages, indices[1])
     # Normalize all features to mean 0 & distance from standard deviation.
     dataset.data[...] = \
             (dataset.data - dataset.data_averages) / dataset.data_std
-    # Normalize all MPGs to mean 0 & distance from standard deviation.
+    # Normalize all targets to mean 0 & distance from standard deviation.
     dataset.target[...] = \
             (dataset.target - dataset.target_averages) / dataset.target_std
-    print(dataset.data_averages)
     return dataset
 
 def evaluate(sess, model, dataset):
+    # TODO(ariw): Fill out.
     pass
 
 def main(_):
@@ -165,8 +168,8 @@ def main(_):
             feed_dict = {X: dataset.data, Y: dataset.target}
             sess.run(training_step, feed_dict=feed_dict)
             if i % (FLAGS.num_epochs / 5) == 0:
-                print(sess.run(tf.Print(W, [W], "Weights: ")),
-                      sess.run(cost, feed_dict=feed_dict))
+                print("Weights: ", sess.run(W),
+                      "\nCost: ", sess.run(cost, feed_dict=feed_dict))
         evaluate(sess, model, dataset)
         # TODO(ariw): Make this easier to use to test new examples.
         test_fuelup = [300, 2.5, 100, seconds_in_past('2013-07-06')]
