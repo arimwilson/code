@@ -164,7 +164,7 @@ def main(_):
         for i in range(FLAGS.num_epochs):
             feed_dict = {X: dataset.data, Y: dataset.target}
             sess.run(training_step, feed_dict=feed_dict)
-            if i % 10 == 0:
+            if i % (FLAGS.num_epochs / 5) == 0:
                 print(sess.run(tf.Print(W, [W], "Weights: ")),
                       sess.run(cost, feed_dict=feed_dict))
         evaluate(sess, model, dataset)
