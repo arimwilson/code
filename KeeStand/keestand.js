@@ -290,7 +290,8 @@ $(document).ready(function() {
 
   $("#export_csv_file").click(function() {
     passwords = serialize($("#data").find(".org,textarea"));
-    location.href = "data:text/csv;base64," + btoa(passwords);
+    location.href = "data:text/csv;base64," +
+                    btoa(unescape(encodeURIComponent(passwords)));
   });
 
   $("#delete_account_button").click(function() {
