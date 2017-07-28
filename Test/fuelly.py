@@ -124,8 +124,8 @@ def read(fuelly_csv_file):
     dataset.data = np.delete(dataset.data, [4,], axis=1)
     # TODO(ariw): Append bias terms to data a la
     # https://aqibsaeed.github.io/2016-07-07-TensorflowLR/.
-    # Fill in missing city percentages with sample mean (MCAR approach).
     dataset.standardize_stats()
+    # Fill in missing city percentages with sample mean (MCAR approach).
     indices = np.where(np.isnan(dataset.data))
     dataset.data[indices] = np.take(dataset.data_averages, indices[1])
     # Normalize all features to mean 0 & distance from standard deviation.
@@ -172,7 +172,7 @@ def main(_):
                       "\nCost: ", sess.run(cost, feed_dict=feed_dict))
         evaluate(sess, model, dataset)
         # TODO(ariw): Make this easier to use to test new examples.
-        test_fuelup = [300, 2.5, 100, seconds_in_past('2013-07-06')]
+        test_fuelup = [150, 2.5, 100, seconds_in_past('2015-07-06')]
         test_fuelup = (test_fuelup - dataset.data_averages) / dataset.data_std
         test_mpg = sess.run(model, feed_dict={X: [test_fuelup]})
         print(test_mpg * dataset.target_std + dataset.target_averages)
