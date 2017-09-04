@@ -1,5 +1,5 @@
 application: keestand-hrd
-version: 1
+version: 2
 runtime: python27
 api_version: 1
 threadsafe: false
@@ -12,13 +12,17 @@ handlers:
   static_files: favicon.ico
   upload: favicon.ico
   secure: always
+- url: /old_sjcl.js
+  static_files: old_sjcl.js
+  upload: old_sjcl.js
+  secure: always
 - url: /sjcl.js
   static_files: sjcl.js
   upload: sjcl.js
   secure: always
-- url: /ucsv-1.1.0-min.js
-  static_files: ucsv-1.1.0-min.js
-  upload: ucsv-1.1.0-min.js
+- url: /ucsv-1.2.0.min.js
+  static_files: ucsv-1.2.0.min.js
+  upload: ucsv-1.2.0.min.js
   secure: always
 - url: /keestand.js
   static_files: keestand.js

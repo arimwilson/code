@@ -44,14 +44,16 @@ class SaltHandler(webapp.RequestHandler):
       self.response.out.write(base64.standard_b64encode(os.urandom(16)))
 
 # Convert gzipped pickled Python dictionary back to JSON.
-def Decode(string):
+def Decode(string, version):
   string = gzip.GzipFile(fileobj=StringIO.StringIO(string)).read()
   dictionary = pickle.loads(string)
-  for (key, value) in dictionary.iteritems():
-    dictionary[key] = base64.standard_b64encode(value)
+  if version == 2:
+    for (key, value) in dictionary.iteritems():
+      dictionary[key] = base64.standard_b64encode(value)
   output = json.dumps(dictionary)
-  # SJCL wants invalid JSON which we hack around here.
-  output = re.sub("([\{,]) ?\"(.*?)\": ", r"\1\2:", output)
+  if version <= 2:
+    # SJCL wants invalid JSON which we hack around here.
+    output = re.sub("([\{,]) ?\"(.*?)\": ", r"\1\2:", output)
   # Python puts in dumb \ characters in base64-decoded strings, so let's get rid
   # of them.
   output = output.replace("\\", "")
@@ -77,18 +79,6 @@ def AuthorizedUser(cookies):
                   "password_hash (%s) is wrong!" % (username, password_hash))
   return user <> None, user
 
-# Convert JSON to gzipped pickled Python dictionary.
-def Encode(string):
-  # SJCL produces invalid JSON which we hack around here.
-  string = re.sub(r"([\{,])(.*?):", "\\1\"\\2\":", string)
-  dictionary = json.loads(string)
-  for (key, value) in dictionary.iteritems():
-    dictionary[key] = base64.standard_b64decode(value)
-  pickled = pickle.dumps(dictionary, 2)
-  output = StringIO.StringIO()
-  gzip.GzipFile(fileobj=output, mode="wb").write(pickled)
-  return output.getvalue()
-
 class LoginHandler(webapp.RequestHandler):
   def post(self):
     username = self.request.get("username")
@@ -109,12 +99,12 @@ class LoginHandler(webapp.RequestHandler):
         self.response.out.write(json.dumps(
           { "version" : user.version,
             "last_modified": time.mktime(user.last_modified.timetuple()),
-            "passwords": Decode(passwords) }))
+            "passwords": Decode(passwords, user.version) }))
     else:  # New user.
       salt = self.request.get("salt")
       assert salt
       user = User(
-          version = 2, username = username,
+          version = 3, username = username,
           salt = db.Blob(base64.standard_b64decode(salt)),
           password_hash = db.ByteString(
               base64.standard_b64decode(password_hash)))
@@ -136,12 +126,14 @@ def AuthorizedUser(cookies):
   return user <> None, user
 
 # Convert JSON to gzipped pickled Python dictionary.
-def Encode(string):
-  # SJCL produces invalid JSON which we hack around here.
-  string = re.sub(r"([\{,])(.*?):", "\\1\"\\2\":", string)
+def Encode(string, version):
+  if version == 2:
+    # SJCL produces invalid JSON which we hack around here.
+    string = re.sub(r"([\{,])(.*?):", "\\1\"\\2\":", string)
   dictionary = json.loads(string)
-  for (key, value) in dictionary.iteritems():
-    dictionary[key] = base64.standard_b64decode(value)
+  if version == 2:
+    for (key, value) in dictionary.iteritems():
+      dictionary[key] = base64.standard_b64decode(value)
   pickled = pickle.dumps(dictionary, 2)
   output = StringIO.StringIO()
   gzip.GzipFile(fileobj=output, mode="wb").write(pickled)
@@ -166,12 +158,12 @@ def SaveDatastore(user, password_chunks, old_password_chunks):
 # Perform most of the work of SaveHandler. Broken out into its own function
 # since we also need to save in ChangePasswordHandler :).
 def Save(user, request):
-  passwords = Encode(request.get("passwords"))
+  if request.get("version"):
+    user.version = int(request.get("version"))
+  passwords = Encode(request.get("passwords"), user.version)
   # Can store at least 10 ** 6 bytes in one entity property.
   password_chunks = Split(passwords, 10 ** 6)
   old_password_chunks = [chunk for chunk in user.passwordchunk_set]
-  if request.get("version"):
-    user.version = int(request.get("version"))
   db.run_in_transaction(SaveDatastore, user, password_chunks,
                         old_password_chunks)
 

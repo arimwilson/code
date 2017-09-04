@@ -1,5 +1,5 @@
 CACHE MANIFEST
-# 2017-06-13:1
+# 2017-09-04:6
 
 CACHE:
 /favicon.ico
@@ -8,8 +8,9 @@ CACHE:
 # browsers.
 https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js
 https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js
+/old_sjcl.js
 /sjcl.js
-/ucsv-1.1.0-min.js
+/ucsv-1.2.0.min.js
 /keestand.js
 /css/cupertino/images/ui-bg_diagonals-thick_90_eeeeee_40x40.png
 /css/cupertino/images/ui-bg_flat_15_cd0a0a_40x100.png

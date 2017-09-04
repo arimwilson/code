@@ -20,21 +20,26 @@ function assert(exp, message) {
   }
 }
 
-function decrypt(data) {
+// Version 2- passwords used an older SJCL library. We silently convert them on
+// save.
+function decrypt(data, version) {
   assert(password_, "password_ is null.");
-  return sjcl.decrypt(password_, data);
+  if (version <= 2) {
+    return old_sjcl.decrypt(password_, data);
+  } else if (version == 3) {
+    return sjcl.decrypt(password_, data);
+  }
 }
 
 // Version 1 serialized form:
 // encrypt(escape(organization1) + "," + escape(username1) + "," + ... + "\n" +
 // ...)
-// Version 2 serialized form:
+// Version 2+ serialized form:
 // encrypt(arrayToCsv([[organization1, username1, ...], ...]))
 //
-// We silently convert version 1 passwords to version 2 passwords when saving
+// We silently convert version 1 passwords to version 2+ passwords when saving
 // them.
 function deserialize(data, version) {
-  assert(version == 1 || version == 2);
   if (version == 1) {
     data = data.split("\n").slice(0, -1);
     for (i = 0; i < data.length; ++i) {
@@ -44,7 +49,7 @@ function deserialize(data, version) {
       }
     }
     return data;
-  } else if (version == 2) {
+  } else if (version >= 2) {
     return CSV.csvToArray(data);
   }
 }
@@ -127,7 +132,7 @@ function salt_error() {
     $("#login").hide();
     $("#edit").show();
     var version = parseInt(localStorage["version"])
-    editor(deserialize(decrypt(localStorage["passwords"]), version));
+    editor(deserialize(decrypt(localStorage["passwords"], version), version));
     save(localStorage["passwords"]);
   }
 }
@@ -146,11 +151,11 @@ function login_successful(data) {
   if (data &&
       (!local_storage_ || last_modified >= last_modified_local)) {
     var version = data["version"];
-    editor(deserialize(decrypt(data["passwords"]), version));
+    editor(deserialize(decrypt(data["passwords"], version), version));
     save_local(data["passwords"], last_modified);
   } else if (local_storage_) {
     var version = parseInt(localStorage["version"])
-    editor(deserialize(decrypt(localStorage["passwords"]), version));
+    editor(deserialize(decrypt(localStorage["passwords"], version), version));
     save(localStorage["passwords"]);
   }
 }
@@ -186,7 +191,7 @@ function save_local(passwords, last_modified) {
 
 function save(passwords) {
   // TODO(ariw): Notify when successful.
-  $.post("script/save", { passwords: passwords, version: 2 });
+  $.post("script/save", { passwords: passwords, version: 3 });
 }
 
 function get_random_num(lower, upper) {
