@@ -6,8 +6,6 @@ Ari Wilson's code, including a variety of projects:
 
 [PebbleScores](http://pebblescores.appspot.com/list?game=Falldown2) records high scores for [Pebble watch](http://getpebble.com/) games. I use it in my [Falldown](https://github.com/evilrobot69/Falldown) game.
 
-[KeeStand](http://keestand.appspot.com/) is a locally-secured cloud password storage web application, designed so that you can securely store and access the many passwords you need to run your daily Internet life in one place.
-
 [Interesaint](http://interesaint.appspot.com/) is a web-based RSS/Atom feed aggregator designed for high volume feeds. It learns and surfaces the items of most interest to you.
 
 [Scrabblish](http://scrabblish.appspot.com/) is a Scrabble solver. It is also available in command-line form [here](https://github.com/evilrobot69/code/blob/master/Scrabble/main.go).
