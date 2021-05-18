@@ -2,10 +2,10 @@
 #
 # stages:
 # 1) determine video parameters based on input file and options
-# 1) insert some random bytes into the binary file (copyright)
-# 2) based on target video length, input binary size, and max data/frame
+# 2) insert some random bytes into the binary file (copyright)
+# 3) based on target video length, input binary size, and max data/frame
 #    turn binary into rgb24 frames using NumPy.
-# 3) use ffmpeg via pipes to encode for YouTube
+# 4) use ffmpeg via pipes to encode for YouTube
 import argparse, io, math, numpy, os, subprocess
 
 class VideoParameters:
@@ -26,16 +26,16 @@ class VideoParameters:
     video_bytes_720p = length_seconds * 15600
     video_bytes_1080p = length_seconds * 25600
     video_bytes_4k = length_seconds * 113000
-    height = 720
-    width = 1280
+    width = 720
+    height = 1280
     bytes_per_second = 15600
     if file_size_bytes > video_bytes_1080p:
-      height = 3840
-      width = 2160
+      width = 3840
+      height = 2160
       bytes_per_second = 113000
     elif file_size_bytes > video_bytes_720p:
-      height = 1920
-      width = 1080
+      width = 1920
+      height = 1080
       bytes_per_second = 25600
     return cls(length_seconds, height, width, color_palette, bytes_per_second)
 
@@ -55,6 +55,13 @@ def data_in_chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
+# repeat each element for h rows and w columns
+def repeat_elements(a, h, w):
+    r, c = a.shape
+    out = np.empty((r, h, c, w), a.dtype)
+    out[...] = a[:, None, :, None]
+    return out.reshape(r*h, c*w)
+
 def generate_frames(parameters, data):
   # Stupid way to do this is to generate 6 independent frames, repeated 10 times
   # (for one total second). Bytes visualized should be bytes_per_second / 6
@@ -66,21 +73,17 @@ def generate_frames(parameters, data):
     block_size_in_pixels = int(math.sqrt(
         parameters.height * parameters.width * 3 / frame_data_length))
     frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
+    #frame = repeat_elements(frame, block_size_in_pixels, block_size_in_pixels)
     frame = numpy.repeat(frame, block_size_in_pixels**2)
-    print(len(frame))
-
-    #frame = numpy.fromfunction(
-    #    generate_frame_pixel, (parameters.height, parameters.width, 3),
-    #    dtype=numpy.uint8, parameters=parameters, frame_data=frame_data)
+    frame = numpy.pad(
+        frame, (0, parameters.width*parameters.height*3 - frame.size))
+    frame = numpy.reshape(frame, (parameters.height, parameters.width, 3))
     for i in range(10):
         frames.append(frame)
     yield frames
 
-def generate_frame_pixel(i, j, k, parameters, frame_data):
-    print(i)
-    if i*j*k >= len(frame_data):
-        return 255
-    return frame_data[i*j*k]
+def generate_and_write_frames(parameters, data, ffmpeg, output_video):
+  frame_count = 0
 
 def main():
   parser = argparse.ArgumentParser(description=
@@ -97,12 +100,39 @@ def main():
   parameters = VideoParameters.get(
       os.path.getsize(args.input_file), args.video_length_seconds,
       args.color_palette)
+  command = [
+      args.ffmpeg,
+      '-y',
+      '-f' ,'rawvideo',
+      '-s', str(parameters.height)+'x'+str(parameters.width),
+      '-pix_fmt', 'rgb24',
+      '-r', '60',
+      '-i', '-',
+      '-an',
+      '-c:v', 'libx264',
+      '-profile:v', 'high444',
+      args.output_video ]
+  pipe = subprocess.Popen(
+      command, stdin=subprocess.PIPE, stderr=subprocess.PIPE,
+      stdout=subprocess.PIPE)
   # read enough data for a second of video, convert to frames, output via
   # ffmpeg, then continue.
+  frame_count = 0
   with open(args.input_file, 'rb') as input_file:
     for data in read_in_chunks(input_file, parameters.bytes_per_second):
-        for frames in generate_frames(parameters, data):
-            output_ffmpeg(frames)
+      for frames in generate_frames(parameters, data):
+        for frame in frames:
+          try:
+            pipe.stdin.write(frame.tobytes())
+          except IOError:
+            print(pipe.stderr.read())
+            return
+          frame_count = frame_count + 1
+      print("Frames written: ", frame_count)
+  pipe.stdin.close()
+  pipe.stderr.close()
+  pipe.stdout.close()
+  pipe.wait()
 
 if __name__ == "__main__":
   main()
