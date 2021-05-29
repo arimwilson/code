@@ -128,8 +128,7 @@ def main():
       '-profile:v', 'high444',
       args.output_video ]
   pipe = subprocess.Popen(
-      command, stdin=subprocess.PIPE, stderr=subprocess.PIPE,
-      stdout=subprocess.PIPE)
+      command, stdin=subprocess.PIPE)
   # read enough data for a second of video, convert to frames, output via
   # ffmpeg, then continue.
   file_read = 0
@@ -145,12 +144,9 @@ def main():
             return
       file_read = file_read + len(data)
       seconds = seconds + 1
-      print(file_read)
       print(int(file_read / input_file_size * 100), "% input file read;",
               seconds, "second(s) of video output.")
   pipe.stdin.close()
-  pipe.stderr.close()
-  pipe.stdout.close()
   pipe.wait()
 
 if __name__ == "__main__":
