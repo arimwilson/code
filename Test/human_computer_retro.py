@@ -57,33 +57,48 @@ def data_in_chunks(lst, n):
 
 # repeat each element for h rows and w columns
 def repeat_elements(a, h, w):
-    r, c = a.shape
-    out = np.empty((r, h, c, w), a.dtype)
-    out[...] = a[:, None, :, None]
-    return out.reshape(r*h, c*w)
+    b = numpy.repeat(a, h, axis=0)
+    return numpy.repeat(b, w, axis=1)
 
-def generate_frames(parameters, data):
+# solve integer linear program to determine block size in pixels using brute
+# force
+def get_block_size_in_pixels(params, frame_data_length):
+  for block_size in range(1, min(params.height, params.width)):
+    if int(params.width / block_size) * int(params.height / block_size) <\
+        frame_data_length / 3:
+      return block_size - 1
+
+def generate_frames(params, data):
   # Stupid way to do this is to generate 6 independent frames, repeated 10 times
   # (for one total second). Bytes visualized should be bytes_per_second / 6
-  frame_data_length = int(parameters.bytes_per_second / 6) + 1
+  frame_data_length = int(params.bytes_per_second / 6) + 1
+  block_size = get_block_size_in_pixels(params, frame_data_length)
   for frame_data in data_in_chunks(data, frame_data_length):
     # each frame is made up of blocks of color, based on how much data we can
     # max out the frame with
     frames = []
-    block_size_in_pixels = int(math.sqrt(
-        parameters.height * parameters.width * 3 / frame_data_length))
     frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
-    #frame = repeat_elements(frame, block_size_in_pixels, block_size_in_pixels)
-    frame = numpy.repeat(frame, block_size_in_pixels**2)
+    row_blocks = int(params.height / block_size)
+    column_blocks = int(params.width / block_size)
+    #print(frame.shape, " size: ", frame.size)
+    # resize to rectangular set of pixels
+    frame = numpy.reshape(
+        numpy.pad(frame, (0, row_blocks * column_blocks * 3 - frame.size)),
+        (row_blocks, column_blocks, 3))
+    #print(frame.shape, " size: ", frame.size)
+    # duplicate pixels to create color blocks
+    frame = repeat_elements(frame, block_size, block_size)
+    #print(frame.shape, " size: ", frame.size)
+    # pad out missing space for full frame
     frame = numpy.pad(
-        frame, (0, parameters.width*parameters.height*3 - frame.size))
-    frame = numpy.reshape(frame, (parameters.height, parameters.width, 3))
+        frame,
+        ((0, params.height - frame.shape[0]),
+         (0, params.width - frame.shape[1]),
+         (0, 0)))
+    #print(frame.shape, " size: ", frame.size)
     for i in range(10):
         frames.append(frame)
     yield frames
-
-def generate_and_write_frames(parameters, data, ffmpeg, output_video):
-  frame_count = 0
 
 def main():
   parser = argparse.ArgumentParser(description=
@@ -97,14 +112,14 @@ def main():
   parser.add_argument('--ffmpeg', help='Location of ffmpeg.')
   parser.add_argument('--output_video', help='Output video file.')
   args = parser.parse_args()
+  input_file_size = os.path.getsize(args.input_file)
   parameters = VideoParameters.get(
-      os.path.getsize(args.input_file), args.video_length_seconds,
-      args.color_palette)
+      input_file_size, args.video_length_seconds, args.color_palette)
   command = [
       args.ffmpeg,
       '-y',
       '-f' ,'rawvideo',
-      '-s', str(parameters.height)+'x'+str(parameters.width),
+      '-s', str(parameters.width)+'x'+str(parameters.height),
       '-pix_fmt', 'rgb24',
       '-r', '60',
       '-i', '-',
@@ -117,7 +132,8 @@ def main():
       stdout=subprocess.PIPE)
   # read enough data for a second of video, convert to frames, output via
   # ffmpeg, then continue.
-  frame_count = 0
+  file_read = 0
+  seconds = 0
   with open(args.input_file, 'rb') as input_file:
     for data in read_in_chunks(input_file, parameters.bytes_per_second):
       for frames in generate_frames(parameters, data):
@@ -127,8 +143,11 @@ def main():
           except IOError:
             print(pipe.stderr.read())
             return
-          frame_count = frame_count + 1
-      print("Frames written: ", frame_count)
+      file_read = file_read + len(data)
+      seconds = seconds + 1
+      print(file_read)
+      print(int(file_read / input_file_size * 100), "% input file read;",
+              seconds, "second(s) of video output.")
   pipe.stdin.close()
   pipe.stderr.close()
   pipe.stdout.close()
