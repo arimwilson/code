@@ -26,8 +26,8 @@ class VideoParameters:
     video_bytes_720p = length_seconds * 15600
     video_bytes_1080p = length_seconds * 25600
     video_bytes_4k = length_seconds * 113000
-    width = 720
-    height = 1280
+    width = 1280
+    height = 720
     bytes_per_second = 15600
     if file_size_bytes > video_bytes_1080p:
       width = 3840
