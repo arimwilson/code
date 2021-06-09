@@ -1,12 +1,11 @@
 # HumanComputerRetro - making old software fun for computers AND humans
 #
-# stages:
-# 1) determine video parameters based on input file and options (e.g. input
-#    binary size, target video length, max data/frame)
-# 2) insert some random bytes into the binary file (copyright)
-# 3) based on target video length, input binary size, and max data/frame
-#    turn binary into blocks of color in rgb24 frames using NumPy
-# 4) use ffmpeg via pipes to encode for YouTube
+# Stages:
+# 1) Determine video parameters based on input file and options.
+# 2) Insert some random bytes into the binary file (copyright). Not yet
+#    implemented.
+# 3) Turn binary into blocks of color in rgb24 frames using NumPy
+# 4) Use ffmpeg via pipes to encode for YouTube
 import argparse, io, math, numpy, os, subprocess
 
 class VideoParameters:
@@ -18,7 +17,7 @@ class VideoParameters:
     self.color_palette = color_palette
     self.bytes_per_second = bytes_per_second
 
-  # approximate max data/s from
+  # Approximate max data/s from
   # https://support.google.com/youtube/answer/1722171?hl=en#zippy=%2Cbitrate:
   #   720p60: 937.5 kilobyte/s
   #   1080p60: 1500 kilobyte/s
@@ -62,31 +61,30 @@ def data_in_chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-# repeat each element for h rows and w columns
+# Repeat each element for h rows and w columns
 def repeat_elements(a, h, w):
     b = numpy.repeat(a, h, axis=0)
     return numpy.repeat(b, w, axis=1)
 
-# solve integer linear program to determine block size in pixels using brute
+# Solve integer linear program to determine block size in pixels using brute
 # force
-def get_block_size_in_pixels(params, frame_data_length):
+def get_block_size_in_pixels(params, min_bytes_in_frame):
   for block_size in range(1, min(params.height, params.width)):
     if int(params.width / block_size) * int(params.height / block_size) <\
-        frame_data_length / 3:
+        min_bytes_in_frame / 3:
       return block_size - 1
 
+# Human pattern recogition takes about 166ms, so we generate 6 independent
+# frames at 60fps to get 1 second of footage. Bytes visualized should be >=
+# bytes_per_second. Each frame is made up of blocks of color.
 def generate_frames(params, data):
-  # Stupid way to do this is to generate 6 independent frames, repeated 10 times
-  # (for one total second). Bytes visualized should be bytes_per_second / 6
-  frame_data_length = int(params.bytes_per_second / 6) + 1
-  block_size = get_block_size_in_pixels(params, frame_data_length)
-  for frame_data in data_in_chunks(data, frame_data_length):
-    # each frame is made up of blocks of color, based on how much data we can
-    # max out the frame with
+  min_bytes_in_frame = int(params.bytes_per_second / 6) + 1
+  block_size = get_block_size_in_pixels(params, min_bytes_in_frame)
+  row_blocks = int(params.height / block_size)
+  column_blocks = int(params.width / block_size)
+  for frame_data in data_in_chunks(data, row_blocks * column_blocks * 3):
     frames = []
     frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
-    row_blocks = int(params.height / block_size)
-    column_blocks = int(params.width / block_size)
     # resize to rectangular set of pixels
     frame = numpy.reshape(
         numpy.pad(frame, (0, row_blocks * column_blocks * 3 - frame.size)),
@@ -150,7 +148,7 @@ def main():
   file_read = 0
   seconds = 0
   with open(args.input_file, 'rb') as input_file:
-    for data in read_in_chunks(input_file, parameters.bytes_per_second):
+    for data in read_in_chunks(input_file, 4000000):
       for frames in generate_frames(parameters, data):
         for frame in frames:
           try:
@@ -159,9 +157,7 @@ def main():
             print(pipe.stderr.read())
             return
       file_read = file_read + len(data)
-      seconds = seconds + 1
-      print(int(file_read / input_file_size * 100), "% input file read;",
-              seconds, "second(s) of video output.")
+      print(int(file_read / input_file_size * 100), "% input file read.")
   pipe.stdin.close()
   pipe.wait()
 
