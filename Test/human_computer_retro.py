@@ -82,8 +82,8 @@ def generate_frames(params, data):
   block_size = get_block_size_in_pixels(params, min_bytes_in_frame)
   row_blocks = int(params.height / block_size)
   column_blocks = int(params.width / block_size)
+  frames = []
   for frame_data in data_in_chunks(data, row_blocks * column_blocks * 3):
-    frames = []
     frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
     # resize to rectangular set of pixels
     frame = numpy.reshape(
@@ -98,8 +98,10 @@ def generate_frames(params, data):
          (0, params.width - frame.shape[1]),
          (0, 0)))
     for i in range(10):
-        frames.append(frame)
-    yield frames
+      frames.append(frame)
+    if len(frames) % 60 == 0:
+      yield frames
+      frames = []
 
 def main():
   parser = argparse.ArgumentParser(description=
@@ -142,13 +144,13 @@ def main():
     '-c:a', 'aac',
     args.output_video ])
   pipe = subprocess.Popen(
-      command, stdin=subprocess.PIPE)
-  # read enough data for a second of video, convert to frames, output via
-  # ffmpeg, then continue.
-  file_read = 0
-  seconds = 0
+      command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+      stderr=subprocess.STDOUT)
+  frame_count = 0
   with open(args.input_file, 'rb') as input_file:
     for data in read_in_chunks(input_file, 4000000):
+      # read enough data for a second of video, convert to frames, output via
+      # ffmpeg, then continue.
       for frames in generate_frames(parameters, data):
         for frame in frames:
           try:
@@ -156,8 +158,9 @@ def main():
           except IOError:
             print(pipe.stderr.read())
             return
-      file_read = file_read + len(data)
-      print(int(file_read / input_file_size * 100), "% input file read.")
+        frame_count = frame_count + len(frames)
+        print(str(frame_count) + " frames written (" +
+              str(int(frame_count/60)) + " second(s)).")
   pipe.stdin.close()
   pipe.wait()
 
