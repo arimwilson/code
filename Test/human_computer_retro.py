@@ -1,10 +1,11 @@
 # HumanComputerRetro - making old software fun for computers AND humans
 #
 # stages:
-# 1) determine video parameters based on input file and options
+# 1) determine video parameters based on input file and options (e.g. input
+#    binary size, target video length, max data/frame)
 # 2) insert some random bytes into the binary file (copyright)
 # 3) based on target video length, input binary size, and max data/frame
-#    turn binary into rgb24 frames using NumPy.
+#    turn binary into blocks of color in rgb24 frames using NumPy
 # 4) use ffmpeg via pipes to encode for YouTube
 import argparse, io, math, numpy, os, subprocess
 
@@ -17,26 +18,32 @@ class VideoParameters:
     self.color_palette = color_palette
     self.bytes_per_second = bytes_per_second
 
-  # approximate max data/frame:
-  #   720p60: 15.6 kb/frame
-  #   1080p60: 25.6 kb/frame
-  #   4k60: 113 kb/frame
+  # approximate max data/s from
+  # https://support.google.com/youtube/answer/1722171?hl=en#zippy=%2Cbitrate:
+  #   720p60: 937.5 kilobyte/s
+  #   1080p60: 1500 kilobyte/s
+  #   4k60: 6625 kilobyte/s
   @classmethod
-  def get(cls, file_size_bytes, length_seconds, color_palette):
-    video_bytes_720p = length_seconds * 15600
-    video_bytes_1080p = length_seconds * 25600
-    video_bytes_4k = length_seconds * 113000
-    width = 1280
-    height = 720
-    bytes_per_second = 15600
-    if file_size_bytes > video_bytes_1080p:
+  def get(cls, file_size_bytes, length_seconds, color_palette, resolution):
+    if resolution == '4k':
       width = 3840
       height = 2160
-      bytes_per_second = 113000
-    elif file_size_bytes > video_bytes_720p:
+      max_bytes_per_second = 6625000
+    elif not resolution or resolution == '1080p':
       width = 1920
       height = 1080
-      bytes_per_second = 25600
+      max_bytes_per_second = 1500000
+    elif resolution == '720p':
+      width = 1280
+      height = 720
+      max_bytes_per_second = 937500
+    else:
+      raise ValueError('invalid resolution')
+    bytes_per_second = int(file_size_bytes / length_seconds)
+    if bytes_per_second > max_bytes_per_second:
+      raise ValueError(
+          'file size, desired video length, and output '
+          'resolution are incompatible')
     return cls(length_seconds, height, width, color_palette, bytes_per_second)
 
   def __repr__(self):
@@ -80,22 +87,18 @@ def generate_frames(params, data):
     frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
     row_blocks = int(params.height / block_size)
     column_blocks = int(params.width / block_size)
-    #print(frame.shape, " size: ", frame.size)
     # resize to rectangular set of pixels
     frame = numpy.reshape(
         numpy.pad(frame, (0, row_blocks * column_blocks * 3 - frame.size)),
         (row_blocks, column_blocks, 3))
-    #print(frame.shape, " size: ", frame.size)
     # duplicate pixels to create color blocks
     frame = repeat_elements(frame, block_size, block_size)
-    #print(frame.shape, " size: ", frame.size)
     # pad out missing space for full frame
     frame = numpy.pad(
         frame,
         ((0, params.height - frame.shape[0]),
          (0, params.width - frame.shape[1]),
          (0, 0)))
-    #print(frame.shape, " size: ", frame.size)
     for i in range(10):
         frames.append(frame)
     yield frames
@@ -106,15 +109,22 @@ def main():
     'that is interesting to humans.')
   parser.add_argument('--input_file', help='Input file.')
   parser.add_argument('--video_length_seconds', type=int, help=
-      'Length of video in seconds.')
+      'Approximate length of video in seconds.')
   parser.add_argument('--color_palette', help=
-      'Video color palette. Default to full 24-bit color.')
+      'Video color palette. Default to full 24-bit color. Doesn\'t do anything '
+      'yet.')
+  parser.add_argument('--resolution', help=
+      'Video resolution. Defaults to 1080p. Accceptable options are 720p, '
+      '1080p, and 4k.')
+  parser.add_argument('--music_file', help=
+      'Music file to attach to video. Default is no music.')
   parser.add_argument('--ffmpeg', help='Location of ffmpeg.')
   parser.add_argument('--output_video', help='Output video file.')
   args = parser.parse_args()
   input_file_size = os.path.getsize(args.input_file)
   parameters = VideoParameters.get(
-      input_file_size, args.video_length_seconds, args.color_palette)
+      input_file_size, args.video_length_seconds, args.color_palette,
+      args.resolution)
   command = [
       args.ffmpeg,
       '-y',
@@ -122,11 +132,17 @@ def main():
       '-s', str(parameters.width)+'x'+str(parameters.height),
       '-pix_fmt', 'rgb24',
       '-r', '60',
-      '-i', '-',
-      '-an',
-      '-c:v', 'libx264',
-      '-profile:v', 'high444',
-      args.output_video ]
+      '-i', '-' ]
+  if args.music_file is not None:
+    command.extend([
+      '-i', args.music_file ])
+  else:
+    command.append('-an')
+  command.extend([
+    '-c:v', 'libx264',
+    '-profile:v', 'high444',
+    '-c:a', 'aac',
+    args.output_video ])
   pipe = subprocess.Popen(
       command, stdin=subprocess.PIPE)
   # read enough data for a second of video, convert to frames, output via
