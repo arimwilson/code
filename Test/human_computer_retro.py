@@ -4,7 +4,8 @@
 # 1) Determine video parameters based on input file and options.
 # 2) Turn binary into blocks of color in rgb24 frames using NumPy
 # 3) Use ffmpeg via pipes to encode for YouTube
-# TODO(ariw): Add ability to extract representative color palettes from screenshots.
+# TODO(ariw): Add ability to extract representative color palettes from screenshots a la
+# https://stackoverflow.com/questions/18801218/build-a-color-palette-from-image-url
 import argparse, io, math, numpy, os, subprocess, time
 
 class VideoParameters:
