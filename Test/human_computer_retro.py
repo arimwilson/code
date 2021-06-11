@@ -2,11 +2,9 @@
 #
 # Stages:
 # 1) Determine video parameters based on input file and options.
-# 2) Insert some random bytes into the binary file (copyright). Not yet
-#    implemented.
-# 3) Turn binary into blocks of color in rgb24 frames using NumPy
-# 4) Use ffmpeg via pipes to encode for YouTube
-import argparse, io, math, numpy, os, subprocess
+# 2) Turn binary into blocks of color in rgb24 frames using NumPy
+# 3) Use ffmpeg via pipes to encode for YouTube
+import argparse, io, math, numpy, os, subprocess, time
 
 class VideoParameters:
   def __init__(
@@ -38,6 +36,16 @@ class VideoParameters:
       max_bytes_per_second = 937500
     else:
       raise ValueError('invalid resolution')
+    if color_palette is not None:
+      color_palette = [
+          numpy.frombuffer(bytes.fromhex(color), dtype=numpy.uint8) for color\
+          in color_palette.split(',')]
+      # duplicate colors to fill out full 256 color palette
+      color_palette_length = len(color_palette)
+      i = 0
+      while len(color_palette) < 256:
+        color_palette.append(color_palette[i])
+        i = (i + 1) % color_palette_length
     bytes_per_second = int(file_size_bytes / length_seconds)
     if bytes_per_second > max_bytes_per_second:
       raise ValueError(
@@ -74,6 +82,10 @@ def get_block_size_in_pixels(params, min_bytes_in_frame):
         min_bytes_in_frame / 3:
       return block_size - 1
 
+# map data to a color in color palette
+def lookup_color(color_palette, frame_pixel):
+  return color_palette[int(numpy.bitwise_xor.reduce(frame_pixel))]
+
 # Human pattern recogition takes about 166ms, so we generate 6 independent
 # frames at 60fps to get 1 second of footage. Bytes visualized should be >=
 # bytes_per_second. Each frame is made up of blocks of color.
@@ -89,6 +101,10 @@ def generate_frames(params, data):
     frame = numpy.reshape(
         numpy.pad(frame, (0, row_blocks * column_blocks * 3 - frame.size)),
         (row_blocks, column_blocks, 3))
+    if params.color_palette is not None:
+      # map every pixel to some color in palette
+      frame = numpy.apply_along_axis(
+          lambda pixel: lookup_color(params.color_palette, pixel), -1, frame)
     # duplicate pixels to create color blocks
     frame = repeat_elements(frame, block_size, block_size)
     # pad out missing space for full frame
@@ -104,6 +120,7 @@ def generate_frames(params, data):
       frames = []
 
 def main():
+  start = time.time()
   parser = argparse.ArgumentParser(description=
     'Convert binary data relatively losslessly to YouTube-compatible video '
     'that is interesting to humans.')
@@ -111,8 +128,8 @@ def main():
   parser.add_argument('--video_length_seconds', type=int, help=
       'Approximate length of video in seconds.')
   parser.add_argument('--color_palette', help=
-      'Video color palette. Default to full 24-bit color. Doesn\'t do anything '
-      'yet.')
+      'Video color palette. Default to full 24-bit color. Specify with up to '
+      '256 colors represented as e.g., black, white: 000000,FFFFFF.')
   parser.add_argument('--resolution', help=
       'Video resolution. Defaults to 1080p. Accceptable options are 720p, '
       '1080p, and 4k.')
@@ -160,7 +177,8 @@ def main():
             return
         frame_count = frame_count + len(frames)
         print(str(frame_count) + " frames written (" +
-              str(int(frame_count/60)) + " second(s)).")
+              str(int(frame_count/60)) + " second(s)). " +
+              str(int(time.time() - start)) + " second(s) elapsed.")
   pipe.stdin.close()
   pipe.wait()
 
