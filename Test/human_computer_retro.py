@@ -4,9 +4,8 @@
 # 1) Determine video parameters based on input file and options.
 # 2) Turn binary into blocks of color in rgb24 frames using NumPy
 # 3) Use ffmpeg via pipes to encode for YouTube
-# TODO(ariw): Add ability to extract representative color palettes from screenshots a la
-# https://stackoverflow.com/questions/18801218/build-a-color-palette-from-image-url
 import argparse, io, math, numpy, os, subprocess, time
+from PIL import Image
 
 class VideoParameters:
   def __init__(
@@ -38,16 +37,6 @@ class VideoParameters:
       max_bytes_per_second = 937500
     else:
       raise ValueError('invalid resolution')
-    if color_palette is not None:
-      color_palette = [
-          numpy.frombuffer(bytes.fromhex(color), dtype=numpy.uint8) for color\
-          in color_palette.split(',')]
-      # duplicate colors to fill out full 256 color palette
-      color_palette_length = len(color_palette)
-      i = 0
-      while len(color_palette) < 256:
-        color_palette.append(color_palette[i])
-        i = (i + 1) % color_palette_length
     bytes_per_second = int(file_size_bytes / length_seconds)
     if bytes_per_second > max_bytes_per_second:
       raise ValueError(
@@ -121,6 +110,54 @@ def generate_frames(params, data):
       yield frames
       frames = []
 
+def get_image_palette(image):
+  """
+  Return palette in descending order of frequency
+  """
+  arr = numpy.asarray(image)
+  palette, index = numpy.unique(asvoid(arr).ravel(), return_inverse=True)
+  palette = palette.view(arr.dtype).reshape(-1, arr.shape[-1])
+  count = numpy.bincount(index)
+  order = numpy.argsort(count)
+  palette = palette[order[::-1]][:256]
+  # palette = ','.join(
+  #    [''.join([int(rgb).to_bytes(1, 'big').hex() for rgb in color])\ 
+  #         for color in palette])
+  return palette[:256]
+
+def asvoid(arr):
+  """View the array as dtype np.void (bytes)
+  This collapses ND-arrays to 1D-arrays, so you can perform 1D operations on them.
+  http://stackoverflow.com/a/16216866/190597 (Jaime)
+  http://stackoverflow.com/a/16840350/190597 (Jaime)
+  Warning:
+  >>> asvoid([-0.]) == asvoid([0.])
+  array([False], dtype=bool)
+  """
+  arr = numpy.ascontiguousarray(arr)
+  return arr.view(numpy.dtype(
+      (numpy.void, arr.dtype.itemsize * arr.shape[-1])))
+
+def get_color_palette(color_palette_text, color_palette_image):
+  if color_palette_text is not None and color_palette_image is not None:
+    raise ValueError('invalid specification of both forms of color palette')
+  elif color_palette_text is not None:
+    color_palette = [
+        numpy.frombuffer(bytes.fromhex(color), dtype=numpy.uint8) for color\
+            in color_palette_text.split(',')]
+    # duplicate colors to fill out full 256 color palette
+    color_palette_length = len(color_palette)
+    i = 0
+    while len(color_palette) < 256:
+      color_palette.append(color_palette[i])
+      i = (i + 1) % color_palette_length
+    return color_palette
+  elif color_palette_image is not None:
+    image = Image.open(color_palette_image, 'r').convert('RGB')
+    return get_image_palette(image)
+  else:
+    return None
+
 def main():
   start = time.time()
   parser = argparse.ArgumentParser(description=
@@ -129,9 +166,12 @@ def main():
   parser.add_argument('--input_file', help='Input file.')
   parser.add_argument('--video_length_seconds', type=int, help=
       'Approximate length of video in seconds.')
-  parser.add_argument('--color_palette', help=
+  parser.add_argument('--color_palette_text', help=
       'Video color palette. Default to full 24-bit color. Specify with up to '
       '256 colors represented as e.g., black, white: 000000,FFFFFF.')
+  parser.add_argument('--color_palette_image', help=
+      'Video color palette from an image. Will take up to top 256 colors from '
+      'image.')
   parser.add_argument('--resolution', help=
       'Video resolution. Defaults to 1080p. Accceptable options are 720p, '
       '1080p, and 4k.')
@@ -141,8 +181,10 @@ def main():
   parser.add_argument('--output_video', help='Output video file.')
   args = parser.parse_args()
   input_file_size = os.path.getsize(args.input_file)
+  color_palette = get_color_palette(
+      args.color_palette_text, args.color_palette_image)
   parameters = VideoParameters.get(
-      input_file_size, args.video_length_seconds, args.color_palette,
+      input_file_size, args.video_length_seconds, color_palette,
       args.resolution)
   command = [
       args.ffmpeg,
