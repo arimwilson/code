@@ -39,9 +39,12 @@ class VideoParameters:
       raise ValueError('invalid resolution')
     bytes_per_second = int(file_size_bytes / length_seconds)
     if bytes_per_second > max_bytes_per_second:
+      min_length_seconds = math.ceil(
+          file_size_bytes / max_bytes_per_second)
       raise ValueError(
-          'file size, desired video length, and output '
-          'resolution are incompatible')
+          'file size, output resolution, and desired video length are '
+          'incompatible. video length of ' + str(min_length_seconds) +
+          ' would work.')
     return cls(length_seconds, height, width, color_palette, bytes_per_second)
 
   def __repr__(self):
