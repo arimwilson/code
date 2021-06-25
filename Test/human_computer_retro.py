@@ -4,6 +4,8 @@
 # 1) Determine video parameters based on input file and options.
 # 2) Turn binary into blocks of color in rgb24 frames using NumPy
 # 3) Use ffmpeg via pipes to encode for YouTube
+# TODO(ariw): Add mode to take output video, extract colors using OpenCV, and
+# reassemble binary for diff against original.
 import argparse, io, math, numpy, os, subprocess, time
 from PIL import Image
 
