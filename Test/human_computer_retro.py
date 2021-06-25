@@ -212,7 +212,7 @@ def main():
       stderr=subprocess.STDOUT)
   frame_count = 0
   with open(args.input_file, 'rb') as input_file:
-    for data in read_in_chunks(input_file, 4000000):
+    for data in read_in_chunks(input_file, 40000000):
       # read enough data for a second of video, convert to frames, output via
       # ffmpeg, then continue.
       for frames in generate_frames(parameters, data):
