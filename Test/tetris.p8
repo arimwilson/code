@@ -54,6 +54,7 @@ local highscore = dget(0) or 0
 
 -- initialize and turn on music
 function init_board()
+    music(-1)
     music(track_listing[flr(rnd(#track_listing)) + 1].start, 120) 
     board = {}
     for y = 1, 20 do
