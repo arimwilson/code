@@ -138,7 +138,9 @@ function clear_lines()
         end
         if filled then
             for remove_y = y, 2, -1 do
-                board[remove_y] = board[remove_y - 1]
+                for x = 1, 10 do
+                    board[remove_y][x] = board[remove_y - 1][x]
+                end
             end
             for x = 1, 10 do
                 board[1][x] = 0
@@ -149,7 +151,11 @@ function clear_lines()
         end
     end
 
-    score = score + lines_cleared * 100
+    local score_multipliers = {1, 3, 5, 8} -- Define score multipliers for 1, 2, 3, and 4 lines cleared simultaneously
+    if lines_cleared > 0 then
+        local multiplier = score_multipliers[lines_cleared]
+        score = score + lines_cleared * 100 * multiplier
+    end
     return lines_cleared
 end
 
