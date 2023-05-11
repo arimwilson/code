@@ -49,6 +49,37 @@ local pieces = {
         color = 14
     }
 }
+--track metadata
+--tracks display in this order
+track_listing = {
+	{trackname="arpument", 
+		start=0,
+		},
+	{trackname="walkabout", 
+		start=11,
+		},
+	{trackname="factory fresh", 
+		start=22,
+		},
+	{trackname="seaside town", 
+		start=16,
+		},
+	{trackname="empire", 
+		start=27,
+		},
+	{trackname="melancholy", 
+		start=33,
+		},
+	{trackname="mission", 
+		start=37,
+		},
+	{trackname="hijinx", 
+		start=43,
+		},
+	{trackname="out of control", 
+		start=53,
+		},
+	}
 cartdata("tetris_highscore")
 local highscore = dget(0) or 0
 
@@ -213,41 +244,9 @@ function draw_ghost_piece(piece, px, py)
 end
 
 function draw_next_piece()
-    print("next:", 75, 15, 7)
-    draw_piece(next_piece, 13, 4)
+    print("next:", 63, 15, 7)
+    draw_piece(next_piece, 12, 4)
 end
-
---track metadata
---tracks display in this order
-track_listing = {
-	{trackname="arpument", 
-		start=0,
-		},
-	{trackname="walkabout", 
-		start=11,
-		},
-	{trackname="factory fresh", 
-		start=22,
-		},
-	{trackname="seaside town", 
-		start=16,
-		},
-	{trackname="empire", 
-		start=27,
-		},
-	{trackname="melancholy", 
-		start=33,
-		},
-	{trackname="mission", 
-		start=37,
-		},
-	{trackname="hijinx", 
-		start=43,
-		},
-	{trackname="out of control", 
-		start=53,
-		},
-	}
 
 -- update
 function _update()
@@ -305,7 +304,7 @@ function _draw()
 
     -- print the score and high score
     print("score: " .. score, 63, 1, 7)
-    print("high score: " .. highscore, 63, 8, 7)
+    print("highscore: " .. highscore, 63, 8, 7)
 end
 
 init_board()
