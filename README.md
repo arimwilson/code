@@ -1,5 +1,3 @@
-Copyright 2009-2015 Ari Wilson, All Rights Reserved
-
 Ari Wilson's code, including a variety of projects:
 
 [BlockFort](http://blockfort3d.appspot.com/) is a web-based game similar to Minecraft but with less gameplay and more world-building :). Saves are backed up to the cloud.
