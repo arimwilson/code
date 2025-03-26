@@ -24,7 +24,7 @@ def process_directory(base_dir, current_dir, include_ext, include_files, exclude
         rel_path = os.path.relpath(full_path, base_dir)
         
         # If an exclude pattern is provided, skip files that match.
-        if exclude_pattern and re.search(exclude_pattern, filename):
+        if exclude_pattern and re.search(exclude_pattern, full_path):
             continue
 
         # Check if the file matches an accepted extension.
@@ -76,7 +76,7 @@ def main():
     parser.add_argument('-f', '--files', default='pom.xml,package.json',
                         help='Comma-separated list of accepted file names (default: pom.xml,package.json)')
     parser.add_argument('-x', '--exclude', default=None,
-                        help='Regex pattern to exclude files (default: none)')
+                        help='Regex pattern to exclude files whose filepath match this (default: none)')
     args = parser.parse_args()
 
     base_dir = os.path.abspath(args.directory)
