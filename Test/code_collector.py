@@ -6,7 +6,7 @@ import platform
 import shutil
 import subprocess
 
-def process_directory(base_dir, current_dir, include_ext, include_files, exclude_pattern, files_found):
+def process_directory(base_dir, current_dir, include_ext, include_files, exclude_substrings, files_found):
     """
     Recursively process the directory tree.
     For each directory, first process files (alphabetically) then process subdirectories (alphabetically).
@@ -23,8 +23,14 @@ def process_directory(base_dir, current_dir, include_ext, include_files, exclude
         full_path = os.path.join(current_dir, filename)
         rel_path = os.path.relpath(full_path, base_dir)
         
-        # If an exclude pattern is provided, skip files that match.
-        if exclude_pattern and re.search(exclude_pattern, full_path):
+        # If exclude substrings are provided, skip files whose full path contains any of them.
+        # Use substring matching ('in') instead of regex.
+        should_exclude = False
+        if exclude_substrings:
+            if any(substring in full_path for substring in exclude_substrings):
+                should_exclude = True
+
+        if should_exclude:
             continue
 
         # Check if the file matches an accepted extension.
@@ -48,7 +54,7 @@ def process_directory(base_dir, current_dir, include_ext, include_files, exclude
     
     # Process subdirectories in alphabetical order.
     for d in dirs:
-        output_text += process_directory(base_dir, os.path.join(current_dir, d), include_ext, include_files, exclude_pattern, files_found)
+        output_text += process_directory(base_dir, os.path.join(current_dir, d), include_ext, include_files, exclude_substrings, files_found)
     
     return output_text
 
@@ -76,20 +82,23 @@ def main():
     parser.add_argument('-f', '--files', default='pom.xml,package.json',
                         help='Comma-separated list of accepted file names (default: pom.xml,package.json)')
     parser.add_argument('-x', '--exclude', default=None,
-                        help='Regex pattern to exclude files whose filepath match this (default: none)')
+                        help='Comma-separated list of substrings. Files/directories whose full path contains any of these substrings will be excluded (default: none)')
     args = parser.parse_args()
 
     base_dir = os.path.abspath(args.directory)
     # Split and strip the allowed file extensions and file names.
     include_ext = [ext.strip() for ext in args.extensions.split(',') if ext.strip()]
     include_files = [fname.strip() for fname in args.files.split(',') if fname.strip()]
-    exclude_pattern = args.exclude
+    # Process exclude argument: split by comma, strip whitespace, filter empty strings
+    exclude_substrings = []
+    if args.exclude:
+        exclude_substrings = [s.strip() for s in args.exclude.split(',') if s.strip()]
 
     # List to store the relative paths of the files that are included.
     files_found = []
 
     # Recursively process the directory structure.
-    output_text = process_directory(base_dir, base_dir, include_ext, include_files, exclude_pattern, files_found)
+    output_text = process_directory(base_dir, base_dir, include_ext, include_files, exclude_substrings, files_found)
     
     # Copy the concatenated text to the system clipboard using platform-specific commands.
     copy_to_clipboard(output_text)
