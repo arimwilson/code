@@ -81,7 +81,7 @@ def main():
                         help='Comma-separated list of accepted file extensions (default: .ts,.js,.html,.java)')
     parser.add_argument('-f', '--files', default='pom.xml,package.json',
                         help='Comma-separated list of accepted file names (default: pom.xml,package.json)')
-    parser.add_argument('-x', '--exclude', default=None,
+    parser.add_argument('-x', '--exclude', default='node_modules',
                         help='Comma-separated list of substrings. Files/directories whose full path contains any of these substrings will be excluded (default: none)')
     args = parser.parse_args()
 
