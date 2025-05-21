@@ -101,8 +101,11 @@ def main():
     for c in commits:
         sha          = c["sha"]
         info         = c["commit"]
-        author_login = c.get("author", {}).get("login")
         author_name  = info["author"]["name"]
+        author_info = c.get("author")
+        author_login = None
+        if author_info is not None:
+            author_login = author_info.get("login")
         date         = info["author"]["date"]
         message      = info["message"].strip()
         diff = None
