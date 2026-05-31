@@ -251,6 +251,7 @@
       }
 
       .recommendation {
+        position: relative;
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 8px 12px;
@@ -259,6 +260,7 @@
         border-radius: 8px;
         background: var(--panel);
         padding: 12px;
+        overflow: hidden;
       }
 
       .recommendation.best {
@@ -293,6 +295,72 @@
         grid-column: 1 / -1;
         color: var(--muted);
         font-size: 13px;
+      }
+
+      .recommendation-list.is-loading .recommendation {
+        border-color: var(--line);
+        background: #f3f2ee;
+        box-shadow: none;
+        color: #8b8780;
+        pointer-events: none;
+      }
+
+      .recommendation-list.is-loading .recommendation.best {
+        border-color: var(--line);
+        background: #f3f2ee;
+      }
+
+      .recommendation-list.is-loading .recommendation-label {
+        background: #dedbd4;
+        color: #8b8780;
+      }
+
+      .recommendation-list.is-loading .recommendation-reason {
+        color: #9a958d;
+      }
+
+      .recommendation-list.is-loading .recommendation::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.58), transparent);
+        animation: recommendation-refresh 1.25s ease-in-out infinite;
+      }
+
+      .loading-bar {
+        display: block;
+        border-radius: 999px;
+        background: #dedbd4;
+      }
+
+      .loading-word {
+        width: 92px;
+        height: 22px;
+      }
+
+      .loading-label {
+        justify-self: end;
+        width: 72px;
+        height: 20px;
+      }
+
+      .loading-reason {
+        grid-column: 1 / -1;
+        width: min(100%, 360px);
+        height: 13px;
+      }
+
+      @keyframes recommendation-refresh {
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .recommendation-list.is-loading .recommendation::after {
+          animation: none;
+        }
       }
 
       .empty-state {
@@ -560,7 +628,29 @@
         return "Could be answer.";
       }
 
+      function renderLoadingRecommendations() {
+        const hasRecommendations = Boolean(
+          recommendations.querySelector(".recommendation:not([aria-hidden='true'])")
+        );
+        recommendations.classList.add("is-loading");
+        recommendations.setAttribute("aria-busy", "true");
+
+        if (hasRecommendations) {
+          return;
+        }
+
+        recommendations.innerHTML = Array.from({length: 5}, (_, index) => `
+          <article class="recommendation ${index === 0 ? "best" : ""}" aria-hidden="true">
+            <span class="loading-bar loading-word"></span>
+            <span class="loading-bar loading-label"></span>
+            <span class="loading-bar loading-reason"></span>
+          </article>
+        `).join("");
+      }
+
       function renderRecommendations(data) {
+        recommendations.classList.remove("is-loading");
+        recommendations.removeAttribute("aria-busy");
         candidateNumber.textContent = formatNumber(data.remaining_candidates);
         const rows = buildRecommendationRows(data);
         rankingNote.textContent = submittedGuesses.length ? "Best move" : "Opening picks";
@@ -587,7 +677,8 @@
             ? formatNumber(totalCandidateSolutions)
             : "-";
         rankingNote.textContent = submittedGuesses.length ? "Best move" : "Opening picks";
-        setMessage("Updating...");
+        renderLoadingRecommendations();
+        setMessage("");
 
         try {
           const response = await fetch("/v1/solve", {
@@ -611,6 +702,11 @@
             return;
           }
           if (!response.ok) {
+            recommendations.classList.remove("is-loading");
+            recommendations.removeAttribute("aria-busy");
+            if (!recommendations.querySelector(".recommendation:not([aria-hidden='true'])")) {
+              recommendations.innerHTML = `<div class="empty-state">No recommendations available.</div>`;
+            }
             candidateNumber.textContent = "0";
             setMessage(data.message || "Board feedback does not match any answer.", true);
             return;
@@ -619,6 +715,11 @@
           setMessage("");
         } catch (_err) {
           if (solveId === latestSolveId) {
+            recommendations.classList.remove("is-loading");
+            recommendations.removeAttribute("aria-busy");
+            if (!recommendations.querySelector(".recommendation:not([aria-hidden='true'])")) {
+              recommendations.innerHTML = `<div class="empty-state">No recommendations available.</div>`;
+            }
             setMessage("Recommendations unavailable.", true);
           }
         }
