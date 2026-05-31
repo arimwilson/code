@@ -3,19 +3,22 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Wordle Solver</title>
+    <title>Wirdle - Wordle Solver</title>
     <style>
       :root {
-        --bg: #f6f4ef;
+        --bg: #f7f7f3;
         --panel: #ffffff;
-        --ink: #24231f;
-        --muted: #69665f;
-        --line: #d7d1c6;
-        --absent: #777c7e;
-        --present: #c9a227;
-        --correct: #538d4e;
-        --accent: #315f72;
-        --danger: #a33b2f;
+        --ink: #1f1f1f;
+        --muted: #686763;
+        --line: #d4d4cf;
+        --tile-empty: #b8b8b4;
+        --absent: #787c7e;
+        --present: #c9b458;
+        --correct: #6aaa64;
+        --accent: #246a73;
+        --accent-soft: #e3f0f2;
+        --danger: #b23b32;
+        --shadow: 0 18px 45px rgba(31, 31, 31, 0.08);
       }
 
       * {
@@ -24,74 +27,126 @@
 
       body {
         margin: 0;
+        min-height: 100vh;
         background: var(--bg);
         color: var(--ink);
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
       main {
-        width: min(1120px, calc(100vw - 32px));
+        width: min(100% - 24px, 1040px);
         margin: 0 auto;
-        padding: 28px 0 40px;
+        padding: 14px 0 28px;
       }
 
       header {
         display: flex;
-        align-items: flex-end;
+        align-items: center;
         justify-content: space-between;
-        gap: 16px;
-        padding-bottom: 18px;
+        gap: 12px;
+        padding: 8px 0 12px;
         border-bottom: 1px solid var(--line);
       }
 
       h1 {
         margin: 0;
-        font-size: 32px;
-        line-height: 1.05;
+        font-size: 24px;
+        line-height: 1;
         letter-spacing: 0;
       }
 
-      .subhead {
-        margin: 8px 0 0;
+      .data-meta {
         color: var(--muted);
-        font-size: 14px;
+        font-size: 12px;
+        white-space: nowrap;
       }
 
-      .shell {
+      .app {
         display: grid;
-        grid-template-columns: minmax(320px, 460px) 1fr;
-        gap: 28px;
-        margin-top: 28px;
+        gap: 18px;
+        padding-top: 18px;
       }
 
-      section {
-        min-width: 0;
+      .play-area {
+        display: grid;
+        justify-items: center;
+        gap: 14px;
+      }
+
+      .candidate-card {
+        width: min(100%, 360px);
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 12px 14px;
+        box-shadow: var(--shadow);
+      }
+
+      .candidate-number {
+        font-size: 28px;
+        line-height: 1;
+        font-weight: 800;
+      }
+
+      .candidate-label {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: right;
+      }
+
+      .board-wrap {
+        position: relative;
+        width: min(100%, 360px);
       }
 
       .board {
         display: grid;
-        gap: 10px;
+        gap: 6px;
+        outline: 0;
       }
 
       .row {
         display: grid;
-        grid-template-columns: repeat(5, minmax(44px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
       }
 
       .tile {
         aspect-ratio: 1;
-        border: 2px solid var(--line);
+        width: 100%;
+        border: 2px solid var(--tile-empty);
         background: var(--panel);
         color: var(--ink);
-        border-radius: 4px;
+        border-radius: 0;
         display: grid;
         place-items: center;
-        font-size: 30px;
+        padding: 0;
+        font-size: clamp(28px, 13vw, 48px);
         font-weight: 800;
+        line-height: 1;
         text-transform: uppercase;
-        cursor: pointer;
         user-select: none;
+      }
+
+      .tile.filled {
+        border-color: #878a8c;
+      }
+
+      .tile.future {
+        border-color: var(--line);
       }
 
       .tile.absent,
@@ -113,193 +168,174 @@
         background: var(--correct);
       }
 
-      .controls {
+      button.tile:focus-visible,
+      .board:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .keyboard-capture {
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 1px;
+        height: 1px;
+        opacity: 0.01;
+        border: 0;
+        padding: 0;
+        pointer-events: none;
+      }
+
+      .actions {
+        width: min(100%, 360px);
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-        margin-top: 16px;
+        justify-content: center;
+        gap: 8px;
       }
 
-      button,
-      input,
-      select {
-        font: inherit;
-      }
-
-      button {
+      .action-button {
+        min-height: 38px;
         border: 1px solid var(--line);
+        border-radius: 6px;
         background: var(--panel);
         color: var(--ink);
-        border-radius: 6px;
-        padding: 10px 12px;
-        min-height: 40px;
-        cursor: pointer;
-      }
-
-      button.primary {
-        border-color: var(--accent);
-        background: var(--accent);
-        color: #fff;
+        padding: 8px 12px;
+        font-size: 14px;
         font-weight: 700;
       }
 
-      button:disabled {
-        opacity: 0.55;
+      .action-button:disabled {
+        opacity: 0.45;
         cursor: not-allowed;
       }
 
-      input[type="text"] {
-        width: 120px;
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: var(--panel);
-        color: var(--ink);
-        padding: 10px 12px;
-        min-height: 40px;
-        text-transform: uppercase;
-        font-weight: 800;
-        letter-spacing: 0;
-      }
-
-      label {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--muted);
-        font-size: 14px;
-      }
-
-      .legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 14px;
-      }
-
-      .legend button {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 10px;
-      }
-
-      .swatch {
-        width: 16px;
-        height: 16px;
-        border-radius: 3px;
-        display: inline-block;
-      }
-
-      .swatch.absent {
-        background: var(--absent);
-      }
-
-      .swatch.present {
-        background: var(--present);
-      }
-
-      .swatch.correct {
-        background: var(--correct);
-      }
-
       .message {
-        min-height: 22px;
-        margin-top: 14px;
+        min-height: 20px;
         color: var(--muted);
-        font-size: 14px;
+        font-size: 13px;
+        text-align: center;
       }
 
       .message.error {
         color: var(--danger);
+        font-weight: 700;
       }
 
-      .results {
+      .recommendations {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 18px;
+        gap: 10px;
       }
 
-      .summary {
+      .section-heading {
         display: flex;
-        align-items: center;
+        align-items: baseline;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 14px;
-      }
-
-      .count {
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: var(--panel);
-        padding: 8px 10px;
-        color: var(--muted);
-        font-size: 14px;
-        white-space: nowrap;
       }
 
       h2 {
-        margin: 0 0 10px;
+        margin: 0;
         font-size: 18px;
+        line-height: 1.2;
         letter-spacing: 0;
       }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        overflow: hidden;
-      }
-
-      th,
-      td {
-        padding: 10px;
-        text-align: left;
-        border-bottom: 1px solid var(--line);
-        font-size: 14px;
-        vertical-align: top;
-      }
-
-      th {
+      .ranking-note {
         color: var(--muted);
-        font-weight: 700;
-        background: #faf9f6;
+        font-size: 12px;
+        white-space: nowrap;
       }
 
-      tr:last-child td {
-        border-bottom: 0;
+      .recommendation-list {
+        display: grid;
+        gap: 8px;
       }
 
-      .word {
+      .recommendation {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px 12px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 12px;
+      }
+
+      .recommendation.best {
+        border-color: var(--accent);
+        background: linear-gradient(0deg, var(--accent-soft), var(--panel) 66%);
+        box-shadow: var(--shadow);
+      }
+
+      .recommendation-word {
+        font-size: 22px;
+        line-height: 1;
         font-weight: 800;
         text-transform: uppercase;
       }
 
-      .tag {
+      .recommendation-label {
+        justify-self: end;
+        border-radius: 999px;
+        background: #ededec;
         color: var(--muted);
+        padding: 4px 8px;
         font-size: 12px;
+        font-weight: 800;
       }
 
-      @media (max-width: 820px) {
+      .recommendation.best .recommendation-label {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .recommendation-reason {
+        grid-column: 1 / -1;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .empty-state {
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        color: var(--muted);
+        padding: 16px;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      @media (min-width: 840px) {
         main {
-          width: min(100vw - 24px, 560px);
-          padding-top: 20px;
+          padding-top: 24px;
         }
 
-        header {
-          align-items: flex-start;
-          flex-direction: column;
+        h1 {
+          font-size: 30px;
         }
 
-        .shell,
-        .results {
-          grid-template-columns: 1fr;
+        .app {
+          grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
+          align-items: start;
+          gap: 36px;
+        }
+
+        .play-area {
+          position: sticky;
+          top: 24px;
+        }
+
+        .board-wrap,
+        .candidate-card,
+        .actions {
+          width: 380px;
         }
 
         .tile {
-          font-size: 26px;
+          font-size: 48px;
+        }
+
+        .recommendations {
+          padding-top: 4px;
         }
       }
     </style>
@@ -307,198 +343,353 @@
   <body>
     <main>
       <header>
-        <div>
-          <h1>Wordle Solver</h1>
-          <p class="subhead">Tap tiles to cycle gray, yellow, and green.</p>
-        </div>
-        <div class="count" id="health">Loading data...</div>
+        <h1>Wirdle</h1>
+        <div class="data-meta" id="health">Loading word list...</div>
       </header>
 
-      <div class="shell">
-        <section>
-          <div class="board" id="board" aria-label="Wordle guesses"></div>
-
-          <div class="controls">
-            <input id="guessInput" type="text" maxlength="5" autocomplete="off" spellcheck="false" aria-label="Guess word">
-            <button class="primary" id="addGuess">Add Guess</button>
-            <button id="solve">Solve</button>
-            <button id="undo">Undo</button>
-            <button id="reset">Reset</button>
+      <div class="app">
+        <section class="play-area" aria-label="Wordle board">
+          <div class="candidate-card" aria-live="polite">
+            <div class="candidate-number" id="candidateNumber">-</div>
+            <div class="candidate-label">candidates left</div>
           </div>
 
-          <div class="legend" aria-label="Feedback controls">
-            <button type="button" data-fill="absent"><span class="swatch absent"></span> Gray</button>
-            <button type="button" data-fill="present"><span class="swatch present"></span> Yellow</button>
-            <button type="button" data-fill="correct"><span class="swatch correct"></span> Green</button>
+          <div class="board-wrap">
+            <div class="board" id="board" tabindex="0" aria-label="Guess board"></div>
+            <input class="keyboard-capture" id="keyboardCapture" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Guess entry">
           </div>
 
-          <div class="message" id="message"></div>
+          <div class="actions" aria-label="Board controls">
+            <button class="action-button" id="undo" type="button">Undo</button>
+            <button class="action-button" id="reset" type="button">Reset</button>
+          </div>
+
+          <div class="message" id="message" aria-live="polite"></div>
         </section>
 
-        <section>
-          <div class="summary">
+        <section class="recommendations" aria-label="Recommendations">
+          <div class="section-heading">
             <h2>Recommendations</h2>
-            <div class="count" id="remaining">- candidates</div>
+            <div class="ranking-note" id="rankingNote">Best move</div>
           </div>
-
-          <div class="results">
-            <div>
-              <h2>Likely Answers</h2>
-              <table>
-                <thead>
-                  <tr><th>Word</th><th>Probability</th><th>Prior</th></tr>
-                </thead>
-                <tbody id="answers"></tbody>
-              </table>
-            </div>
-
-            <div>
-              <h2>Information Guesses</h2>
-              <table>
-                <thead>
-                  <tr><th>Word</th><th>Entropy</th><th>Worst</th></tr>
-                </thead>
-                <tbody id="guesses"></tbody>
-              </table>
-            </div>
-          </div>
+          <div class="recommendation-list" id="recommendations"></div>
         </section>
       </div>
     </main>
 
     <script>
+      const ROW_COUNT = 6;
+      const WORD_LENGTH = 5;
       const statuses = ["absent", "present", "correct"];
+      const statusLabels = {
+        absent: "absent",
+        present: "present",
+        correct: "correct"
+      };
+
       const board = document.querySelector("#board");
-      const guessInput = document.querySelector("#guessInput");
+      const keyboardCapture = document.querySelector("#keyboardCapture");
       const message = document.querySelector("#message");
-      const remaining = document.querySelector("#remaining");
-      const answers = document.querySelector("#answers");
-      const guessesBody = document.querySelector("#guesses");
+      const candidateNumber = document.querySelector("#candidateNumber");
+      const recommendations = document.querySelector("#recommendations");
+      const rankingNote = document.querySelector("#rankingNote");
       const health = document.querySelector("#health");
-      const guesses = [];
+      const undoButton = document.querySelector("#undo");
+      const resetButton = document.querySelector("#reset");
+
+      const submittedGuesses = [];
+      let activeLetters = [];
+      let latestSolveId = 0;
+      let totalCandidateSolutions = null;
 
       function setMessage(text, isError = false) {
         message.textContent = text;
         message.classList.toggle("error", isError);
       }
 
+      function focusKeyboard() {
+        keyboardCapture.focus({preventScroll: true});
+      }
+
+      function syncKeyboardCapture() {
+        keyboardCapture.value = activeLetters.join("");
+      }
+
+      function titleCase(value) {
+        return value.charAt(0).toUpperCase() + value.slice(1);
+      }
+
+      function formatNumber(value) {
+        return new Intl.NumberFormat().format(value);
+      }
+
+      function renderTile(rowIndex, tileIndex) {
+        const submitted = submittedGuesses[rowIndex];
+        const isActive = rowIndex === submittedGuesses.length && submittedGuesses.length < ROW_COUNT;
+        const letter = submitted ? submitted.word[tileIndex] : isActive ? activeLetters[tileIndex] || "" : "";
+        const status = submitted ? submitted.statuses[tileIndex] : "";
+        const tile = document.createElement(submitted ? "button" : "div");
+
+        tile.className = [
+          "tile",
+          submitted ? status : "",
+          !submitted && letter ? "filled" : "",
+          !submitted && !isActive ? "future" : ""
+        ].filter(Boolean).join(" ");
+        tile.textContent = letter;
+
+        if (!submitted) {
+          tile.setAttribute("aria-hidden", "true");
+          return tile;
+        }
+
+        tile.type = "button";
+        tile.title = titleCase(statusLabels[status]);
+        tile.setAttribute(
+          "aria-label",
+          `${letter.toUpperCase()} ${statusLabels[status]}. Change feedback.`
+        );
+        tile.addEventListener("click", () => {
+          const current = statuses.indexOf(status);
+          submitted.statuses[tileIndex] = statuses[(current + 1) % statuses.length];
+          renderBoard();
+          refreshRecommendations();
+          focusKeyboard();
+        });
+        return tile;
+      }
+
       function renderBoard() {
         board.innerHTML = "";
-        guesses.forEach((guess, rowIndex) => {
+        for (let rowIndex = 0; rowIndex < ROW_COUNT; rowIndex += 1) {
           const row = document.createElement("div");
           row.className = "row";
-          guess.statuses.forEach((status, tileIndex) => {
-            const tile = document.createElement("button");
-            tile.type = "button";
-            tile.className = `tile ${status}`;
-            tile.textContent = guess.word[tileIndex];
-            tile.title = status;
-            tile.addEventListener("click", () => {
-              const current = statuses.indexOf(guess.statuses[tileIndex]);
-              guess.statuses[tileIndex] = statuses[(current + 1) % statuses.length];
-              renderBoard();
-              solve();
-            });
-            row.appendChild(tile);
-          });
+          row.setAttribute("aria-label", `Row ${rowIndex + 1}`);
+          for (let tileIndex = 0; tileIndex < WORD_LENGTH; tileIndex += 1) {
+            row.appendChild(renderTile(rowIndex, tileIndex));
+          }
           board.appendChild(row);
-        });
+        }
+
+        undoButton.disabled = submittedGuesses.length === 0;
+        resetButton.disabled = submittedGuesses.length === 0 && activeLetters.length === 0;
+        syncKeyboardCapture();
       }
 
-      function rowHtml(cells) {
-        return `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
-      }
-
-      function renderResults(data) {
-        remaining.textContent = `${data.remaining_candidates} candidates`;
-        answers.innerHTML = data.likely_answers.map((answer) => rowHtml([
-          `<span class="word">${answer.word}</span>`,
-          `${(answer.probability * 100).toFixed(1)}%`,
-          answer.used_before ? `<span class="tag">used before</span>` : `<span class="tag">fresh</span>`
-        ])).join("");
-        guessesBody.innerHTML = data.best_information_guesses.map((guess) => rowHtml([
-          `<span class="word">${guess.word}</span>${guess.is_possible_answer ? "" : ` <span class="tag">probe</span>`}`,
-          guess.entropy_bits.toFixed(2),
-          String(guess.worst_case_remaining)
-        ])).join("");
-      }
-
-      async function solve() {
-        setMessage("Solving...");
-        const response = await fetch("/v1/solve", {
-          method: "POST",
-          headers: {"content-type": "application/json"},
-          body: JSON.stringify({
-            guesses,
-            mode: "hybrid",
-            hard_mode: false,
-            limit: 10,
-            past_solution_policy: {
-              enabled: true,
-              weight_multiplier: 0.05,
-              recent_repeat_multiplier: 0.01,
-              recent_days: 90
-            }
-          })
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          setMessage(data.message || "The solver rejected that board.", true);
+      function addLetter(letter) {
+        if (submittedGuesses.length >= ROW_COUNT || activeLetters.length >= WORD_LENGTH) {
           return;
         }
-        renderResults(data);
-        setMessage(guesses.length ? "Updated." : "Opening recommendations loaded.");
+        activeLetters.push(letter.toLowerCase());
+        renderBoard();
+        setMessage("");
       }
 
-      function addGuess() {
-        const word = guessInput.value.trim().toLowerCase();
-        if (!/^[a-z]{5}$/.test(word)) {
-          setMessage("Enter a five-letter guess.", true);
+      function removeLetter() {
+        if (!activeLetters.length) {
           return;
         }
-        guesses.push({word, statuses: ["absent", "absent", "absent", "absent", "absent"]});
-        guessInput.value = "";
+        activeLetters.pop();
         renderBoard();
-        solve();
+        setMessage("");
       }
 
-      document.querySelector("#addGuess").addEventListener("click", addGuess);
-      document.querySelector("#solve").addEventListener("click", solve);
-      document.querySelector("#undo").addEventListener("click", () => {
-        guesses.pop();
-        renderBoard();
-        solve();
-      });
-      document.querySelector("#reset").addEventListener("click", () => {
-        guesses.length = 0;
-        renderBoard();
-        solve();
-      });
-      guessInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          addGuess();
+      function submitActiveRow() {
+        if (submittedGuesses.length >= ROW_COUNT) {
+          return;
         }
-      });
-      document.querySelectorAll("[data-fill]").forEach((button) => {
-        button.addEventListener("click", () => {
-          if (!guesses.length) {
+        if (activeLetters.length !== WORD_LENGTH) {
+          setMessage("Five letters needed.", true);
+          return;
+        }
+        submittedGuesses.push({
+          word: activeLetters.join(""),
+          statuses: ["absent", "absent", "absent", "absent", "absent"]
+        });
+        activeLetters = [];
+        renderBoard();
+        refreshRecommendations();
+      }
+
+      function buildRecommendationRows(data) {
+        const likelyByWord = new Map(data.likely_answers.map((answer) => [answer.word, answer]));
+        const rows = [];
+        const seen = new Set();
+
+        data.best_information_guesses.forEach((guess) => {
+          const likely = likelyByWord.get(guess.word);
+          const isAnswer = Boolean(guess.is_possible_answer || likely);
+          rows.push({
+            word: guess.word,
+            label: isAnswer ? "Answer" : "Probe",
+            score: guess.score,
+            reason: isAnswer
+              ? answerReason(likely, guess)
+              : `Best splitter: ${guess.entropy_bits.toFixed(2)} bits, worst case ${guess.worst_case_remaining}.`,
+            sortValue: guess.score
+          });
+          seen.add(guess.word);
+        });
+
+        data.likely_answers.forEach((answer) => {
+          if (seen.has(answer.word)) {
             return;
           }
-          guesses[guesses.length - 1].statuses.fill(button.dataset.fill);
-          renderBoard();
-          solve();
+          rows.push({
+            word: answer.word,
+            label: "Answer",
+            score: answer.score,
+            reason: answerReason(answer),
+            sortValue: answer.score
+          });
+          seen.add(answer.word);
         });
+
+        rows.sort((a, b) => b.sortValue - a.sortValue || a.word.localeCompare(b.word));
+        return rows.slice(0, 10);
+      }
+
+      function answerReason(answer, guess) {
+        if (answer) {
+          const freshness = answer.used_before ? "used before" : "fresh";
+          return `Best chance: ${(answer.probability * 100).toFixed(1)}%, ${freshness}.`;
+        }
+        if (guess) {
+          return `Could be answer: ${guess.entropy_bits.toFixed(2)} bits, worst case ${guess.worst_case_remaining}.`;
+        }
+        return "Could be answer.";
+      }
+
+      function renderRecommendations(data) {
+        candidateNumber.textContent = formatNumber(data.remaining_candidates);
+        const rows = buildRecommendationRows(data);
+        rankingNote.textContent = submittedGuesses.length ? "Best move" : "Opening picks";
+
+        if (!rows.length) {
+          recommendations.innerHTML = `<div class="empty-state">No recommendations available.</div>`;
+          return;
+        }
+
+        recommendations.innerHTML = rows.map((item, index) => `
+          <article class="recommendation ${index === 0 ? "best" : ""}">
+            <div class="recommendation-word">${item.word.toUpperCase()}</div>
+            <div class="recommendation-label">${index === 0 ? "Next best" : item.label}</div>
+            <div class="recommendation-reason">${item.reason}</div>
+          </article>
+        `).join("");
+      }
+
+      async function refreshRecommendations() {
+        const solveId = latestSolveId + 1;
+        latestSolveId = solveId;
+        candidateNumber.textContent =
+          submittedGuesses.length === 0 && totalCandidateSolutions !== null
+            ? formatNumber(totalCandidateSolutions)
+            : "-";
+        rankingNote.textContent = submittedGuesses.length ? "Best move" : "Opening picks";
+        setMessage("Updating...");
+
+        try {
+          const response = await fetch("/v1/solve", {
+            method: "POST",
+            headers: {"content-type": "application/json"},
+            body: JSON.stringify({
+              guesses: submittedGuesses,
+              mode: "hybrid",
+              hard_mode: false,
+              limit: 10,
+              past_solution_policy: {
+                enabled: true,
+                weight_multiplier: 0.05,
+                recent_repeat_multiplier: 0.01,
+                recent_days: 90
+              }
+            })
+          });
+          const data = await response.json();
+          if (solveId !== latestSolveId) {
+            return;
+          }
+          if (!response.ok) {
+            candidateNumber.textContent = "0";
+            setMessage(data.message || "Board feedback does not match any answer.", true);
+            return;
+          }
+          renderRecommendations(data);
+          setMessage("");
+        } catch (_err) {
+          if (solveId === latestSolveId) {
+            setMessage("Recommendations unavailable.", true);
+          }
+        }
+      }
+
+      function handleKey(key) {
+        if (/^[a-zA-Z]$/.test(key)) {
+          addLetter(key);
+          return true;
+        }
+        if (key === "Backspace") {
+          removeLetter();
+          return true;
+        }
+        if (key === "Enter") {
+          submitActiveRow();
+          return true;
+        }
+        return false;
+      }
+
+      document.addEventListener("keydown", (event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) {
+          return;
+        }
+        if (handleKey(event.key)) {
+          event.preventDefault();
+          focusKeyboard();
+        }
+      });
+
+      keyboardCapture.addEventListener("input", () => {
+        const letters = keyboardCapture.value.toLowerCase().replace(/[^a-z]/g, "").slice(0, WORD_LENGTH);
+        activeLetters = letters.split("");
+        renderBoard();
+      });
+
+      board.addEventListener("click", focusKeyboard);
+      board.addEventListener("focus", focusKeyboard);
+
+      undoButton.addEventListener("click", () => {
+        submittedGuesses.pop();
+        renderBoard();
+        refreshRecommendations();
+        focusKeyboard();
+      });
+
+      resetButton.addEventListener("click", () => {
+        submittedGuesses.length = 0;
+        activeLetters = [];
+        renderBoard();
+        refreshRecommendations();
+        focusKeyboard();
       });
 
       fetch("/v1/health")
         .then((response) => response.json())
         .then((data) => {
-          health.textContent = `${data.candidate_solutions} answers / ${data.allowed_guesses} guesses`;
+          totalCandidateSolutions = data.candidate_solutions;
+          health.textContent = `${formatNumber(data.candidate_solutions)} answers / ${formatNumber(data.allowed_guesses)} allowed guesses`;
+          if (submittedGuesses.length === 0) {
+            candidateNumber.textContent = formatNumber(totalCandidateSolutions);
+          }
         })
         .catch(() => {
-          health.textContent = "Data unavailable";
+          health.textContent = "Word list unavailable";
         });
-      solve();
+
+      renderBoard();
+      refreshRecommendations();
+      focusKeyboard();
     </script>
   </body>
 </html>
