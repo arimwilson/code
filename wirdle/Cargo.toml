@@ -1,0 +1,18 @@
+[package]
+name = "wordle-api"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "wordle_api"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wordle-server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name = "wordle-backtest"
+path = "src/bin/backtest.rs"
+
+[dependencies]
