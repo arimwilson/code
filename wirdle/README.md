@@ -55,8 +55,8 @@ Example `POST /v1/solve` body:
 
 Sources:
 
-- `allowed_guesses.txt`: `https://raw.githubusercontent.com/Roy-Orbison/wordle-guesses-answers/main/guesses.txt`, merged with answers and observed historical solutions.
-- `candidate_solutions.txt`: `https://raw.githubusercontent.com/Roy-Orbison/wordle-guesses-answers/main/answers.txt`, merged with observed historical solutions.
-- `past_solutions.json`: `https://wordle.today/answers`.
+- `allowed_guesses.txt`: extracted from the current NYT Wordle JavaScript assets referenced by `https://www.nytimes.com/games/wordle/index.html`.
+- `candidate_solutions.txt`: the original answer slice from the same NYT asset, merged with observed historical solutions.
+- `past_solutions.json`: dated NYT puzzle JSON from `https://www.nytimes.com/svc/wordle/v2/YYYY-MM-DD.json`.
 
-As of the latest update in this checkout, `past_solutions.json` contains 1,807 rows through Wordle 1,806 on `2026-05-30`. The source hides the current-day answer until it is published.
+As of the latest update in this checkout, `past_solutions.json` contains 1,808 rows through Wordle 1,807 on `2026-05-31`.

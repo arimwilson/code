@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download Wordle word lists and dated past-solution data.
+"""Download Wordle word lists and dated past-solution data from NYT.
 
 The output matches the files consumed by this crate:
 
@@ -16,19 +16,33 @@ import re
 import sys
 import tempfile
 import urllib.request
-from datetime import datetime
+from argparse import ArgumentParser
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date, datetime, timedelta
 from html import unescape
 from pathlib import Path
+from urllib.error import HTTPError
+from urllib.parse import urljoin
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover - Python < 3.9 fallback.
+    ZoneInfo = None  # type: ignore[assignment]
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "wordle-data"
 
-ANSWERS_URL = "https://raw.githubusercontent.com/Roy-Orbison/wordle-guesses-answers/main/answers.txt"
-GUESSES_URL = "https://raw.githubusercontent.com/Roy-Orbison/wordle-guesses-answers/main/guesses.txt"
-PAST_SOLUTIONS_URL = "https://wordle.today/answers"
+WORDLE_URL = "https://www.nytimes.com/games/wordle/index.html"
+WORDLE_API_URL = "https://www.nytimes.com/svc/wordle/v2/{date}.json"
+FIRST_WORDLE_DATE = date(2021, 6, 19)
+FIRST_ANSWERS = ["cigar", "rebut", "sissy", "humph", "awake"]
+NYT_SOURCE = "nytimes.com/svc/wordle/v2"
 
 WORD_RE = re.compile(r"^[a-z]{5}$")
+JS_ASSET_RE = re.compile(r"""["'](?P<url>(?:https://www\.nytimes\.com)?/games-assets/v2/[^"']+?\.js)["']""")
+WORD_ARRAY_RE = re.compile(r'\[(?:"[a-z]{5}",){1000,}"[a-z]{5}"\]')
+QUOTED_WORD_RE = re.compile(r'"([a-z]{5})"')
 
 
 def fetch_text(url: str) -> str:
@@ -37,43 +51,101 @@ def fetch_text(url: str) -> str:
         return response.read().decode("utf-8")
 
 
-def clean_words(text: str) -> list[str]:
-    words: set[str] = set()
-    for line in text.splitlines():
-        word = line.strip().lower()
-        if not word or word.startswith("#"):
-            continue
-        if not WORD_RE.match(word):
-            raise ValueError(f"invalid word from source: {word!r}")
-        words.add(word)
-    return sorted(words)
+def fetch_json(url: str) -> dict[str, object]:
+    return json.loads(fetch_text(url))
 
 
-def fetch_all_past_solutions() -> list[dict[str, object]]:
-    html = fetch_text(PAST_SOLUTIONS_URL)
-    text = unescape(re.sub(r"<[^>]+>", " ", html))
-    row_re = re.compile(
-        r"([A-Z][a-z]+,\s+[A-Z][a-z]+\s+\d{1,2},\s+\d{4})\s+"
-        r"Wordle\s+([\d,]+)\s+([A-Z]{5})"
+def current_wordle_date() -> date:
+    if ZoneInfo is None:
+        return date.today()
+    return datetime.now(ZoneInfo("America/New_York")).date()
+
+
+def parse_date(value: str) -> date:
+    return datetime.strptime(value, "%Y-%m-%d").date()
+
+
+def date_range(start: date, end: date) -> list[date]:
+    if end < start:
+        raise ValueError(f"end date {end.isoformat()} is before start date {start.isoformat()}")
+    days = (end - start).days
+    return [start + timedelta(days=offset) for offset in range(days + 1)]
+
+
+def fetch_nyt_word_lists() -> tuple[list[str], list[str]]:
+    html = unescape(fetch_text(WORDLE_URL))
+    asset_urls = sorted(
+        {
+            urljoin(WORDLE_URL, match.group("url"))
+            for match in JS_ASSET_RE.finditer(html)
+            if "datadog" not in match.group("url")
+        }
     )
-    rows: list[dict[str, object]] = []
-    for date_text, puzzle_text, answer_text in row_re.findall(text):
-        answer = answer_text.lower()
-        if not WORD_RE.match(answer):
-            raise ValueError(f"invalid solution from source: {answer!r}")
-        rows.append(
-            {
-                "date": datetime.strptime(date_text, "%A, %B %d, %Y").date().isoformat(),
-                "puzzle_number": int(puzzle_text.replace(",", "")),
-                "solution": answer,
-                "source": "wordle.today",
-                "is_repeat": False,
-            }
-        )
+    if not asset_urls:
+        raise ValueError("no NYT Wordle JavaScript assets found")
 
-    rows.sort(key=lambda row: int(row["puzzle_number"]))
+    for asset_url in asset_urls:
+        script = fetch_text(asset_url)
+        for match in WORD_ARRAY_RE.finditer(script):
+            words = QUOTED_WORD_RE.findall(match.group(0))
+            if len(words) < 10_000:
+                continue
+            try:
+                first_answer_idx = words.index(FIRST_ANSWERS[0])
+            except ValueError:
+                continue
+            if words[first_answer_idx : first_answer_idx + len(FIRST_ANSWERS)] != FIRST_ANSWERS:
+                continue
+            validate_words(words, f"word list in {asset_url}")
+            if len(set(words)) != len(words):
+                raise ValueError(f"duplicate words found in {asset_url}")
+            return sorted(words), sorted(words[first_answer_idx:])
+
+    raise ValueError("no NYT Wordle word list found in JavaScript assets")
+
+
+def validate_words(words: list[str], source: str) -> None:
+    for word in words:
+        if not WORD_RE.match(word):
+            raise ValueError(f"invalid word from {source}: {word!r}")
+
+
+def fetch_solution(day: date) -> dict[str, object]:
+    url = WORDLE_API_URL.format(date=day.isoformat())
+    try:
+        data = fetch_json(url)
+    except HTTPError as err:
+        raise ValueError(f"failed to fetch {url}: HTTP {err.code}") from err
+
+    answer = str(data.get("solution", "")).lower()
+    if not WORD_RE.match(answer):
+        raise ValueError(f"invalid solution from {url}: {answer!r}")
+
+    print_date = str(data.get("print_date") or day.isoformat())
+    puzzle_number = data.get("days_since_launch") or data.get("id")
+    if not isinstance(puzzle_number, int):
+        raise ValueError(f"missing puzzle number from {url}")
+
+    return {
+        "date": print_date,
+        "puzzle_number": puzzle_number,
+        "solution": answer,
+        "source": NYT_SOURCE,
+        "is_repeat": False,
+    }
+
+
+def fetch_all_past_solutions(through: date) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    days = date_range(FIRST_WORDLE_DATE, through)
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {executor.submit(fetch_solution, day): day for day in days}
+        for future in as_completed(futures):
+            rows.append(future.result())
+
+    rows.sort(key=lambda row: str(row["date"]))
     if not rows:
-        raise ValueError("no past solutions parsed from wordle.today")
+        raise ValueError("no past solutions fetched from NYT")
     seen: set[str] = set()
     for row in rows:
         solution = str(row["solution"])
@@ -90,10 +162,30 @@ def write_text(path: Path, content: str) -> None:
     tmp_path.replace(path)
 
 
+def parse_args() -> tuple[date, bool]:
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--through",
+        default=current_wordle_date().isoformat(),
+        help="last NYT Wordle print date to fetch, in YYYY-MM-DD format",
+    )
+    parser.add_argument(
+        "--skip-past-solutions",
+        action="store_true",
+        help="refresh word lists only, leaving past_solutions.json unchanged",
+    )
+    args = parser.parse_args()
+    return parse_date(args.through), args.skip_past_solutions
+
+
 def main() -> int:
-    answers = clean_words(fetch_text(ANSWERS_URL))
-    guesses = clean_words(fetch_text(GUESSES_URL))
-    past_solutions = fetch_all_past_solutions()
+    through, skip_past_solutions = parse_args()
+    guesses, answers = fetch_nyt_word_lists()
+    past_solutions = (
+        json.loads((DATA_DIR / "past_solutions.json").read_text(encoding="utf-8"))
+        if skip_past_solutions
+        else fetch_all_past_solutions(through)
+    )
 
     past_words = {str(row["solution"]) for row in past_solutions}
     allowed_guesses = sorted(set(guesses) | set(answers) | past_words)
