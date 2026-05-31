@@ -4,13 +4,19 @@ use crate::solver::{PastSolutionPolicy, SolveMode, SolveRequest, SolveResponse, 
 use crate::word::Word;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::thread;
 
 pub fn serve(addr: &str, solver: Solver) -> std::io::Result<()> {
     let listener = TcpListener::bind(addr)?;
     eprintln!("wordle-server listening on http://{addr}");
     for stream in listener.incoming() {
         let stream = stream?;
-        handle_connection(stream, &solver)?;
+        let solver = solver.clone();
+        thread::spawn(move || {
+            if let Err(err) = handle_connection(stream, &solver) {
+                eprintln!("request failed: {err}");
+            }
+        });
     }
     Ok(())
 }
@@ -18,9 +24,9 @@ pub fn serve(addr: &str, solver: Solver) -> std::io::Result<()> {
 fn handle_connection(mut stream: TcpStream, solver: &Solver) -> std::io::Result<()> {
     let buffer = read_http_request(&mut stream)?;
     let request = String::from_utf8_lossy(&buffer);
-    let (status, body) = handle_http_request(&request, solver);
+    let (status, content_type, body) = handle_http_request(&request, solver);
     let response = format!(
-        "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+        "HTTP/1.1 {status}\r\ncontent-type: {content_type}\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
         body.len(),
         body
     );
@@ -70,22 +76,30 @@ fn content_length(headers: &str) -> usize {
         .unwrap_or(0)
 }
 
-pub fn handle_http_request(raw: &str, solver: &Solver) -> (&'static str, String) {
+pub fn handle_http_request(raw: &str, solver: &Solver) -> (&'static str, &'static str, String) {
     let mut lines = raw.lines();
     let first = lines.next().unwrap_or_default();
+    if first.starts_with("GET / ") || first.starts_with("GET /index.html ") {
+        return (
+            "200 OK",
+            "text/html; charset=utf-8",
+            include_str!("../static/index.html").to_string(),
+        );
+    }
     if first.starts_with("GET /v1/health ") {
-        return ("200 OK", solver.health_json());
+        return ("200 OK", "application/json", solver.health_json());
     }
     if first.starts_with("GET /v1/metadata ") {
-        return ("200 OK", solver.metadata_json());
+        return ("200 OK", "application/json", solver.metadata_json());
     }
     if first.starts_with("POST /v1/solve ") {
         let body = raw.split("\r\n\r\n").nth(1).unwrap_or_default();
         return match parse_solve_request(body) {
             Ok(request) => match solver.solve(&request) {
-                Ok(response) => ("200 OK", solve_response_json(&response)),
+                Ok(response) => ("200 OK", "application/json", solve_response_json(&response)),
                 Err(message) => (
                     "422 Unprocessable Entity",
+                    "application/json",
                     format!(
                         "{{\"error\":\"no_candidates_remaining\",\"message\":\"{}\"}}",
                         escape_json(&message)
@@ -94,6 +108,7 @@ pub fn handle_http_request(raw: &str, solver: &Solver) -> (&'static str, String)
             },
             Err(message) => (
                 "400 Bad Request",
+                "application/json",
                 format!(
                     "{{\"error\":\"invalid_request\",\"message\":\"{}\"}}",
                     escape_json(&message)
@@ -103,6 +118,7 @@ pub fn handle_http_request(raw: &str, solver: &Solver) -> (&'static str, String)
     }
     (
         "404 Not Found",
+        "application/json",
         "{\"error\":\"not_found\",\"message\":\"Unknown route\"}".to_string(),
     )
 }

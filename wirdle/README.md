@@ -11,14 +11,24 @@ cargo run --bin wordle-server
 python3 scripts/update_wordle_data.py
 ```
 
-The server listens on `127.0.0.1:7878` by default. Override with:
+The server listens on `127.0.0.1:7878` by default and serves the web UI at `/`. Override with:
 
 ```bash
 WORDLE_ADDR=127.0.0.1:9000 cargo run --bin wordle-server
 ```
 
+For hosted environments, set `PORT`; the server will bind `0.0.0.0:$PORT` when `WORDLE_ADDR` is not set.
+
+## Docker
+
+```bash
+docker build -t wordle-solver .
+docker run --rm -p 10000:10000 wordle-solver
+```
+
 ## Endpoints
 
+- `GET /`
 - `GET /v1/health`
 - `GET /v1/metadata`
 - `POST /v1/solve`

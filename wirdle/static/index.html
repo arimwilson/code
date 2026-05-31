@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wordle Solver</title>
+    <style>
+      :root {
+        --bg: #f6f4ef;
+        --panel: #ffffff;
+        --ink: #24231f;
+        --muted: #69665f;
+        --line: #d7d1c6;
+        --absent: #777c7e;
+        --present: #c9a227;
+        --correct: #538d4e;
+        --accent: #315f72;
+        --danger: #a33b2f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(1120px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 28px 0 40px;
+      }
+
+      header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 32px;
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+
+      .subhead {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(320px, 460px) 1fr;
+        gap: 28px;
+        margin-top: 28px;
+      }
+
+      section {
+        min-width: 0;
+      }
+
+      .board {
+        display: grid;
+        gap: 10px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(44px, 1fr));
+        gap: 8px;
+      }
+
+      .tile {
+        aspect-ratio: 1;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        border-radius: 4px;
+        display: grid;
+        place-items: center;
+        font-size: 30px;
+        font-weight: 800;
+        text-transform: uppercase;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .tile.absent,
+      .tile.present,
+      .tile.correct {
+        color: #fff;
+        border-color: transparent;
+      }
+
+      .tile.absent {
+        background: var(--absent);
+      }
+
+      .tile.present {
+        background: var(--present);
+      }
+
+      .tile.correct {
+        background: var(--correct);
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-top: 16px;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        border-radius: 6px;
+        padding: 10px 12px;
+        min-height: 40px;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      input[type="text"] {
+        width: 120px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+        color: var(--ink);
+        padding: 10px 12px;
+        min-height: 40px;
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+
+      label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .legend button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+      }
+
+      .swatch {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        display: inline-block;
+      }
+
+      .swatch.absent {
+        background: var(--absent);
+      }
+
+      .swatch.present {
+        background: var(--present);
+      }
+
+      .swatch.correct {
+        background: var(--correct);
+      }
+
+      .message {
+        min-height: 22px;
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .message.error {
+        color: var(--danger);
+      }
+
+      .results {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .count {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+        padding: 8px 10px;
+        color: var(--muted);
+        font-size: 14px;
+        white-space: nowrap;
+      }
+
+      h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        letter-spacing: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-weight: 700;
+        background: #faf9f6;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .word {
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .tag {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      @media (max-width: 820px) {
+        main {
+          width: min(100vw - 24px, 560px);
+          padding-top: 20px;
+        }
+
+        header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .shell,
+        .results {
+          grid-template-columns: 1fr;
+        }
+
+        .tile {
+          font-size: 26px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Wordle Solver</h1>
+          <p class="subhead">Tap tiles to cycle gray, yellow, and green.</p>
+        </div>
+        <div class="count" id="health">Loading data...</div>
+      </header>
+
+      <div class="shell">
+        <section>
+          <div class="board" id="board" aria-label="Wordle guesses"></div>
+
+          <div class="controls">
+            <input id="guessInput" type="text" maxlength="5" autocomplete="off" spellcheck="false" aria-label="Guess word">
+            <button class="primary" id="addGuess">Add Guess</button>
+            <button id="solve">Solve</button>
+            <button id="undo">Undo</button>
+            <button id="reset">Reset</button>
+          </div>
+
+          <div class="legend" aria-label="Feedback controls">
+            <button type="button" data-fill="absent"><span class="swatch absent"></span> Gray</button>
+            <button type="button" data-fill="present"><span class="swatch present"></span> Yellow</button>
+            <button type="button" data-fill="correct"><span class="swatch correct"></span> Green</button>
+          </div>
+
+          <div class="message" id="message"></div>
+        </section>
+
+        <section>
+          <div class="summary">
+            <h2>Recommendations</h2>
+            <div class="count" id="remaining">- candidates</div>
+          </div>
+
+          <div class="results">
+            <div>
+              <h2>Likely Answers</h2>
+              <table>
+                <thead>
+                  <tr><th>Word</th><th>Probability</th><th>Prior</th></tr>
+                </thead>
+                <tbody id="answers"></tbody>
+              </table>
+            </div>
+
+            <div>
+              <h2>Information Guesses</h2>
+              <table>
+                <thead>
+                  <tr><th>Word</th><th>Entropy</th><th>Worst</th></tr>
+                </thead>
+                <tbody id="guesses"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const statuses = ["absent", "present", "correct"];
+      const board = document.querySelector("#board");
+      const guessInput = document.querySelector("#guessInput");
+      const message = document.querySelector("#message");
+      const remaining = document.querySelector("#remaining");
+      const answers = document.querySelector("#answers");
+      const guessesBody = document.querySelector("#guesses");
+      const health = document.querySelector("#health");
+      const guesses = [];
+
+      function setMessage(text, isError = false) {
+        message.textContent = text;
+        message.classList.toggle("error", isError);
+      }
+
+      function renderBoard() {
+        board.innerHTML = "";
+        guesses.forEach((guess, rowIndex) => {
+          const row = document.createElement("div");
+          row.className = "row";
+          guess.statuses.forEach((status, tileIndex) => {
+            const tile = document.createElement("button");
+            tile.type = "button";
+            tile.className = `tile ${status}`;
+            tile.textContent = guess.word[tileIndex];
+            tile.title = status;
+            tile.addEventListener("click", () => {
+              const current = statuses.indexOf(guess.statuses[tileIndex]);
+              guess.statuses[tileIndex] = statuses[(current + 1) % statuses.length];
+              renderBoard();
+              solve();
+            });
+            row.appendChild(tile);
+          });
+          board.appendChild(row);
+        });
+      }
+
+      function rowHtml(cells) {
+        return `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
+      }
+
+      function renderResults(data) {
+        remaining.textContent = `${data.remaining_candidates} candidates`;
+        answers.innerHTML = data.likely_answers.map((answer) => rowHtml([
+          `<span class="word">${answer.word}</span>`,
+          `${(answer.probability * 100).toFixed(1)}%`,
+          answer.used_before ? `<span class="tag">used before</span>` : `<span class="tag">fresh</span>`
+        ])).join("");
+        guessesBody.innerHTML = data.best_information_guesses.map((guess) => rowHtml([
+          `<span class="word">${guess.word}</span>${guess.is_possible_answer ? "" : ` <span class="tag">probe</span>`}`,
+          guess.entropy_bits.toFixed(2),
+          String(guess.worst_case_remaining)
+        ])).join("");
+      }
+
+      async function solve() {
+        setMessage("Solving...");
+        const response = await fetch("/v1/solve", {
+          method: "POST",
+          headers: {"content-type": "application/json"},
+          body: JSON.stringify({
+            guesses,
+            mode: "hybrid",
+            hard_mode: false,
+            limit: 10,
+            past_solution_policy: {
+              enabled: true,
+              weight_multiplier: 0.05,
+              recent_repeat_multiplier: 0.01,
+              recent_days: 90
+            }
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setMessage(data.message || "The solver rejected that board.", true);
+          return;
+        }
+        renderResults(data);
+        setMessage(guesses.length ? "Updated." : "Opening recommendations loaded.");
+      }
+
+      function addGuess() {
+        const word = guessInput.value.trim().toLowerCase();
+        if (!/^[a-z]{5}$/.test(word)) {
+          setMessage("Enter a five-letter guess.", true);
+          return;
+        }
+        guesses.push({word, statuses: ["absent", "absent", "absent", "absent", "absent"]});
+        guessInput.value = "";
+        renderBoard();
+        solve();
+      }
+
+      document.querySelector("#addGuess").addEventListener("click", addGuess);
+      document.querySelector("#solve").addEventListener("click", solve);
+      document.querySelector("#undo").addEventListener("click", () => {
+        guesses.pop();
+        renderBoard();
+        solve();
+      });
+      document.querySelector("#reset").addEventListener("click", () => {
+        guesses.length = 0;
+        renderBoard();
+        solve();
+      });
+      guessInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          addGuess();
+        }
+      });
+      document.querySelectorAll("[data-fill]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!guesses.length) {
+            return;
+          }
+          guesses[guesses.length - 1].statuses.fill(button.dataset.fill);
+          renderBoard();
+          solve();
+        });
+      });
+
+      fetch("/v1/health")
+        .then((response) => response.json())
+        .then((data) => {
+          health.textContent = `${data.candidate_solutions} answers / ${data.allowed_guesses} guesses`;
+        })
+        .catch(() => {
+          health.textContent = "Data unavailable";
+        });
+      solve();
+    </script>
+  </body>
+</html>

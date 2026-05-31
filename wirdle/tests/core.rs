@@ -186,9 +186,20 @@ fn parses_and_handles_solve_http_request() {
         body.len(),
         body
     );
-    let (status, response) = handle_http_request(&request, &fixture_solver());
+    let (status, content_type, response) = handle_http_request(&request, &fixture_solver());
     assert_eq!(status, "200 OK");
+    assert_eq!(content_type, "application/json");
     assert!(response.contains("\"remaining_candidates\""));
+}
+
+#[test]
+fn serves_static_ui_as_html() {
+    let (status, content_type, response) =
+        handle_http_request("GET / HTTP/1.1\r\n\r\n", &fixture_solver());
+
+    assert_eq!(status, "200 OK");
+    assert_eq!(content_type, "text/html; charset=utf-8");
+    assert!(response.contains("Wordle Solver"));
 }
 
 #[test]
