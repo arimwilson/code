@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Wirdle - Wordle Solver</title>
     <style>
       :root {
@@ -30,7 +30,14 @@
         min-height: 100vh;
         background: var(--bg);
         color: var(--ink);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
       }
 
       button,
@@ -487,7 +494,12 @@
         position: absolute;
         inset: 0;
         transform: translateX(-100%);
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.58), transparent);
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.58),
+          transparent
+        );
         animation: recommendation-refresh 1.25s ease-in-out infinite;
       }
 
@@ -575,34 +587,87 @@
       <header>
         <h1>Wirdle</h1>
         <div class="header-tools">
-          <button class="header-info-button" id="dataInfo" type="button" aria-label="Word list info" title="Word list info">i</button>
-          <button class="help-button" id="coachHelp" type="button" aria-label="How to use Wirdle" title="How to use Wirdle">?</button>
+          <button
+            class="header-info-button"
+            id="dataInfo"
+            type="button"
+            aria-label="Word list info"
+            title="Word list info"
+          >
+            i
+          </button>
+          <button
+            class="help-button"
+            id="coachHelp"
+            type="button"
+            aria-label="How to use Wirdle"
+            title="How to use Wirdle"
+          >
+            ?
+          </button>
         </div>
       </header>
 
       <div class="overlay" id="infoOverlay" hidden>
         <div class="overlay-backdrop" data-close-overlay></div>
-        <section class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+        <section
+          class="overlay-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="overlayTitle"
+        >
           <div class="overlay-header">
             <h2 id="overlayTitle"></h2>
-            <button class="overlay-close" id="overlayClose" type="button" aria-label="Close">x</button>
+            <button
+              class="overlay-close"
+              id="overlayClose"
+              type="button"
+              aria-label="Close"
+            >
+              x
+            </button>
           </div>
           <div class="overlay-body" id="overlayBody"></div>
-          <button class="overlay-action" id="overlayAction" type="button">Got it</button>
+          <button class="overlay-action" id="overlayAction" type="button">
+            Got it
+          </button>
         </section>
       </div>
 
       <div class="app">
         <section class="play-area" aria-label="Wordle board">
           <div class="board-wrap">
-            <div class="board" id="board" tabindex="0" aria-label="Guess board"></div>
-            <input class="keyboard-capture" id="keyboardCapture" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Guess entry">
+            <div
+              class="board"
+              id="board"
+              tabindex="0"
+              aria-label="Guess board"
+            ></div>
+            <input
+              class="keyboard-capture"
+              id="keyboardCapture"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              aria-label="Guess entry"
+            />
           </div>
 
           <div class="actions" aria-label="Board controls">
-            <button class="action-button primary" id="addGuess" type="button" disabled>Add guess</button>
+            <button
+              class="action-button primary"
+              id="addGuess"
+              type="button"
+              disabled
+            >
+              Add guess
+            </button>
             <button class="action-button" id="undo" type="button">Undo</button>
-            <button class="action-button" id="reset" type="button">Reset</button>
+            <button class="action-button" id="reset" type="button">
+              Reset
+            </button>
           </div>
 
           <div class="message" id="message" aria-live="polite"></div>
@@ -615,12 +680,46 @@
           </div>
           <div class="tabs" role="tablist" aria-label="Suggestion type">
             <div class="tab-option">
-              <button class="tab-button" id="tab-power" type="button" role="tab" aria-selected="true" aria-controls="recommendations" data-tab="power">Power Words</button>
-              <button class="info-button tab-info-button" type="button" data-info-action="power-tab" aria-label="About Power Words">?</button>
+              <button
+                class="tab-button"
+                id="tab-power"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="recommendations"
+                data-tab="power"
+              >
+                Power Words
+              </button>
+              <button
+                class="info-button tab-info-button"
+                type="button"
+                data-info-action="power-tab"
+                aria-label="About Power Words"
+              >
+                ?
+              </button>
             </div>
             <div class="tab-option">
-              <button class="tab-button" id="tab-answers" type="button" role="tab" aria-selected="false" aria-controls="recommendations" data-tab="answers">Answers</button>
-              <button class="info-button tab-info-button" type="button" data-info-action="answers-tab" aria-label="About Answers">?</button>
+              <button
+                class="tab-button"
+                id="tab-answers"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="recommendations"
+                data-tab="answers"
+              >
+                Answers
+              </button>
+              <button
+                class="info-button tab-info-button"
+                type="button"
+                data-info-action="answers-tab"
+                aria-label="About Answers"
+              >
+                ?
+              </button>
             </div>
           </div>
           <div class="recommendation-list" id="recommendations"></div>
@@ -639,7 +738,7 @@
       const statusLabels = {
         absent: "absent",
         present: "present",
-        correct: "correct"
+        correct: "correct",
       };
 
       const board = document.querySelector("#board");
@@ -675,7 +774,7 @@
       }
 
       function focusKeyboard() {
-        keyboardCapture.focus({preventScroll: true});
+        keyboardCapture.focus({ preventScroll: true });
       }
 
       function syncKeyboardCapture() {
@@ -709,7 +808,7 @@
         overlayTitle.textContent = title;
         overlayBody.innerHTML = body;
         infoOverlay.hidden = false;
-        overlayClose.focus({preventScroll: true});
+        overlayClose.focus({ preventScroll: true });
       }
 
       function closeOverlay() {
@@ -725,11 +824,11 @@
           "How Wirdle Helps",
           `
             <p>Wirdle does not know today&apos;s answer. Play a guess in Wordle, add that same word here, then tap the tiles to match Wordle&apos;s colors.</p>
-            <p><strong>Power Words</strong> are optional boosts. They may not be answers, but they can reveal more information when you want superhero help.</p>
+            <p><strong>Power Words</strong> are optional boosts. They are not answers, but they can reveal more information when you want superhero help.</p>
             <p><strong>Answers</strong> is the peek tab. Use it when you want to compare possible solutions or when you are ready for a stronger nudge.</p>
             <p>Tapping any suggestion only fills the next row. It does not submit the guess or set any colors.</p>
           `,
-          "coach"
+          "coach",
         );
       }
 
@@ -739,14 +838,20 @@
           : "<p>The word lists are still loading.</p>";
         openOverlay(
           "Word Lists",
-          `${details}<p>This only describes the data behind Wirdle. It is not a hint about today&apos;s puzzle.</p>`
+          `${details}<p>This only describes the data behind Wirdle. It is not a hint about today&apos;s puzzle.</p>`,
         );
       }
 
       function renderTile(rowIndex, tileIndex) {
         const submitted = submittedGuesses[rowIndex];
-        const isActive = rowIndex === submittedGuesses.length && submittedGuesses.length < ROW_COUNT;
-        const letter = submitted ? submitted.word[tileIndex] : isActive ? activeLetters[tileIndex] || "" : "";
+        const isActive =
+          rowIndex === submittedGuesses.length &&
+          submittedGuesses.length < ROW_COUNT;
+        const letter = submitted
+          ? submitted.word[tileIndex]
+          : isActive
+            ? activeLetters[tileIndex] || ""
+            : "";
         const status = submitted ? submitted.statuses[tileIndex] : "";
         const tile = document.createElement(submitted ? "button" : "div");
 
@@ -754,8 +859,10 @@
           "tile",
           submitted ? status : "",
           !submitted && letter ? "filled" : "",
-          !submitted && !isActive ? "future" : ""
-        ].filter(Boolean).join(" ");
+          !submitted && !isActive ? "future" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
         tile.textContent = letter;
 
         if (!submitted) {
@@ -767,11 +874,12 @@
         tile.title = titleCase(statusLabels[status]);
         tile.setAttribute(
           "aria-label",
-          `${letter.toUpperCase()} ${statusLabels[status]}. Change feedback.`
+          `${letter.toUpperCase()} ${statusLabels[status]}. Change feedback.`,
         );
         tile.addEventListener("click", () => {
           const current = statuses.indexOf(status);
-          submitted.statuses[tileIndex] = statuses[(current + 1) % statuses.length];
+          submitted.statuses[tileIndex] =
+            statuses[(current + 1) % statuses.length];
           renderBoard();
           refreshRecommendations();
           focusKeyboard();
@@ -792,13 +900,19 @@
         }
 
         undoButton.disabled = submittedGuesses.length === 0;
-        resetButton.disabled = submittedGuesses.length === 0 && activeLetters.length === 0;
-        addGuessButton.disabled = submittedGuesses.length >= ROW_COUNT || activeLetters.length !== WORD_LENGTH;
+        resetButton.disabled =
+          submittedGuesses.length === 0 && activeLetters.length === 0;
+        addGuessButton.disabled =
+          submittedGuesses.length >= ROW_COUNT ||
+          activeLetters.length !== WORD_LENGTH;
         syncKeyboardCapture();
       }
 
       function addLetter(letter) {
-        if (submittedGuesses.length >= ROW_COUNT || activeLetters.length >= WORD_LENGTH) {
+        if (
+          submittedGuesses.length >= ROW_COUNT ||
+          activeLetters.length >= WORD_LENGTH
+        ) {
           return;
         }
         activeLetters.push(letter.toLowerCase());
@@ -825,7 +939,7 @@
         }
         submittedGuesses.push({
           word: activeLetters.join(""),
-          statuses: ["absent", "absent", "absent", "absent", "absent"]
+          statuses: ["absent", "absent", "absent", "absent", "absent"],
         });
         activeLetters = [];
         renderBoard();
@@ -854,18 +968,21 @@
           usedBefore: answer.used_before,
           details: answer.used_before
             ? `<p>Chance: ${(answer.probability * 100).toFixed(1)}%.</p><p>Status: used before. This word appears in Wirdle&apos;s historical answer data, so it is ranked lower but still kept possible.</p>`
-            : `<p>Chance: ${(answer.probability * 100).toFixed(1)}%.</p><p>Status: never used before. Wirdle has not seen this word in the loaded historical answer data.</p>`
+            : `<p>Chance: ${(answer.probability * 100).toFixed(1)}%.</p><p>Status: never used before. Wirdle has not seen this word in the loaded historical answer data.</p>`,
         }));
       }
 
       function buildPowerWordRows(data) {
-        const likelyWords = new Set(data.likely_answers.map((answer) => answer.word));
+        const likelyWords = new Set(
+          data.likely_answers.map((answer) => answer.word),
+        );
         return data.best_information_guesses
-          .filter((guess) =>
-            !guess.is_possible_answer
-            && !likelyWords.has(guess.word)
-            && guess.entropy_bits > 0
-            && guess.worst_case_remaining < data.remaining_candidates
+          .filter(
+            (guess) =>
+              !guess.is_possible_answer &&
+              !likelyWords.has(guess.word) &&
+              guess.entropy_bits > 0 &&
+              guess.worst_case_remaining < data.remaining_candidates,
           )
           .slice(0, 10)
           .map((guess) => ({
@@ -873,7 +990,7 @@
             word: guess.word,
             score: guess.score,
             reason: "",
-            details: `<p>Information score: ${guess.entropy_bits.toFixed(2)} bits.</p><p>Worst case: ${formatNumber(guess.worst_case_remaining)} possible answers remain.</p><p>Average result: ${guess.expected_remaining.toFixed(1)} possible answers remain.</p>`
+            details: `<p>Information score: ${guess.entropy_bits.toFixed(2)} bits.</p><p>Worst case: ${formatNumber(guess.worst_case_remaining)} possible answers remain.</p><p>Average result: ${guess.expected_remaining.toFixed(1)} possible answers remain.</p>`,
           }));
       }
 
@@ -896,7 +1013,9 @@
       }
 
       function findSuggestionItem(type, word) {
-        return currentSuggestionRows().find((item) => item.type === type && item.word === word);
+        return currentSuggestionRows().find(
+          (item) => item.type === type && item.word === word,
+        );
       }
 
       function openPowerWordsInfo() {
@@ -906,7 +1025,7 @@
             <p>Power Words are allowed Wordle guesses that are not currently possible answers.</p>
             <p>They are ranked by how well they split the remaining possibilities after you enter Wordle&apos;s colors.</p>
             <p>A higher information score means Wirdle expects that word to separate the possibilities more strongly.</p>
-          `
+          `,
         );
       }
 
@@ -918,7 +1037,7 @@
             <p>A short preview is shown while many answers are possible. More answer ideas appear once the board is narrowed down.</p>
             <p>Chance is Wirdle&apos;s rough ranking for which remaining word looks most plausible. It is not secret knowledge from Wordle.</p>
             <p>Never used before means the word is not in Wirdle&apos;s loaded historical answer data. Used before means it is in that data, but Wordle repeats are still possible.</p>
-          `
+          `,
         );
       }
 
@@ -935,8 +1054,10 @@
         const classes = [
           "recommendation",
           index === 0 ? "best" : "",
-          canFill ? "selectable" : "disabled"
-        ].filter(Boolean).join(" ");
+          canFill ? "selectable" : "disabled",
+        ]
+          .filter(Boolean)
+          .join(" ");
         const reason = item.reason
           ? `<div class="recommendation-reason">${item.reason}</div>`
           : "";
@@ -954,7 +1075,9 @@
 
       function renderPowerWords(data) {
         const rows = buildPowerWordRows(data);
-        rankingNote.textContent = submittedGuesses.length ? "Optional boost" : "Opening boosts";
+        rankingNote.textContent = submittedGuesses.length
+          ? "Optional boost"
+          : "Opening boosts";
 
         if (!rows.length) {
           recommendations.innerHTML = `<div class="empty-state">No power words available.</div>`;
@@ -966,15 +1089,19 @@
 
       function renderAnswers(data) {
         const rows = buildAnswerRows(data);
-        const canShowAll = data.remaining_candidates <= SMALL_POOL_THRESHOLD && rows.length > ANSWER_PREVIEW_LIMIT;
-        const visibleRows = data.remaining_candidates > SMALL_POOL_THRESHOLD
-          ? rows.slice(0, ANSWER_PREVIEW_LIMIT)
-          : canShowAll && !answersExpanded
-          ? rows.slice(0, ANSWER_PREVIEW_LIMIT)
-          : rows;
-        const showAll = canShowAll && !answersExpanded
-          ? `<button class="show-all-button" type="button" id="showAllAnswers">Show all possible answers</button>`
-          : "";
+        const canShowAll =
+          data.remaining_candidates <= SMALL_POOL_THRESHOLD &&
+          rows.length > ANSWER_PREVIEW_LIMIT;
+        const visibleRows =
+          data.remaining_candidates > SMALL_POOL_THRESHOLD
+            ? rows.slice(0, ANSWER_PREVIEW_LIMIT)
+            : canShowAll && !answersExpanded
+              ? rows.slice(0, ANSWER_PREVIEW_LIMIT)
+              : rows;
+        const showAll =
+          canShowAll && !answersExpanded
+            ? `<button class="show-all-button" type="button" id="showAllAnswers">Show all possible answers</button>`
+            : "";
 
         rankingNote.textContent = `${formatNumber(data.remaining_candidates)} possible`;
 
@@ -985,13 +1112,17 @@
 
         recommendations.innerHTML = [
           ...visibleRows.map(renderRecommendationCard),
-          showAll
-        ].filter(Boolean).join("");
+          showAll,
+        ]
+          .filter(Boolean)
+          .join("");
       }
 
       function renderLoadingRecommendations() {
         const hasRecommendations = Boolean(
-          recommendations.querySelector(".recommendation:not([aria-hidden='true'])")
+          recommendations.querySelector(
+            ".recommendation:not([aria-hidden='true'])",
+          ),
         );
         recommendations.classList.add("is-loading");
         recommendations.setAttribute("aria-busy", "true");
@@ -1000,13 +1131,16 @@
           return;
         }
 
-        recommendations.innerHTML = Array.from({length: 5}, (_, index) => `
+        recommendations.innerHTML = Array.from(
+          { length: 5 },
+          (_, index) => `
           <article class="recommendation ${index === 0 ? "best" : ""}" aria-hidden="true">
             <span class="loading-bar loading-word"></span>
             <span class="loading-bar loading-label"></span>
             <span class="loading-bar loading-reason"></span>
           </article>
-        `).join("");
+        `,
+        ).join("");
       }
 
       function renderRecommendations(data = latestRecommendationData) {
@@ -1027,14 +1161,17 @@
       async function refreshRecommendations() {
         const solveId = latestSolveId + 1;
         latestSolveId = solveId;
-        rankingNote.textContent = activeSuggestionTab === "answers" ? "Loading answers" : "Optional boost";
+        rankingNote.textContent =
+          activeSuggestionTab === "answers"
+            ? "Loading answers"
+            : "Optional boost";
         renderLoadingRecommendations();
         setMessage("");
 
         try {
           const response = await fetch("/v1/solve", {
             method: "POST",
-            headers: {"content-type": "application/json"},
+            headers: { "content-type": "application/json" },
             body: JSON.stringify({
               guesses: submittedGuesses,
               mode: "hybrid",
@@ -1044,9 +1181,9 @@
                 enabled: true,
                 weight_multiplier: 0.05,
                 recent_repeat_multiplier: 0.01,
-                recent_days: 90
-              }
-            })
+                recent_days: 90,
+              },
+            }),
           });
           const data = await response.json();
           if (solveId !== latestSolveId) {
@@ -1055,11 +1192,18 @@
           if (!response.ok) {
             recommendations.classList.remove("is-loading");
             recommendations.removeAttribute("aria-busy");
-            if (!recommendations.querySelector(".recommendation:not([aria-hidden='true'])")) {
+            if (
+              !recommendations.querySelector(
+                ".recommendation:not([aria-hidden='true'])",
+              )
+            ) {
               recommendations.innerHTML = `<div class="empty-state">No recommendations available.</div>`;
             }
             latestRecommendationData = null;
-            setMessage(data.message || "Board feedback does not match any answer.", true);
+            setMessage(
+              data.message || "Board feedback does not match any answer.",
+              true,
+            );
             return;
           }
           latestRecommendationData = data;
@@ -1069,7 +1213,11 @@
           if (solveId === latestSolveId) {
             recommendations.classList.remove("is-loading");
             recommendations.removeAttribute("aria-busy");
-            if (!recommendations.querySelector(".recommendation:not([aria-hidden='true'])")) {
+            if (
+              !recommendations.querySelector(
+                ".recommendation:not([aria-hidden='true'])",
+              )
+            ) {
               recommendations.innerHTML = `<div class="empty-state">No recommendations available.</div>`;
             }
             latestRecommendationData = null;
@@ -1108,7 +1256,10 @@
       });
 
       keyboardCapture.addEventListener("input", () => {
-        const letters = keyboardCapture.value.toLowerCase().replace(/[^a-z]/g, "").slice(0, WORD_LENGTH);
+        const letters = keyboardCapture.value
+          .toLowerCase()
+          .replace(/[^a-z]/g, "")
+          .slice(0, WORD_LENGTH);
         activeLetters = letters.split("");
         renderBoard();
       });
@@ -1220,7 +1371,7 @@
         .then((data) => {
           wordListInfo = {
             candidateSolutions: data.candidate_solutions,
-            allowedGuesses: data.allowed_guesses
+            allowedGuesses: data.allowed_guesses,
           };
           dataInfo.disabled = false;
         })
