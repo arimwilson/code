@@ -64,10 +64,106 @@
         letter-spacing: 0;
       }
 
-      .data-meta {
+      .header-tools {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .help-button,
+      .header-info-button,
+      .overlay-close,
+      .info-button {
+        display: inline-grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel);
+        color: var(--ink);
+        padding: 0;
+        font-weight: 800;
+      }
+
+      .help-button,
+      .header-info-button {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 auto;
+      }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+      }
+
+      .overlay[hidden] {
+        display: none;
+      }
+
+      .overlay-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(31, 31, 31, 0.42);
+      }
+
+      .overlay-panel {
+        position: relative;
+        width: min(100%, 440px);
+        max-height: min(80vh, 640px);
+        display: grid;
+        gap: 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 16px;
+        box-shadow: var(--shadow);
+        overflow: auto;
+      }
+
+      .overlay-header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .overlay-header h2 {
+        padding-top: 3px;
+      }
+
+      .overlay-close {
+        width: 28px;
+        height: 28px;
+        flex: 0 0 auto;
+      }
+
+      .overlay-body {
+        display: grid;
+        gap: 10px;
         color: var(--muted);
-        font-size: 12px;
-        white-space: nowrap;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .overlay-body p {
+        margin: 0;
+      }
+
+      .overlay-action {
+        min-height: 38px;
+        border: 1px solid var(--accent);
+        border-radius: 6px;
+        background: var(--accent);
+        color: #fff;
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: 800;
       }
 
       .app {
@@ -80,31 +176,6 @@
         display: grid;
         justify-items: center;
         gap: 14px;
-      }
-
-      .candidate-card {
-        width: min(100%, 360px);
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 12px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--panel);
-        padding: 12px 14px;
-        box-shadow: var(--shadow);
-      }
-
-      .candidate-number {
-        font-size: 28px;
-        line-height: 1;
-        font-weight: 800;
-      }
-
-      .candidate-label {
-        color: var(--muted);
-        font-size: 13px;
-        text-align: right;
       }
 
       .board-wrap {
@@ -187,8 +258,8 @@
 
       .actions {
         width: min(100%, 360px);
-        display: flex;
-        justify-content: center;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
         gap: 8px;
       }
 
@@ -203,16 +274,25 @@
         font-weight: 700;
       }
 
+      .action-button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
       .action-button:disabled {
         opacity: 0.45;
         cursor: not-allowed;
       }
 
       .message {
-        min-height: 20px;
         color: var(--muted);
         font-size: 13px;
         text-align: center;
+      }
+
+      .message:empty {
+        display: none;
       }
 
       .message.error {
@@ -245,6 +325,47 @@
         white-space: nowrap;
       }
 
+      .tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ecebe6;
+        padding: 4px;
+      }
+
+      .tab-option {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 2px;
+        border-radius: 6px;
+      }
+
+      .tab-option:has(.tab-button[aria-selected="true"]) {
+        background: var(--panel);
+        box-shadow: 0 1px 4px rgba(31, 31, 31, 0.08);
+      }
+
+      .tab-button {
+        min-height: 38px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .tab-button[aria-selected="true"] {
+        color: var(--ink);
+      }
+
+      .tab-info-button {
+        margin-right: 6px;
+      }
+
       .recommendation-list {
         display: grid;
         gap: 8px;
@@ -263,6 +384,28 @@
         overflow: hidden;
       }
 
+      .recommendation.selectable {
+        cursor: pointer;
+      }
+
+      .recommendation.selectable:focus-visible,
+      .tab-button:focus-visible,
+      .action-button:focus-visible,
+      .help-button:focus-visible,
+      .header-info-button:focus-visible,
+      .overlay-close:focus-visible,
+      .overlay-action:focus-visible,
+      .info-button:focus-visible,
+      .show-all-button:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .recommendation.disabled {
+        cursor: not-allowed;
+        opacity: 0.58;
+      }
+
       .recommendation.best {
         border-color: var(--accent);
         background: linear-gradient(0deg, var(--accent-soft), var(--panel) 66%);
@@ -276,25 +419,50 @@
         text-transform: uppercase;
       }
 
-      .recommendation-label {
-        justify-self: end;
-        border-radius: 999px;
-        background: #ededec;
-        color: var(--muted);
-        padding: 4px 8px;
-        font-size: 12px;
-        font-weight: 800;
+      .recommendation-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
       }
 
-      .recommendation.best .recommendation-label {
-        background: var(--accent);
-        color: #fff;
+      .info-button {
+        width: 26px;
+        height: 26px;
+        font-size: 13px;
+        position: relative;
+        z-index: 1;
       }
 
       .recommendation-reason {
         grid-column: 1 / -1;
         color: var(--muted);
         font-size: 13px;
+      }
+
+      .answer-note {
+        grid-column: 1 / -1;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .answer-note {
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        background: #fbfaf7;
+      }
+
+      .show-all-button {
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--ink);
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: 800;
       }
 
       .recommendation-list.is-loading .recommendation {
@@ -308,11 +476,6 @@
       .recommendation-list.is-loading .recommendation.best {
         border-color: var(--line);
         background: #f3f2ee;
-      }
-
-      .recommendation-list.is-loading .recommendation-label {
-        background: #dedbd4;
-        color: #8b8780;
       }
 
       .recommendation-list.is-loading .recommendation-reason {
@@ -393,7 +556,6 @@
         }
 
         .board-wrap,
-        .candidate-card,
         .actions {
           width: 380px;
         }
@@ -412,22 +574,33 @@
     <main>
       <header>
         <h1>Wirdle</h1>
-        <div class="data-meta" id="health">Loading word list...</div>
+        <div class="header-tools">
+          <button class="header-info-button" id="dataInfo" type="button" aria-label="Word list info" title="Word list info">i</button>
+          <button class="help-button" id="coachHelp" type="button" aria-label="How to use Wirdle" title="How to use Wirdle">?</button>
+        </div>
       </header>
+
+      <div class="overlay" id="infoOverlay" hidden>
+        <div class="overlay-backdrop" data-close-overlay></div>
+        <section class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+          <div class="overlay-header">
+            <h2 id="overlayTitle"></h2>
+            <button class="overlay-close" id="overlayClose" type="button" aria-label="Close">x</button>
+          </div>
+          <div class="overlay-body" id="overlayBody"></div>
+          <button class="overlay-action" id="overlayAction" type="button">Got it</button>
+        </section>
+      </div>
 
       <div class="app">
         <section class="play-area" aria-label="Wordle board">
-          <div class="candidate-card" aria-live="polite">
-            <div class="candidate-number" id="candidateNumber">-</div>
-            <div class="candidate-label">candidates left</div>
-          </div>
-
           <div class="board-wrap">
             <div class="board" id="board" tabindex="0" aria-label="Guess board"></div>
             <input class="keyboard-capture" id="keyboardCapture" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Guess entry">
           </div>
 
           <div class="actions" aria-label="Board controls">
+            <button class="action-button primary" id="addGuess" type="button" disabled>Add guess</button>
             <button class="action-button" id="undo" type="button">Undo</button>
             <button class="action-button" id="reset" type="button">Reset</button>
           </div>
@@ -437,8 +610,18 @@
 
         <section class="recommendations" aria-label="Recommendations">
           <div class="section-heading">
-            <h2>Recommendations</h2>
+            <h2>Suggestions</h2>
             <div class="ranking-note" id="rankingNote">Best move</div>
+          </div>
+          <div class="tabs" role="tablist" aria-label="Suggestion type">
+            <div class="tab-option">
+              <button class="tab-button" id="tab-power" type="button" role="tab" aria-selected="true" aria-controls="recommendations" data-tab="power">Power Words</button>
+              <button class="info-button tab-info-button" type="button" data-info-action="power-tab" aria-label="About Power Words">?</button>
+            </div>
+            <div class="tab-option">
+              <button class="tab-button" id="tab-answers" type="button" role="tab" aria-selected="false" aria-controls="recommendations" data-tab="answers">Answers</button>
+              <button class="info-button tab-info-button" type="button" data-info-action="answers-tab" aria-label="About Answers">?</button>
+            </div>
           </div>
           <div class="recommendation-list" id="recommendations"></div>
         </section>
@@ -448,6 +631,10 @@
     <script>
       const ROW_COUNT = 6;
       const WORD_LENGTH = 5;
+      const API_RECOMMENDATION_LIMIT = 50;
+      const ANSWER_PREVIEW_LIMIT = 10;
+      const SMALL_POOL_THRESHOLD = 20;
+      const COACH_STORAGE_KEY = "wirdle-coach-dismissed";
       const statuses = ["absent", "present", "correct"];
       const statusLabels = {
         absent: "absent",
@@ -458,17 +645,29 @@
       const board = document.querySelector("#board");
       const keyboardCapture = document.querySelector("#keyboardCapture");
       const message = document.querySelector("#message");
-      const candidateNumber = document.querySelector("#candidateNumber");
       const recommendations = document.querySelector("#recommendations");
       const rankingNote = document.querySelector("#rankingNote");
-      const health = document.querySelector("#health");
+      const dataInfo = document.querySelector("#dataInfo");
+      const addGuessButton = document.querySelector("#addGuess");
       const undoButton = document.querySelector("#undo");
       const resetButton = document.querySelector("#reset");
+      const coachHelp = document.querySelector("#coachHelp");
+      const infoOverlay = document.querySelector("#infoOverlay");
+      const overlayTitle = document.querySelector("#overlayTitle");
+      const overlayBody = document.querySelector("#overlayBody");
+      const overlayClose = document.querySelector("#overlayClose");
+      const overlayAction = document.querySelector("#overlayAction");
+      const tabs = document.querySelector(".tabs");
+      const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 
       const submittedGuesses = [];
       let activeLetters = [];
       let latestSolveId = 0;
-      let totalCandidateSolutions = null;
+      let latestRecommendationData = null;
+      let activeSuggestionTab = "power";
+      let answersExpanded = false;
+      let wordListInfo = null;
+      let activeOverlayKind = null;
 
       function setMessage(text, isError = false) {
         message.textContent = text;
@@ -489,6 +688,59 @@
 
       function formatNumber(value) {
         return new Intl.NumberFormat().format(value);
+      }
+
+      function isCoachDismissed() {
+        try {
+          return localStorage.getItem(COACH_STORAGE_KEY) === "true";
+        } catch (_err) {
+          return false;
+        }
+      }
+
+      function markCoachDismissed() {
+        try {
+          localStorage.setItem(COACH_STORAGE_KEY, "true");
+        } catch (_err) {}
+      }
+
+      function openOverlay(title, body, kind = "info") {
+        activeOverlayKind = kind;
+        overlayTitle.textContent = title;
+        overlayBody.innerHTML = body;
+        infoOverlay.hidden = false;
+        overlayClose.focus({preventScroll: true});
+      }
+
+      function closeOverlay() {
+        if (activeOverlayKind === "coach") {
+          markCoachDismissed();
+        }
+        activeOverlayKind = null;
+        infoOverlay.hidden = true;
+      }
+
+      function openCoach() {
+        openOverlay(
+          "How Wirdle Helps",
+          `
+            <p>Wirdle does not know today&apos;s answer. Play a guess in Wordle, add that same word here, then tap the tiles to match Wordle&apos;s colors.</p>
+            <p><strong>Power Words</strong> are optional boosts. They may not be answers, but they can reveal more information when you want superhero help.</p>
+            <p><strong>Answers</strong> is the peek tab. Use it when you want to compare possible solutions or when you are ready for a stronger nudge.</p>
+            <p>Tapping any suggestion only fills the next row. It does not submit the guess or set any colors.</p>
+          `,
+          "coach"
+        );
+      }
+
+      function openDataInfo() {
+        const details = wordListInfo
+          ? `<p>Loaded ${formatNumber(wordListInfo.candidateSolutions)} possible answer words and ${formatNumber(wordListInfo.allowedGuesses)} allowed guess words.</p>`
+          : "<p>The word lists are still loading.</p>";
+        openOverlay(
+          "Word Lists",
+          `${details}<p>This only describes the data behind Wirdle. It is not a hint about today&apos;s puzzle.</p>`
+        );
       }
 
       function renderTile(rowIndex, tileIndex) {
@@ -541,6 +793,7 @@
 
         undoButton.disabled = submittedGuesses.length === 0;
         resetButton.disabled = submittedGuesses.length === 0 && activeLetters.length === 0;
+        addGuessButton.disabled = submittedGuesses.length >= ROW_COUNT || activeLetters.length !== WORD_LENGTH;
         syncKeyboardCapture();
       }
 
@@ -577,55 +830,163 @@
         activeLetters = [];
         renderBoard();
         refreshRecommendations();
+        setMessage("");
       }
 
-      function buildRecommendationRows(data) {
-        const likelyByWord = new Map(data.likely_answers.map((answer) => [answer.word, answer]));
-        const rows = [];
-        const seen = new Set();
+      function fillActiveRow(word) {
+        if (submittedGuesses.length >= ROW_COUNT) {
+          setMessage("All rows are filled.", true);
+          return;
+        }
+        activeLetters = word.toLowerCase().slice(0, WORD_LENGTH).split("");
+        renderBoard();
+        focusKeyboard();
+        setMessage("");
+      }
 
-        data.best_information_guesses.forEach((guess) => {
-          const likely = likelyByWord.get(guess.word);
-          const isAnswer = Boolean(guess.is_possible_answer || likely);
-          rows.push({
+      function buildAnswerRows(data) {
+        return data.likely_answers.map((answer) => ({
+          type: "answer",
+          word: answer.word,
+          score: answer.score,
+          reason: "",
+          chance: answer.probability,
+          usedBefore: answer.used_before,
+          details: answer.used_before
+            ? `<p>Chance: ${(answer.probability * 100).toFixed(1)}%.</p><p>Status: used before. This word appears in Wirdle&apos;s historical answer data, so it is ranked lower but still kept possible.</p>`
+            : `<p>Chance: ${(answer.probability * 100).toFixed(1)}%.</p><p>Status: never used before. Wirdle has not seen this word in the loaded historical answer data.</p>`
+        }));
+      }
+
+      function buildPowerWordRows(data) {
+        const likelyWords = new Set(data.likely_answers.map((answer) => answer.word));
+        return data.best_information_guesses
+          .filter((guess) =>
+            !guess.is_possible_answer
+            && !likelyWords.has(guess.word)
+            && guess.entropy_bits > 0
+            && guess.worst_case_remaining < data.remaining_candidates
+          )
+          .slice(0, 10)
+          .map((guess) => ({
+            type: "power",
             word: guess.word,
-            label: isAnswer ? "Answer" : "Probe",
             score: guess.score,
-            reason: isAnswer
-              ? answerReason(likely, guess)
-              : `Best splitter: ${guess.entropy_bits.toFixed(2)} bits, worst case ${guess.worst_case_remaining}.`,
-            sortValue: guess.score
-          });
-          seen.add(guess.word);
-        });
-
-        data.likely_answers.forEach((answer) => {
-          if (seen.has(answer.word)) {
-            return;
-          }
-          rows.push({
-            word: answer.word,
-            label: "Answer",
-            score: answer.score,
-            reason: answerReason(answer),
-            sortValue: answer.score
-          });
-          seen.add(answer.word);
-        });
-
-        rows.sort((a, b) => b.sortValue - a.sortValue || a.word.localeCompare(b.word));
-        return rows.slice(0, 10);
+            reason: "",
+            details: `<p>Information score: ${guess.entropy_bits.toFixed(2)} bits.</p><p>Worst case: ${formatNumber(guess.worst_case_remaining)} possible answers remain.</p><p>Average result: ${guess.expected_remaining.toFixed(1)} possible answers remain.</p>`
+          }));
       }
 
-      function answerReason(answer, guess) {
-        if (answer) {
-          const freshness = answer.used_before ? "used before" : "fresh";
-          return `Best chance: ${(answer.probability * 100).toFixed(1)}%, ${freshness}.`;
+      function setActiveSuggestionTab(tab) {
+        activeSuggestionTab = tab;
+        tabButtons.forEach((button) => {
+          const isSelected = button.dataset.tab === tab;
+          button.setAttribute("aria-selected", String(isSelected));
+        });
+        renderRecommendations();
+      }
+
+      function currentSuggestionRows() {
+        if (!latestRecommendationData) {
+          return [];
         }
-        if (guess) {
-          return `Could be answer: ${guess.entropy_bits.toFixed(2)} bits, worst case ${guess.worst_case_remaining}.`;
+        return activeSuggestionTab === "answers"
+          ? buildAnswerRows(latestRecommendationData)
+          : buildPowerWordRows(latestRecommendationData);
+      }
+
+      function findSuggestionItem(type, word) {
+        return currentSuggestionRows().find((item) => item.type === type && item.word === word);
+      }
+
+      function openPowerWordsInfo() {
+        openOverlay(
+          "Power Words",
+          `
+            <p>Power Words are allowed Wordle guesses that are not currently possible answers.</p>
+            <p>They are ranked by how well they split the remaining possibilities after you enter Wordle&apos;s colors.</p>
+            <p>A higher information score means Wirdle expects that word to separate the possibilities more strongly.</p>
+          `
+        );
+      }
+
+      function openAnswersInfo() {
+        openOverlay(
+          "Answers",
+          `
+            <p>Answers are words still consistent with every color you entered.</p>
+            <p>A short preview is shown while many answers are possible. More answer ideas appear once the board is narrowed down.</p>
+            <p>Chance is Wirdle&apos;s rough ranking for which remaining word looks most plausible. It is not secret knowledge from Wordle.</p>
+            <p>Never used before means the word is not in Wirdle&apos;s loaded historical answer data. Used before means it is in that data, but Wordle repeats are still possible.</p>
+          `
+        );
+      }
+
+      function openSuggestionInfo(type, word) {
+        const item = findSuggestionItem(type, word);
+        if (!item) {
+          return;
         }
-        return "Could be answer.";
+        openOverlay(item.word.toUpperCase(), item.details);
+      }
+
+      function renderRecommendationCard(item, index) {
+        const canFill = submittedGuesses.length < ROW_COUNT;
+        const classes = [
+          "recommendation",
+          index === 0 ? "best" : "",
+          canFill ? "selectable" : "disabled"
+        ].filter(Boolean).join(" ");
+        const reason = item.reason
+          ? `<div class="recommendation-reason">${item.reason}</div>`
+          : "";
+
+        return `
+          <article class="${classes}" role="button" tabindex="0" data-word="${item.word}" aria-disabled="${!canFill}">
+            <div class="recommendation-word">${item.word.toUpperCase()}</div>
+            <div class="recommendation-actions">
+              <button class="info-button" type="button" data-info-action="${item.type}" data-info-word="${item.word}" aria-label="About ${item.word.toUpperCase()}">i</button>
+            </div>
+            ${reason}
+          </article>
+        `;
+      }
+
+      function renderPowerWords(data) {
+        const rows = buildPowerWordRows(data);
+        rankingNote.textContent = submittedGuesses.length ? "Optional boost" : "Opening boosts";
+
+        if (!rows.length) {
+          recommendations.innerHTML = `<div class="empty-state">No power words available.</div>`;
+          return;
+        }
+
+        recommendations.innerHTML = rows.map(renderRecommendationCard).join("");
+      }
+
+      function renderAnswers(data) {
+        const rows = buildAnswerRows(data);
+        const canShowAll = data.remaining_candidates <= SMALL_POOL_THRESHOLD && rows.length > ANSWER_PREVIEW_LIMIT;
+        const visibleRows = data.remaining_candidates > SMALL_POOL_THRESHOLD
+          ? rows.slice(0, ANSWER_PREVIEW_LIMIT)
+          : canShowAll && !answersExpanded
+          ? rows.slice(0, ANSWER_PREVIEW_LIMIT)
+          : rows;
+        const showAll = canShowAll && !answersExpanded
+          ? `<button class="show-all-button" type="button" id="showAllAnswers">Show all possible answers</button>`
+          : "";
+
+        rankingNote.textContent = `${formatNumber(data.remaining_candidates)} possible`;
+
+        if (!rows.length) {
+          recommendations.innerHTML = `<div class="empty-state">No possible answers available.</div>`;
+          return;
+        }
+
+        recommendations.innerHTML = [
+          ...visibleRows.map(renderRecommendationCard),
+          showAll
+        ].filter(Boolean).join("");
       }
 
       function renderLoadingRecommendations() {
@@ -648,35 +1009,25 @@
         `).join("");
       }
 
-      function renderRecommendations(data) {
+      function renderRecommendations(data = latestRecommendationData) {
+        if (!data) {
+          return;
+        }
         recommendations.classList.remove("is-loading");
         recommendations.removeAttribute("aria-busy");
-        candidateNumber.textContent = formatNumber(data.remaining_candidates);
-        const rows = buildRecommendationRows(data);
-        rankingNote.textContent = submittedGuesses.length ? "Best move" : "Opening picks";
 
-        if (!rows.length) {
-          recommendations.innerHTML = `<div class="empty-state">No recommendations available.</div>`;
+        if (activeSuggestionTab === "answers") {
+          renderAnswers(data);
           return;
         }
 
-        recommendations.innerHTML = rows.map((item, index) => `
-          <article class="recommendation ${index === 0 ? "best" : ""}">
-            <div class="recommendation-word">${item.word.toUpperCase()}</div>
-            <div class="recommendation-label">${index === 0 ? "Next best" : item.label}</div>
-            <div class="recommendation-reason">${item.reason}</div>
-          </article>
-        `).join("");
+        renderPowerWords(data);
       }
 
       async function refreshRecommendations() {
         const solveId = latestSolveId + 1;
         latestSolveId = solveId;
-        candidateNumber.textContent =
-          submittedGuesses.length === 0 && totalCandidateSolutions !== null
-            ? formatNumber(totalCandidateSolutions)
-            : "-";
-        rankingNote.textContent = submittedGuesses.length ? "Best move" : "Opening picks";
+        rankingNote.textContent = activeSuggestionTab === "answers" ? "Loading answers" : "Optional boost";
         renderLoadingRecommendations();
         setMessage("");
 
@@ -688,7 +1039,7 @@
               guesses: submittedGuesses,
               mode: "hybrid",
               hard_mode: false,
-              limit: 10,
+              limit: API_RECOMMENDATION_LIMIT,
               past_solution_policy: {
                 enabled: true,
                 weight_multiplier: 0.05,
@@ -707,12 +1058,13 @@
             if (!recommendations.querySelector(".recommendation:not([aria-hidden='true'])")) {
               recommendations.innerHTML = `<div class="empty-state">No recommendations available.</div>`;
             }
-            candidateNumber.textContent = "0";
+            latestRecommendationData = null;
             setMessage(data.message || "Board feedback does not match any answer.", true);
             return;
           }
+          latestRecommendationData = data;
+          answersExpanded = false;
           renderRecommendations(data);
-          setMessage("");
         } catch (_err) {
           if (solveId === latestSolveId) {
             recommendations.classList.remove("is-loading");
@@ -720,6 +1072,7 @@
             if (!recommendations.querySelector(".recommendation:not([aria-hidden='true'])")) {
               recommendations.innerHTML = `<div class="empty-state">No recommendations available.</div>`;
             }
+            latestRecommendationData = null;
             setMessage("Recommendations unavailable.", true);
           }
         }
@@ -742,6 +1095,9 @@
       }
 
       document.addEventListener("keydown", (event) => {
+        if (!infoOverlay.hidden) {
+          return;
+        }
         if (event.metaKey || event.ctrlKey || event.altKey) {
           return;
         }
@@ -760,6 +1116,11 @@
       board.addEventListener("click", focusKeyboard);
       board.addEventListener("focus", focusKeyboard);
 
+      addGuessButton.addEventListener("click", () => {
+        submitActiveRow();
+        focusKeyboard();
+      });
+
       undoButton.addEventListener("click", () => {
         submittedGuesses.pop();
         renderBoard();
@@ -775,22 +1136,103 @@
         focusKeyboard();
       });
 
+      dataInfo.addEventListener("click", openDataInfo);
+      coachHelp.addEventListener("click", () => {
+        openCoach();
+      });
+      overlayClose.addEventListener("click", closeOverlay);
+      overlayAction.addEventListener("click", closeOverlay);
+      infoOverlay.addEventListener("click", (event) => {
+        if (event.target.closest("[data-close-overlay]")) {
+          closeOverlay();
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !infoOverlay.hidden) {
+          closeOverlay();
+        }
+      });
+
+      tabButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          setActiveSuggestionTab(button.dataset.tab);
+        });
+      });
+
+      tabs.addEventListener("click", (event) => {
+        const infoButton = event.target.closest("[data-info-action]");
+        if (!infoButton) {
+          return;
+        }
+        const action = infoButton.dataset.infoAction;
+        if (action === "power-tab") {
+          openPowerWordsInfo();
+          return;
+        }
+        if (action === "answers-tab") {
+          openAnswersInfo();
+        }
+      });
+
+      recommendations.addEventListener("click", (event) => {
+        if (event.target.closest("#showAllAnswers")) {
+          answersExpanded = true;
+          renderRecommendations();
+          return;
+        }
+
+        const infoButton = event.target.closest("[data-info-action]");
+        if (infoButton) {
+          const action = infoButton.dataset.infoAction;
+          if (action === "power-tab") {
+            openPowerWordsInfo();
+            return;
+          }
+          if (action === "answers-tab") {
+            openAnswersInfo();
+            return;
+          }
+          openSuggestionInfo(action, infoButton.dataset.infoWord);
+          return;
+        }
+
+        const card = event.target.closest("[data-word]");
+        if (!card) {
+          return;
+        }
+        fillActiveRow(card.dataset.word);
+      });
+
+      recommendations.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") {
+          return;
+        }
+        const card = event.target.closest("[data-word]");
+        if (!card || event.target.closest("button")) {
+          return;
+        }
+        event.preventDefault();
+        fillActiveRow(card.dataset.word);
+      });
+
       fetch("/v1/health")
         .then((response) => response.json())
         .then((data) => {
-          totalCandidateSolutions = data.candidate_solutions;
-          health.textContent = `${formatNumber(data.candidate_solutions)} answers / ${formatNumber(data.allowed_guesses)} allowed guesses`;
-          if (submittedGuesses.length === 0) {
-            candidateNumber.textContent = formatNumber(totalCandidateSolutions);
-          }
+          wordListInfo = {
+            candidateSolutions: data.candidate_solutions,
+            allowedGuesses: data.allowed_guesses
+          };
+          dataInfo.disabled = false;
         })
         .catch(() => {
-          health.textContent = "Word list unavailable";
+          wordListInfo = null;
         });
 
       renderBoard();
       refreshRecommendations();
-      focusKeyboard();
+      if (!isCoachDismissed()) {
+        openCoach();
+      }
     </script>
   </body>
 </html>
