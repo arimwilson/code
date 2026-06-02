@@ -201,7 +201,7 @@ def main() -> int:
         DATA_DIR / "editorial_overrides.json",
         json.dumps(
             {
-                "add_candidate_solutions": sorted(past_words - set(answers)),
+                "add_candidate_solutions": [],
                 "remove_candidate_solutions": [],
                 "word_priors": {},
             },

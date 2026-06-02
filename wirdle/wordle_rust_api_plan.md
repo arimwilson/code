@@ -92,11 +92,13 @@ Rules:
 
 ### 3.4 `editorial_overrides.json`
 
-A lightweight override file for NYT/editorial behavior and newly observed solution words.
+A lightweight manual override file for NYT/editorial behavior. `candidate_solutions.txt`
+is the canonical generated answer list and should already include observed historical
+solutions; the updater should not auto-populate runtime candidate additions.
 
 ```json
 {
-  "add_candidate_solutions": ["divot"],
+  "add_candidate_solutions": [],
   "remove_candidate_solutions": [],
   "word_priors": {
     "snafu": 0.8,
