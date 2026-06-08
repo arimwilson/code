@@ -12654,5 +12654,54 @@
     "solution": "etude",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-01",
+    "puzzle_number": 1808,
+    "solution": "chili",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
+  },
+  {
+    "date": "2026-06-02",
+    "puzzle_number": 1809,
+    "solution": "basis",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
+  },
+  {
+    "date": "2026-06-03",
+    "puzzle_number": 1810,
+    "solution": "notch",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
+  },
+  {
+    "date": "2026-06-04",
+    "puzzle_number": 1811,
+    "solution": "alloy",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
+  },
+  {
+    "date": "2026-06-05",
+    "puzzle_number": 1812,
+    "solution": "nobly",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
+  },
+  {
+    "date": "2026-06-06",
+    "puzzle_number": 1813,
+    "solution": "morph",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
+  },
+  {
+    "date": "2026-06-07",
+    "puzzle_number": 1814,
+    "solution": "thumb",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]

@@ -1,0 +1,43 @@
+name: Update Wordle data
+
+on:
+  schedule:
+    # Runs daily at 09:15 UTC, after midnight Pacific time.
+    - cron: "15 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wirdle
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute NY date
+        id: date
+        run: |
+          through="$(TZ=America/New_York date +%F)"
+          echo "through=$through" >> "$GITHUB_OUTPUT"
+
+      - name: Update Wordle data
+        run: python3 scripts/update_wordle_data.py --through "${{ steps.date.outputs.through }}"
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- wordle-data; then
+            echo "No wordle-data changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add wordle-data
+          git commit -m "Update Wordle data through ${{ steps.date.outputs.through }}"
+          git push
