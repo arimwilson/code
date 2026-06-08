@@ -57,6 +57,6 @@ Sources:
 
 - `allowed_guesses.txt`: extracted from the current NYT Wordle JavaScript assets referenced by `https://www.nytimes.com/games/wordle/index.html`.
 - `candidate_solutions.txt`: the original answer slice from the same NYT asset, merged with observed historical solutions.
-- `past_solutions.json`: dated NYT puzzle JSON from `https://www.nytimes.com/svc/wordle/v2/YYYY-MM-DD.json`.
+- `past_solutions.json`: dated NYT puzzle JSON from `https://www.nytimes.com/svc/wordle/v2/YYYY-MM-DD.json`. The scheduled GitHub Action updates it through the previous New York Wordle date.
 
-As of the latest update in this checkout, `past_solutions.json` contains 1,808 rows through Wordle 1,807 on `2026-05-31`.
+As of the latest update in this checkout, `past_solutions.json` contains 1,815 rows through Wordle 1,814 on `2026-06-07`.

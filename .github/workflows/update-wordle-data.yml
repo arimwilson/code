@@ -22,7 +22,7 @@ jobs:
       - name: Compute NY date
         id: date
         run: |
-          through="$(TZ=America/New_York date +%F)"
+          through="$(TZ=America/New_York date -d yesterday +%F)"
           echo "through=$through" >> "$GITHUB_OUTPUT"
 
       - name: Update Wordle data
