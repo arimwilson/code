@@ -135,22 +135,84 @@ def fetch_solution(day: date) -> dict[str, object]:
     }
 
 
-def fetch_all_past_solutions(through: date) -> list[dict[str, object]]:
-    rows: list[dict[str, object]] = []
-    days = date_range(FIRST_WORDLE_DATE, through)
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        futures = {executor.submit(fetch_solution, day): day for day in days}
-        for future in as_completed(futures):
-            rows.append(future.result())
+def parse_past_solution(row: object, source: Path) -> dict[str, object]:
+    if not isinstance(row, dict):
+        raise ValueError(f"invalid past solution row in {source}: {row!r}")
 
+    print_date = str(row.get("date", ""))
+    day = parse_date(print_date)
+    if day < FIRST_WORDLE_DATE:
+        raise ValueError(f"past solution date before first Wordle in {source}: {print_date!r}")
+
+    solution = str(row.get("solution", "")).lower()
+    if not WORD_RE.match(solution):
+        raise ValueError(f"invalid past solution from {source}: {solution!r}")
+
+    puzzle_number = row.get("puzzle_number")
+    if not isinstance(puzzle_number, int):
+        raise ValueError(f"missing puzzle number from {source} for {print_date}")
+
+    return {
+        "date": day.isoformat(),
+        "puzzle_number": puzzle_number,
+        "solution": solution,
+        "source": str(row.get("source") or NYT_SOURCE),
+        "is_repeat": False,
+    }
+
+
+def load_cached_past_solutions(through: date) -> list[dict[str, object]]:
+    path = DATA_DIR / "past_solutions.json"
+    if not path.exists():
+        return []
+
+    rows = [parse_past_solution(row, path) for row in json.loads(path.read_text(encoding="utf-8"))]
+    rows = [row for row in rows if parse_date(str(row["date"])) <= through]
     rows.sort(key=lambda row: str(row["date"]))
-    if not rows:
-        raise ValueError("no past solutions fetched from NYT")
+
+    seen_dates: set[str] = set()
+    for row in rows:
+        print_date = str(row["date"])
+        if print_date in seen_dates:
+            raise ValueError(f"duplicate past solution date in {path}: {print_date}")
+        seen_dates.add(print_date)
+
+    return rows
+
+
+def mark_repeats(rows: list[dict[str, object]]) -> None:
     seen: set[str] = set()
     for row in rows:
         solution = str(row["solution"])
         row["is_repeat"] = solution in seen
         seen.add(solution)
+
+
+def fetch_missing_past_solutions(
+    days: list[date],
+    cached_rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    rows = list(cached_rows)
+    cached_dates = {parse_date(str(row["date"])) for row in cached_rows}
+    missing_days = [day for day in days if day not in cached_dates]
+    if not missing_days:
+        return rows
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {executor.submit(fetch_solution, day): day for day in missing_days}
+        for future in as_completed(futures):
+            rows.append(future.result())
+
+    return rows
+
+
+def fetch_all_past_solutions(through: date) -> list[dict[str, object]]:
+    days = date_range(FIRST_WORDLE_DATE, through)
+    rows = fetch_missing_past_solutions(days, load_cached_past_solutions(through))
+    rows.sort(key=lambda row: str(row["date"]))
+    if not rows:
+        raise ValueError("no past solutions fetched from NYT")
+    mark_repeats(rows)
     return rows
 
 

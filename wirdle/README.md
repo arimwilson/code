@@ -59,4 +59,4 @@ Sources:
 - `candidate_solutions.txt`: the original answer slice from the same NYT asset, merged with observed historical solutions.
 - `past_solutions.json`: dated NYT puzzle JSON from `https://www.nytimes.com/svc/wordle/v2/YYYY-MM-DD.json`. The scheduled GitHub Action updates it through the previous New York Wordle date.
 
-As of the latest update in this checkout, `past_solutions.json` contains 1,815 rows through Wordle 1,814 on `2026-06-07`.
+As of the latest update in this checkout, `past_solutions.json` contains 1,817 rows through Wordle 1,816 on `2026-06-09`.
