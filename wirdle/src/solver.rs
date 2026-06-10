@@ -125,11 +125,15 @@ impl Solver {
     }
 
     pub fn health_json(&self) -> String {
+        let (past_solution_first_date, past_solution_latest_date) =
+            self.past.date_range().unwrap_or(("", ""));
         format!(
-            "{{\"ok\":true,\"candidate_solutions\":{},\"allowed_guesses\":{},\"past_solutions\":{},\"data_updated_at\":\"fixture\"}}",
+            "{{\"ok\":true,\"candidate_solutions\":{},\"allowed_guesses\":{},\"past_solutions\":{},\"past_solution_first_date\":\"{}\",\"past_solution_latest_date\":\"{}\",\"data_updated_at\":\"fixture\"}}",
             self.lexicon.candidate_solutions.len(),
             self.lexicon.allowed_guesses.len(),
-            self.past.entries().len()
+            self.past.entries().len(),
+            past_solution_first_date,
+            past_solution_latest_date
         )
     }
 

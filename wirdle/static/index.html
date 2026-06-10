@@ -834,7 +834,8 @@
 
       function openDataInfo() {
         const details = wordListInfo
-          ? `<p>Loaded ${formatNumber(wordListInfo.candidateSolutions)} possible answer words and ${formatNumber(wordListInfo.allowedGuesses)} allowed guess words.</p>`
+          ? `<p>Loaded ${formatNumber(wordListInfo.allowedGuesses)} allowed guess words and ${formatNumber(wordListInfo.candidateSolutions)} possible answer words.</p>
+            <p>Historical solutions: ${formatNumber(wordListInfo.pastSolutions)} from ${wordListInfo.pastSolutionFirstDate} through ${wordListInfo.pastSolutionLatestDate}.</p>`
           : "<p>The word lists are still loading.</p>";
         openOverlay(
           "Word Lists",
@@ -1372,6 +1373,9 @@
           wordListInfo = {
             candidateSolutions: data.candidate_solutions,
             allowedGuesses: data.allowed_guesses,
+            pastSolutions: data.past_solutions,
+            pastSolutionFirstDate: data.past_solution_first_date,
+            pastSolutionLatestDate: data.past_solution_latest_date,
           };
           dataInfo.disabled = false;
         })

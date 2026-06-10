@@ -79,6 +79,15 @@ impl PastSolutionIndex {
         &self.entries
     }
 
+    pub fn date_range(&self) -> Option<(&str, &str)> {
+        let mut dates = self.entries.iter().map(|entry| entry.date.as_str());
+        let first = dates.next()?;
+        let (earliest, latest) = dates.fold((first, first), |(earliest, latest), date| {
+            (earliest.min(date), latest.max(date))
+        });
+        Some((earliest, latest))
+    }
+
     pub fn as_of_before(&self, date: &str) -> Self {
         let Some(cutoff) = civil_day(date) else {
             return Self::default();
