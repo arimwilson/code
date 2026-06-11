@@ -12717,5 +12717,12 @@
     "solution": "wharf",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-10",
+    "puzzle_number": 1817,
+    "solution": "align",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
