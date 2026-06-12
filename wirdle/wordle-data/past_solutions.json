@@ -12724,5 +12724,12 @@
     "solution": "align",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-11",
+    "puzzle_number": 1818,
+    "solution": "testy",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
