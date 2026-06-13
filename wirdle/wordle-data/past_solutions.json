@@ -12731,5 +12731,12 @@
     "solution": "testy",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-12",
+    "puzzle_number": 1819,
+    "solution": "break",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
