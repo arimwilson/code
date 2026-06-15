@@ -12745,5 +12745,12 @@
     "solution": "quell",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-14",
+    "puzzle_number": 1821,
+    "solution": "sepia",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
