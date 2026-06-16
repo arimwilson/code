@@ -12752,5 +12752,12 @@
     "solution": "sepia",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-15",
+    "puzzle_number": 1822,
+    "solution": "broil",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
