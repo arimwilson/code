@@ -12759,5 +12759,12 @@
     "solution": "broil",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-16",
+    "puzzle_number": 1823,
+    "solution": "amaze",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
