@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Wirdle - Wordle Solver</title>
+    <title>Wirdle - Wordle Coach</title>
     <style>
       :root {
         --bg: #f7f7f3;
@@ -312,6 +312,99 @@
         gap: 10px;
       }
 
+      .mode-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .mode-panel {
+        display: grid;
+        gap: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 14px;
+      }
+
+      .mode-panel.primary-panel {
+        border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+      }
+
+      .panel-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .coach-report {
+        display: grid;
+        gap: 12px;
+      }
+
+      .summary-band {
+        display: grid;
+        gap: 6px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfaf7;
+        padding: 12px;
+      }
+
+      .summary-line {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .turn-timeline {
+        display: grid;
+        gap: 8px;
+      }
+
+      .turn-review {
+        display: grid;
+        gap: 7px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 12px;
+      }
+
+      .turn-review-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .turn-title {
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      .turn-grade {
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        padding: 3px 8px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .turn-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .advanced-shell[hidden],
+      .coach-report[hidden] {
+        display: none;
+      }
+
       .section-heading {
         display: flex;
         align-items: baseline;
@@ -576,7 +669,7 @@
           font-size: 48px;
         }
 
-        .recommendations {
+        .mode-stack {
           padding-top: 4px;
         }
       }
@@ -673,56 +766,77 @@
           <div class="message" id="message" aria-live="polite"></div>
         </section>
 
-        <section class="recommendations" aria-label="Recommendations">
-          <div class="section-heading">
-            <h2>Suggestions</h2>
-            <div class="ranking-note" id="rankingNote">Best move</div>
-          </div>
-          <div class="tabs" role="tablist" aria-label="Suggestion type">
-            <div class="tab-option">
-              <button
-                class="tab-button"
-                id="tab-power"
-                type="button"
-                role="tab"
-                aria-selected="true"
-                aria-controls="recommendations"
-                data-tab="power"
-              >
-                Power Words
-              </button>
-              <button
-                class="info-button tab-info-button"
-                type="button"
-                data-info-action="power-tab"
-                aria-label="About Power Words"
-              >
-                ?
-              </button>
+        <section class="mode-stack" aria-label="Wirdle modes">
+          <section class="mode-panel primary-panel" aria-label="Post Game">
+            <div class="section-heading">
+              <h2>Post Game</h2>
+              <div class="ranking-note" id="postGameState">Finish board</div>
             </div>
-            <div class="tab-option">
-              <button
-                class="tab-button"
-                id="tab-answers"
-                type="button"
-                role="tab"
-                aria-selected="false"
-                aria-controls="recommendations"
-                data-tab="answers"
-              >
-                Answers
-              </button>
-              <button
-                class="info-button tab-info-button"
-                type="button"
-                data-info-action="answers-tab"
-                aria-label="About Answers"
-              >
-                ?
-              </button>
+            <button class="action-button primary" id="reviewGame" type="button" disabled>
+              Review my game
+            </button>
+            <div class="coach-report" id="coachReport" hidden></div>
+          </section>
+
+          <section class="mode-panel" aria-label="Advanced Analyses">
+            <div class="section-heading">
+              <h2>Advanced Analyses</h2>
+              <div class="ranking-note" id="rankingNote">Spoiler gated</div>
             </div>
-          </div>
-          <div class="recommendation-list" id="recommendations"></div>
+            <p class="panel-copy">
+              Solver-style rankings can reveal likely answers and reduce the challenge.
+            </p>
+            <button class="action-button" id="showAdvanced" type="button">
+              Show Advanced Analyses
+            </button>
+            <div class="advanced-shell" id="advancedShell" hidden>
+              <div class="tabs" role="tablist" aria-label="Suggestion type">
+                <div class="tab-option">
+                  <button
+                    class="tab-button"
+                    id="tab-power"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="recommendations"
+                    data-tab="power"
+                  >
+                    Power Words
+                  </button>
+                  <button
+                    class="info-button tab-info-button"
+                    type="button"
+                    data-info-action="power-tab"
+                    aria-label="About Power Words"
+                  >
+                    ?
+                  </button>
+                </div>
+                <div class="tab-option">
+                  <button
+                    class="tab-button"
+                    id="tab-answers"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="recommendations"
+                    data-tab="answers"
+                  >
+                    Answers
+                  </button>
+                  <button
+                    class="info-button tab-info-button"
+                    type="button"
+                    data-info-action="answers-tab"
+                    aria-label="About Answers"
+                  >
+                    ?
+                  </button>
+                </div>
+              </div>
+              <div class="recommendation-list" id="recommendations"></div>
+            </div>
+          </section>
         </section>
       </div>
     </main>
@@ -746,6 +860,11 @@
       const message = document.querySelector("#message");
       const recommendations = document.querySelector("#recommendations");
       const rankingNote = document.querySelector("#rankingNote");
+      const postGameState = document.querySelector("#postGameState");
+      const reviewGameButton = document.querySelector("#reviewGame");
+      const coachReport = document.querySelector("#coachReport");
+      const showAdvancedButton = document.querySelector("#showAdvanced");
+      const advancedShell = document.querySelector("#advancedShell");
       const dataInfo = document.querySelector("#dataInfo");
       const addGuessButton = document.querySelector("#addGuess");
       const undoButton = document.querySelector("#undo");
@@ -767,6 +886,10 @@
       let answersExpanded = false;
       let wordListInfo = null;
       let activeOverlayKind = null;
+      let activeOverlayAction = null;
+      let advancedConfirmed = false;
+      let latestCoachId = 0;
+      let latestShareText = "";
 
       function setMessage(text, isError = false) {
         message.textContent = text;
@@ -789,6 +912,40 @@
         return new Intl.NumberFormat().format(value);
       }
 
+      function solvedTurn() {
+        const index = submittedGuesses.findIndex((guess) =>
+          guess.statuses.every((status) => status === "correct"),
+        );
+        return index === -1 ? null : index + 1;
+      }
+
+      function isBoardComplete() {
+        return solvedTurn() !== null || submittedGuesses.length === ROW_COUNT;
+      }
+
+      function canEditActiveRow() {
+        return submittedGuesses.length < ROW_COUNT && solvedTurn() === null;
+      }
+
+      function clearCoachReport() {
+        latestCoachId += 1;
+        latestShareText = "";
+        coachReport.hidden = true;
+        coachReport.innerHTML = "";
+      }
+
+      function syncPostGameState() {
+        const turn = solvedTurn();
+        if (turn !== null) {
+          postGameState.textContent = `Solved in ${turn}`;
+        } else if (submittedGuesses.length === ROW_COUNT) {
+          postGameState.textContent = "Six rows";
+        } else {
+          postGameState.textContent = "Finish board";
+        }
+        reviewGameButton.disabled = !isBoardComplete();
+      }
+
       function isCoachDismissed() {
         try {
           return localStorage.getItem(COACH_STORAGE_KEY) === "true";
@@ -803,10 +960,18 @@
         } catch (_err) {}
       }
 
-      function openOverlay(title, body, kind = "info") {
+      function openOverlay(
+        title,
+        body,
+        kind = "info",
+        actionLabel = "Got it",
+        onAction = null,
+      ) {
         activeOverlayKind = kind;
+        activeOverlayAction = onAction;
         overlayTitle.textContent = title;
         overlayBody.innerHTML = body;
+        overlayAction.textContent = actionLabel;
         infoOverlay.hidden = false;
         overlayClose.focus({ preventScroll: true });
       }
@@ -816,6 +981,8 @@
           markCoachDismissed();
         }
         activeOverlayKind = null;
+        activeOverlayAction = null;
+        overlayAction.textContent = "Got it";
         infoOverlay.hidden = true;
       }
 
@@ -824,9 +991,8 @@
           "How Wirdle Helps",
           `
             <p>Wirdle does not know today&apos;s answer. Play a guess in Wordle, add that same word here, then tap the tiles to match Wordle&apos;s colors.</p>
-            <p><strong>Power Words</strong> are optional boosts. They are not answers, but they can reveal more information when you want superhero help.</p>
-            <p><strong>Answers</strong> is the peek tab. Use it when you want to compare possible solutions or when you are ready for a stronger nudge.</p>
-            <p>Tapping any suggestion only fills the next row. It does not submit the guess or set any colors.</p>
+            <p><strong>Post Game</strong> reviews a finished board with grades, turn notes, and share text.</p>
+            <p><strong>Advanced Analyses</strong> keeps the old solver-style rankings behind a spoiler warning.</p>
           `,
           "coach",
         );
@@ -881,6 +1047,7 @@
           const current = statuses.indexOf(status);
           submitted.statuses[tileIndex] =
             statuses[(current + 1) % statuses.length];
+          clearCoachReport();
           renderBoard();
           refreshRecommendations();
           focusKeyboard();
@@ -904,14 +1071,15 @@
         resetButton.disabled =
           submittedGuesses.length === 0 && activeLetters.length === 0;
         addGuessButton.disabled =
-          submittedGuesses.length >= ROW_COUNT ||
+          !canEditActiveRow() ||
           activeLetters.length !== WORD_LENGTH;
         syncKeyboardCapture();
+        syncPostGameState();
       }
 
       function addLetter(letter) {
         if (
-          submittedGuesses.length >= ROW_COUNT ||
+          !canEditActiveRow() ||
           activeLetters.length >= WORD_LENGTH
         ) {
           return;
@@ -934,6 +1102,10 @@
         if (submittedGuesses.length >= ROW_COUNT) {
           return;
         }
+        if (solvedTurn() !== null) {
+          setMessage("The board is already solved.", true);
+          return;
+        }
         if (activeLetters.length !== WORD_LENGTH) {
           setMessage("Five letters needed.", true);
           return;
@@ -943,17 +1115,19 @@
           statuses: ["absent", "absent", "absent", "absent", "absent"],
         });
         activeLetters = [];
+        clearCoachReport();
         renderBoard();
         refreshRecommendations();
         setMessage("");
       }
 
       function fillActiveRow(word) {
-        if (submittedGuesses.length >= ROW_COUNT) {
+        if (!canEditActiveRow()) {
           setMessage("All rows are filled.", true);
           return;
         }
         activeLetters = word.toLowerCase().slice(0, WORD_LENGTH).split("");
+        clearCoachReport();
         renderBoard();
         focusKeyboard();
         setMessage("");
@@ -1039,6 +1213,24 @@
             <p>Chance is Wirdle&apos;s rough ranking for which remaining word looks most plausible. It is not secret knowledge from Wordle.</p>
             <p>Never used before means the word is not in Wirdle&apos;s loaded historical answer data. Used before means it is in that data, but Wordle repeats are still possible.</p>
           `,
+        );
+      }
+
+      function openAdvancedWarning() {
+        openOverlay(
+          "Advanced Analyses",
+          `
+            <p>Advanced Analyses can reveal likely answers and reduce the challenge of today&apos;s Wordle.</p>
+            <p>Continue only if you want solver-style rankings for the board you entered.</p>
+          `,
+          "advanced",
+          "Show analyses",
+          () => {
+            advancedConfirmed = true;
+            advancedShell.hidden = false;
+            showAdvancedButton.hidden = true;
+            refreshRecommendations();
+          },
         );
       }
 
@@ -1159,7 +1351,109 @@
         renderPowerWords(data);
       }
 
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function renderCoachReport(data) {
+        const report = data.post_game;
+        const summary = report.summary;
+        const missed = summary.missed_opportunity
+          ? `<p class="summary-line">${escapeHtml(summary.missed_opportunity)}</p>`
+          : "";
+        const recovery =
+          summary.best_recovery_turn === null
+            ? ""
+            : `<p class="summary-line">Best recovery: turn ${summary.best_recovery_turn}.</p>`;
+        const turns = report.turns
+          .map(
+            (turn) => `
+              <article class="turn-review">
+                <div class="turn-review-header">
+                  <div class="turn-title">Turn ${turn.turn}: ${escapeHtml(turn.label)}</div>
+                  <div class="turn-grade">${escapeHtml(turn.grade)}</div>
+                </div>
+                <p class="turn-copy">${escapeHtml(turn.summary)}</p>
+                <p class="turn-copy">${escapeHtml(turn.did_well)}</p>
+                <p class="turn-copy">${escapeHtml(turn.missed)}</p>
+              </article>
+            `,
+          )
+          .join("");
+
+        latestShareText = data.share?.text || "";
+        coachReport.innerHTML = `
+          <div class="summary-band">
+            <p class="summary-line">Best move: turn ${summary.best_move_turn}. Biggest information gain: turn ${summary.biggest_information_gain_turn}.</p>
+            <p class="summary-line">Most questionable move: turn ${summary.most_questionable_turn}.</p>
+            ${recovery}
+            ${missed}
+            <p class="summary-line">${escapeHtml(summary.lesson)}</p>
+          </div>
+          <button class="action-button" id="copyShare" type="button">Copy share text</button>
+          <div class="turn-timeline">${turns}</div>
+        `;
+        coachReport.hidden = false;
+      }
+
+      async function reviewGame() {
+        if (!isBoardComplete()) {
+          setMessage("Finish the Wordle board before reviewing your game.", true);
+          return;
+        }
+        const coachId = latestCoachId + 1;
+        latestCoachId = coachId;
+        reviewGameButton.disabled = true;
+        reviewGameButton.textContent = "Reviewing...";
+        setMessage("");
+
+        try {
+          const response = await fetch("/v1/coach", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              intent: "post_game_review",
+              guesses: submittedGuesses,
+              hard_mode: false,
+            }),
+          });
+          const data = await response.json();
+          if (coachId !== latestCoachId) {
+            return;
+          }
+          if (!response.ok) {
+            latestShareText = "";
+            coachReport.hidden = true;
+            coachReport.innerHTML = "";
+            setMessage(data.message || "Board could not be reviewed.", true);
+            return;
+          }
+          renderCoachReport(data);
+          setMessage("");
+        } catch (_err) {
+          if (coachId === latestCoachId) {
+            latestShareText = "";
+            coachReport.hidden = true;
+            coachReport.innerHTML = "";
+            setMessage("Post-game review unavailable.", true);
+          }
+        } finally {
+          if (coachId === latestCoachId) {
+            reviewGameButton.textContent = "Review my game";
+            syncPostGameState();
+          }
+        }
+      }
+
       async function refreshRecommendations() {
+        if (!advancedConfirmed) {
+          latestRecommendationData = null;
+          return;
+        }
         const solveId = latestSolveId + 1;
         latestSolveId = solveId;
         rankingNote.textContent =
@@ -1262,6 +1556,7 @@
           .replace(/[^a-z]/g, "")
           .slice(0, WORD_LENGTH);
         activeLetters = letters.split("");
+        clearCoachReport();
         renderBoard();
       });
 
@@ -1275,6 +1570,7 @@
 
       undoButton.addEventListener("click", () => {
         submittedGuesses.pop();
+        clearCoachReport();
         renderBoard();
         refreshRecommendations();
         focusKeyboard();
@@ -1283,17 +1579,26 @@
       resetButton.addEventListener("click", () => {
         submittedGuesses.length = 0;
         activeLetters = [];
+        clearCoachReport();
         renderBoard();
         refreshRecommendations();
         focusKeyboard();
       });
 
       dataInfo.addEventListener("click", openDataInfo);
+      reviewGameButton.addEventListener("click", reviewGame);
+      showAdvancedButton.addEventListener("click", openAdvancedWarning);
       coachHelp.addEventListener("click", () => {
         openCoach();
       });
       overlayClose.addEventListener("click", closeOverlay);
-      overlayAction.addEventListener("click", closeOverlay);
+      overlayAction.addEventListener("click", () => {
+        const action = activeOverlayAction;
+        closeOverlay();
+        if (action) {
+          action();
+        }
+      });
       infoOverlay.addEventListener("click", (event) => {
         if (event.target.closest("[data-close-overlay]")) {
           closeOverlay();
@@ -1323,6 +1628,22 @@
         }
         if (action === "answers-tab") {
           openAnswersInfo();
+        }
+      });
+
+      coachReport.addEventListener("click", async (event) => {
+        if (!event.target.closest("#copyShare")) {
+          return;
+        }
+        if (!latestShareText) {
+          setMessage("Share text unavailable.", true);
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(latestShareText);
+          setMessage("Share text copied.");
+        } catch (_err) {
+          setMessage("Share text could not be copied.", true);
         }
       });
 

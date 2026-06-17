@@ -3,7 +3,7 @@ use crate::lexicon::EditorialOverrides;
 use crate::past_solutions::PastSolutionIndex;
 use crate::solver::PastSolutionPolicy;
 use crate::word::Word;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug)]
 pub struct LikelyAnswer {
@@ -76,44 +76,11 @@ pub fn rank_information_guesses(
     if candidates.is_empty() {
         return Vec::new();
     }
-    let answer_probability: HashMap<Word, f64> = likely_answers
+    let mut ranked: Vec<InformationGuess> = legal_guesses
         .iter()
-        .map(|answer| (answer.word, answer.probability))
+        .copied()
+        .map(|guess| evaluate_information_guess(guess, candidates, likely_answers, past))
         .collect();
-    let candidate_set: std::collections::HashSet<Word> = candidates.iter().copied().collect();
-    let mut ranked = Vec::with_capacity(legal_guesses.len());
-
-    for guess in legal_guesses {
-        let mut buckets: HashMap<u16, usize> = HashMap::new();
-        for candidate in candidates {
-            *buckets
-                .entry(evaluate_feedback(*guess, *candidate))
-                .or_insert(0) += 1;
-        }
-        let candidate_count = candidates.len() as f64;
-        let mut entropy = 0.0;
-        let mut expected_remaining = 0.0;
-        let mut worst_case_remaining = 0usize;
-        for bucket_size in buckets.values().copied() {
-            let p = bucket_size as f64 / candidate_count;
-            entropy -= p * p.log2();
-            expected_remaining += p * bucket_size as f64;
-            worst_case_remaining = worst_case_remaining.max(bucket_size);
-        }
-        let is_possible_answer = candidate_set.contains(guess);
-        let answer_prob = answer_probability.get(guess).copied().unwrap_or(0.0);
-        let score = entropy + answer_prob + if is_possible_answer { 0.05 } else { 0.0 }
-            - (expected_remaining / candidate_count) * 0.10;
-        ranked.push(InformationGuess {
-            word: *guess,
-            entropy_bits: entropy,
-            expected_remaining,
-            worst_case_remaining,
-            is_possible_answer,
-            used_before: past.was_ever_solution(*guess),
-            score,
-        });
-    }
 
     ranked.sort_by(|a, b| {
         b.score
@@ -123,6 +90,63 @@ pub fn rank_information_guesses(
             .then_with(|| a.word.cmp(&b.word))
     });
     ranked
+}
+
+pub fn evaluate_information_guess(
+    guess: Word,
+    candidates: &[Word],
+    likely_answers: &[LikelyAnswer],
+    past: &PastSolutionIndex,
+) -> InformationGuess {
+    if candidates.is_empty() {
+        return InformationGuess {
+            word: guess,
+            entropy_bits: 0.0,
+            expected_remaining: 0.0,
+            worst_case_remaining: 0,
+            is_possible_answer: false,
+            used_before: past.was_ever_solution(guess),
+            score: 0.0,
+        };
+    }
+
+    let answer_probability: HashMap<Word, f64> = likely_answers
+        .iter()
+        .map(|answer| (answer.word, answer.probability))
+        .collect();
+    let candidate_set: HashSet<Word> = candidates.iter().copied().collect();
+    let mut buckets: HashMap<u16, usize> = HashMap::new();
+    for candidate in candidates {
+        *buckets
+            .entry(evaluate_feedback(guess, *candidate))
+            .or_insert(0) += 1;
+    }
+
+    let candidate_count = candidates.len() as f64;
+    let mut entropy = 0.0;
+    let mut expected_remaining = 0.0;
+    let mut worst_case_remaining = 0usize;
+    for bucket_size in buckets.values().copied() {
+        let p = bucket_size as f64 / candidate_count;
+        entropy -= p * p.log2();
+        expected_remaining += p * bucket_size as f64;
+        worst_case_remaining = worst_case_remaining.max(bucket_size);
+    }
+
+    let is_possible_answer = candidate_set.contains(&guess);
+    let answer_prob = answer_probability.get(&guess).copied().unwrap_or(0.0);
+    let score = entropy + answer_prob + if is_possible_answer { 0.05 } else { 0.0 }
+        - (expected_remaining / candidate_count) * 0.10;
+
+    InformationGuess {
+        word: guess,
+        entropy_bits: entropy,
+        expected_remaining,
+        worst_case_remaining,
+        is_possible_answer,
+        used_before: past.was_ever_solution(guess),
+        score,
+    }
 }
 
 fn positional_letter_priors(candidates: &[Word]) -> [[f64; 26]; 5] {

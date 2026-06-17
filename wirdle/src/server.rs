@@ -1,3 +1,4 @@
+use crate::coach::{CoachIntent, CoachRequest, coach, coach_response_json};
 use crate::feedback::LetterStatus;
 use crate::filter::GuessInput;
 use crate::solver::{PastSolutionPolicy, SolveMode, SolveRequest, SolveResponse, Solver};
@@ -116,11 +117,53 @@ pub fn handle_http_request(raw: &str, solver: &Solver) -> (&'static str, &'stati
             ),
         };
     }
+    if first.starts_with("POST /v1/coach ") {
+        let body = raw.split("\r\n\r\n").nth(1).unwrap_or_default();
+        return match parse_coach_request(body) {
+            Ok(request) => match coach(solver, &request) {
+                Ok(response) => ("200 OK", "application/json", coach_response_json(&response)),
+                Err(err) => (
+                    if err.code == "invalid_request" {
+                        "400 Bad Request"
+                    } else {
+                        "422 Unprocessable Entity"
+                    },
+                    "application/json",
+                    format!(
+                        "{{\"error\":\"{}\",\"message\":\"{}\"}}",
+                        err.code,
+                        escape_json(&err.message)
+                    ),
+                ),
+            },
+            Err(message) => (
+                "400 Bad Request",
+                "application/json",
+                format!(
+                    "{{\"error\":\"invalid_request\",\"message\":\"{}\"}}",
+                    escape_json(&message)
+                ),
+            ),
+        };
+    }
     (
         "404 Not Found",
         "application/json",
         "{\"error\":\"not_found\",\"message\":\"Unknown route\"}".to_string(),
     )
+}
+
+pub fn parse_coach_request(json: &str) -> Result<CoachRequest, String> {
+    let intent_value = json_string(json, "intent").ok_or("coach request is missing intent")?;
+    let intent = CoachIntent::parse(&intent_value)
+        .ok_or_else(|| format!("unsupported coach intent '{intent_value}'"))?;
+    let solve_request = parse_solve_request(json)?;
+
+    Ok(CoachRequest {
+        intent,
+        guesses: solve_request.guesses,
+        hard_mode: json_bool(json, "hard_mode").unwrap_or(false),
+    })
 }
 
 pub fn parse_solve_request(json: &str) -> Result<SolveRequest, String> {
