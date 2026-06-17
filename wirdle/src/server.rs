@@ -1,4 +1,6 @@
-use crate::coach::{CoachIntent, CoachRequest, coach, coach_response_json};
+use crate::coach::{
+    CoachIntent, CoachRequest, HintRequest, SessionContext, coach, coach_response_json,
+};
 use crate::feedback::LetterStatus;
 use crate::filter::GuessInput;
 use crate::solver::{PastSolutionPolicy, SolveMode, SolveRequest, SolveResponse, Solver};
@@ -163,7 +165,52 @@ pub fn parse_coach_request(json: &str) -> Result<CoachRequest, String> {
         intent,
         guesses: solve_request.guesses,
         hard_mode: json_bool(json, "hard_mode").unwrap_or(false),
+        hint_request: parse_hint_request(json)?,
+        session_context: parse_session_context(json)?,
     })
+}
+
+fn parse_hint_request(json: &str) -> Result<Option<HintRequest>, String> {
+    let Some(object) = json_object(json, "hint_request")? else {
+        return Ok(None);
+    };
+    let requested_level = if json_has_key(object, "requested_level") {
+        Some(
+            json_number(object, "requested_level")
+                .ok_or("hint_request.requested_level must be a number")?
+                .clamp(1, 6) as u8,
+        )
+    } else {
+        None
+    };
+
+    Ok(Some(HintRequest {
+        requested_level,
+        explain_current: json_bool(object, "explain_current").unwrap_or(false),
+        confirmed_spoiler: json_bool(object, "confirmed_spoiler").unwrap_or(false),
+    }))
+}
+
+fn parse_session_context(json: &str) -> Result<Option<SessionContext>, String> {
+    let Some(object) = json_object(json, "session_context")? else {
+        return Ok(None);
+    };
+    let highest_hint_level_used = json_number(object, "highest_hint_level_used")
+        .unwrap_or(0)
+        .clamp(0, 6) as u8;
+    let hint_levels_used = if json_has_key(object, "hint_levels_used") {
+        json_number_array(object, "hint_levels_used")?
+            .into_iter()
+            .map(|level| level.clamp(1, 6) as u8)
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    Ok(Some(SessionContext {
+        highest_hint_level_used,
+        hint_levels_used,
+    }))
 }
 
 pub fn parse_solve_request(json: &str) -> Result<SolveRequest, String> {
@@ -309,6 +356,56 @@ fn json_string_array(object: &str, key: &str) -> Vec<String> {
         .map(|part| part.trim().trim_matches('"').to_string())
         .filter(|part| !part.is_empty())
         .collect()
+}
+
+fn json_number_array(object: &str, key: &str) -> Result<Vec<u64>, String> {
+    let Some(key_start) = object.find(&format!("\"{key}\"")) else {
+        return Ok(Vec::new());
+    };
+    let Some(open_rel) = object[key_start..].find('[') else {
+        return Err(format!("{key} must be an array"));
+    };
+    let open = key_start + open_rel;
+    let Some(close) = matching(object, open, '[', ']') else {
+        return Err(format!("{key} array is not closed"));
+    };
+    let inner = object[open + 1..close].trim();
+    if inner.is_empty() {
+        return Ok(Vec::new());
+    }
+    inner
+        .split(',')
+        .map(|part| {
+            part.trim()
+                .parse::<u64>()
+                .map_err(|_| format!("{key} must contain only numbers"))
+        })
+        .collect()
+}
+
+fn json_object<'a>(object: &'a str, key: &str) -> Result<Option<&'a str>, String> {
+    let Some(key_start) = object.find(&format!("\"{key}\"")) else {
+        return Ok(None);
+    };
+    let Some(colon_rel) = object[key_start..].find(':') else {
+        return Err(format!("{key} is malformed"));
+    };
+    let after_colon = key_start + colon_rel + 1;
+    let value_start = object[after_colon..]
+        .char_indices()
+        .find_map(|(idx, ch)| (!ch.is_whitespace()).then_some(after_colon + idx))
+        .ok_or_else(|| format!("{key} is missing a value"))?;
+    if !object[value_start..].starts_with('{') {
+        return Err(format!("{key} must be an object"));
+    }
+    let Some(close) = matching(object, value_start, '{', '}') else {
+        return Err(format!("{key} object is not closed"));
+    };
+    Ok(Some(&object[value_start..=close]))
+}
+
+fn json_has_key(object: &str, key: &str) -> bool {
+    object.find(&format!("\"{key}\"")).is_some()
 }
 
 fn json_bool(object: &str, key: &str) -> Option<bool> {

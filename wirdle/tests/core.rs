@@ -1,4 +1,6 @@
-use wordle_api::coach::{CoachIntent, CoachRequest, coach, status_grid_row};
+use wordle_api::coach::{
+    CoachIntent, CoachRequest, HintLevel, HintRequest, SessionContext, coach, status_grid_row,
+};
 use wordle_api::feedback::{LetterStatus::*, pattern_from_statuses, statuses_from_pattern};
 use wordle_api::filter::GuessInput;
 use wordle_api::rank::{evaluate_information_guess, rank_information_guesses, rank_likely_answers};
@@ -29,6 +31,34 @@ fn played_game(answer: &str, guesses: &[&str]) -> Vec<GuessInput> {
             )
         })
         .collect()
+}
+
+fn coach_request(intent: CoachIntent, guesses: Vec<GuessInput>) -> CoachRequest {
+    CoachRequest {
+        intent,
+        guesses,
+        hard_mode: false,
+        hint_request: None,
+        session_context: None,
+    }
+}
+
+fn easy_hint_request(
+    guesses: Vec<GuessInput>,
+    requested_level: Option<u8>,
+    confirmed_spoiler: bool,
+) -> CoachRequest {
+    CoachRequest {
+        intent: CoachIntent::EasyHint,
+        guesses,
+        hard_mode: false,
+        hint_request: Some(HintRequest {
+            requested_level,
+            explain_current: false,
+            confirmed_spoiler,
+        }),
+        session_context: None,
+    }
 }
 
 #[test]
@@ -224,6 +254,8 @@ fn post_game_coach_accepts_solved_board_and_omits_guess_words_from_share() {
             intent: CoachIntent::PostGameReview,
             guesses: guesses.clone(),
             hard_mode: false,
+            hint_request: None,
+            session_context: None,
         },
     )
     .unwrap();
@@ -254,6 +286,8 @@ fn post_game_coach_accepts_six_row_loss() {
             intent: CoachIntent::PostGameReview,
             guesses,
             hard_mode: false,
+            hint_request: None,
+            session_context: None,
         },
     )
     .unwrap();
@@ -271,6 +305,8 @@ fn post_game_coach_rejects_incomplete_and_inconsistent_boards() {
             intent: CoachIntent::PostGameReview,
             guesses: played_game("visit", &["slate"]),
             hard_mode: false,
+            hint_request: None,
+            session_context: None,
         },
     )
     .unwrap_err();
@@ -285,6 +321,8 @@ fn post_game_coach_rejects_incomplete_and_inconsistent_boards() {
                 [Present, Present, Present, Present, Present],
             )],
             hard_mode: false,
+            hint_request: None,
+            session_context: None,
         },
     )
     .unwrap_err();
@@ -301,11 +339,273 @@ fn post_game_coach_rejects_rows_after_solve() {
             intent: CoachIntent::PostGameReview,
             guesses,
             hard_mode: false,
+            hint_request: None,
+            session_context: None,
         },
     )
     .unwrap_err();
 
     assert_eq!(err.code, "invalid_request");
+}
+
+#[test]
+fn easy_hint_accepts_in_progress_board_and_starts_low() {
+    let solver = fixture_solver();
+    let response = coach(
+        &solver,
+        &coach_request(
+            CoachIntent::EasyHint,
+            played_game("visit", &["slate", "crown"]),
+        ),
+    )
+    .unwrap();
+    let hint = response.easy_hint.as_ref().unwrap();
+    let share = response.share.as_ref().unwrap();
+
+    assert_eq!(response.intent, CoachIntent::EasyHint);
+    assert!(hint.level <= HintLevel::NextMoveStrategy);
+    assert!(hint.revealed_words.is_empty());
+    assert!(share.text.starts_with("Wordle ?/6"));
+    assert!(share.text.contains("Wirdle: Easy Mode"));
+    assert!(!share.contains_guess_words);
+}
+
+#[test]
+fn easy_hint_rejects_bad_or_finished_boards() {
+    let solver = fixture_solver();
+    let inconsistent = coach(
+        &solver,
+        &coach_request(
+            CoachIntent::EasyHint,
+            vec![GuessInput::new(
+                word("slate"),
+                [Present, Present, Present, Present, Present],
+            )],
+        ),
+    )
+    .unwrap_err();
+    assert_eq!(inconsistent.code, "board_inconsistent");
+
+    let rows_after_solve = coach(
+        &solver,
+        &coach_request(
+            CoachIntent::EasyHint,
+            played_game("visit", &["visit", "couch"]),
+        ),
+    )
+    .unwrap_err();
+    assert_eq!(rows_after_solve.code, "invalid_request");
+
+    let solved = coach(
+        &solver,
+        &coach_request(CoachIntent::EasyHint, played_game("visit", &["visit"])),
+    )
+    .unwrap_err();
+    assert_eq!(solved.code, "game_finished");
+
+    let lost = coach(
+        &solver,
+        &coach_request(
+            CoachIntent::EasyHint,
+            played_game(
+                "couch",
+                &["slate", "pride", "brink", "flame", "gypsy", "zonal"],
+            ),
+        ),
+    )
+    .unwrap_err();
+    assert_eq!(lost.code, "game_finished");
+}
+
+#[test]
+fn easy_hint_escalates_and_explain_current_does_not_advance() {
+    let solver = fixture_solver();
+    let guesses = played_game("visit", &["slate", "crown"]);
+    let stronger = CoachRequest {
+        intent: CoachIntent::EasyHint,
+        guesses: guesses.clone(),
+        hard_mode: false,
+        hint_request: Some(HintRequest {
+            requested_level: Some(2),
+            explain_current: false,
+            confirmed_spoiler: false,
+        }),
+        session_context: Some(SessionContext {
+            highest_hint_level_used: 1,
+            hint_levels_used: vec![1],
+        }),
+    };
+    let response = coach(&solver, &stronger).unwrap();
+    let hint = response.easy_hint.as_ref().unwrap();
+    assert_eq!(hint.level, HintLevel::NextMoveStrategy);
+    assert_eq!(hint.share_summary.highest_hint_level_used, 2);
+    assert!(
+        hint.share_summary
+            .hint_labels_used
+            .contains(&"Gentle Nudge".to_string())
+    );
+
+    let explain = CoachRequest {
+        hint_request: Some(HintRequest {
+            requested_level: Some(1),
+            explain_current: true,
+            confirmed_spoiler: false,
+        }),
+        session_context: Some(SessionContext {
+            highest_hint_level_used: 1,
+            hint_levels_used: vec![1],
+        }),
+        ..stronger
+    };
+    let response = coach(&solver, &explain).unwrap();
+    let hint = response.easy_hint.as_ref().unwrap();
+    assert_eq!(hint.level, HintLevel::GentleNudge);
+    assert_eq!(hint.share_summary.highest_hint_level_used, 1);
+    assert!(hint.rationale.as_ref().unwrap().contains("compatible"));
+}
+
+#[test]
+fn easy_hint_spoiler_levels_are_gated_and_share_safe() {
+    let solver = fixture_solver();
+    let guesses = played_game("visit", &["slate", "crown"]);
+
+    let level_five =
+        coach(&solver, &easy_hint_request(guesses.clone(), Some(5), false)).unwrap_err();
+    assert_eq!(level_five.code, "spoiler_confirmation_required");
+
+    let level_six =
+        coach(&solver, &easy_hint_request(guesses.clone(), Some(6), false)).unwrap_err();
+    assert_eq!(level_six.code, "spoiler_confirmation_required");
+
+    let response = coach(&solver, &easy_hint_request(guesses, Some(5), true)).unwrap();
+    let hint = response.easy_hint.as_ref().unwrap();
+    let share = response.share.as_ref().unwrap();
+    assert_eq!(hint.level, HintLevel::StrongGuessHelp);
+    assert!(!hint.revealed_words.is_empty());
+    assert!(hint.revealed_words.len() <= 3);
+    for word in &hint.revealed_words {
+        assert!(!share.text.to_lowercase().contains(word.as_str()));
+    }
+    assert!(!share.contains_guess_words);
+}
+
+#[test]
+fn answer_reveal_requires_one_compatible_candidate() {
+    let solver = fixture_solver();
+    let too_many = coach(
+        &solver,
+        &easy_hint_request(played_game("visit", &["slate"]), Some(6), true),
+    )
+    .unwrap_err();
+    assert_eq!(too_many.code, "answer_reveal_unavailable");
+
+    let guesses = single_candidate_in_progress_game(&solver, "visit");
+    let response = coach(&solver, &easy_hint_request(guesses, Some(6), true)).unwrap();
+    let hint = response.easy_hint.as_ref().unwrap();
+    assert_eq!(hint.level, HintLevel::AnswerReveal);
+    assert_eq!(hint.revealed_words, vec![word("visit")]);
+    assert!(!response.share.as_ref().unwrap().text.contains("visit"));
+}
+
+#[test]
+fn useful_letters_and_pattern_hints_do_not_reveal_words() {
+    let solver = fixture_solver();
+    let guesses = played_game("couch", &["slate", "pride"]);
+
+    let letters = coach(&solver, &easy_hint_request(guesses.clone(), Some(3), false)).unwrap();
+    let letter_hint = letters.easy_hint.as_ref().unwrap();
+    assert_eq!(letter_hint.level, HintLevel::UsefulLetter);
+    assert!(letter_hint.revealed_words.is_empty());
+    assert!(!letter_hint.message.contains("couch"));
+
+    let pattern = coach(&solver, &easy_hint_request(guesses, Some(4), false)).unwrap();
+    let pattern_hint = pattern.easy_hint.as_ref().unwrap();
+    assert_eq!(pattern_hint.level, HintLevel::Pattern);
+    assert!(pattern_hint.revealed_words.is_empty());
+    assert!(!pattern_hint.message.contains("couch"));
+}
+
+#[test]
+fn hard_mode_strong_hint_options_respect_known_constraints() {
+    let solver = fixture_solver();
+    let guesses = played_game("visit", &["slate", "crown"]);
+    let request = CoachRequest {
+        intent: CoachIntent::EasyHint,
+        guesses: guesses.clone(),
+        hard_mode: true,
+        hint_request: Some(HintRequest {
+            requested_level: Some(5),
+            explain_current: false,
+            confirmed_spoiler: true,
+        }),
+        session_context: None,
+    };
+    let response = coach(&solver, &request).unwrap();
+    let hint = response.easy_hint.as_ref().unwrap();
+
+    assert!(!hint.revealed_words.is_empty());
+    assert!(
+        hint.revealed_words
+            .iter()
+            .all(|word| wordle_api::is_candidate_consistent(*word, &guesses))
+    );
+}
+
+#[test]
+fn post_game_share_includes_easy_mode_usage() {
+    let solver = fixture_solver();
+    let request = CoachRequest {
+        intent: CoachIntent::PostGameReview,
+        guesses: played_game("visit", &["slate", "crown", "visit"]),
+        hard_mode: false,
+        hint_request: None,
+        session_context: Some(SessionContext {
+            highest_hint_level_used: 2,
+            hint_levels_used: vec![1, 2],
+        }),
+    };
+    let response = coach(&solver, &request).unwrap();
+    let share = response.share.as_ref().unwrap();
+
+    assert!(share.text.contains("Wirdle: Easy Mode + Post Game Mode"));
+    assert!(share.text.contains("Highest hint: Level 2"));
+    assert!(share.text.contains("Grades:"));
+    assert!(!share.contains_guess_words);
+}
+
+fn single_candidate_in_progress_game(solver: &Solver, answer: &str) -> Vec<GuessInput> {
+    let answer = word(answer);
+    let mut observed = Vec::new();
+    for _ in 0..5 {
+        let candidates = filter_candidates(&solver.lexicon().candidate_solutions, &observed);
+        if candidates == vec![answer] {
+            return observed;
+        }
+        let guess = solver
+            .lexicon()
+            .candidate_solutions
+            .iter()
+            .copied()
+            .filter(|candidate| *candidate != answer)
+            .min_by_key(|candidate| {
+                let mut trial = observed.clone();
+                trial.push(GuessInput::new(
+                    *candidate,
+                    statuses_from_pattern(evaluate_feedback(*candidate, answer)),
+                ));
+                filter_candidates(&solver.lexicon().candidate_solutions, &trial).len()
+            })
+            .expect("candidate guess");
+        observed.push(GuessInput::new(
+            guess,
+            statuses_from_pattern(evaluate_feedback(guess, answer)),
+        ));
+    }
+    assert_eq!(
+        filter_candidates(&solver.lexicon().candidate_solutions, &observed),
+        vec![answer]
+    );
+    observed
 }
 
 #[test]
@@ -371,6 +671,64 @@ fn parses_and_handles_coach_http_request() {
     assert_eq!(content_type, "application/json");
     assert!(response.contains("\"post_game\""));
     assert!(response.contains("wirdle.onrender.com"));
+}
+
+#[test]
+fn parses_and_handles_easy_hint_http_request() {
+    let body = r#"{
+      "intent": "easy_hint",
+      "guesses": [{"word": "slate", "statuses": ["present", "absent", "absent", "present", "absent"]}],
+      "hard_mode": false,
+      "hint_request": {"requested_level": 2},
+      "session_context": {"highest_hint_level_used": 1, "hint_levels_used": [1]}
+    }"#;
+    let parsed = parse_coach_request(body).unwrap();
+    assert_eq!(parsed.intent, CoachIntent::EasyHint);
+    assert_eq!(parsed.hint_request.unwrap().requested_level, Some(2));
+    assert_eq!(parsed.session_context.unwrap().hint_levels_used, vec![1]);
+
+    let request = format!(
+        "POST /v1/coach HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+        body.len(),
+        body
+    );
+    let (status, content_type, response) = handle_http_request(&request, &fixture_solver());
+    assert_eq!(status, "200 OK");
+    assert_eq!(content_type, "application/json");
+    assert!(response.contains("\"easy_hint\""));
+    assert!(response.contains("\"level\":2"));
+    assert!(response.contains("Highest hint: Level 2"));
+}
+
+#[test]
+fn easy_hint_http_rejects_malformed_request_and_missing_confirmation() {
+    let malformed = r#"{
+      "intent": "easy_hint",
+      "guesses": [],
+      "hint_request": {"requested_level": "strong"}
+    }"#;
+    let request = format!(
+        "POST /v1/coach HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+        malformed.len(),
+        malformed
+    );
+    let (status, _, response) = handle_http_request(&request, &fixture_solver());
+    assert_eq!(status, "400 Bad Request");
+    assert!(response.contains("requested_level must be a number"));
+
+    let gated = r#"{
+      "intent": "easy_hint",
+      "guesses": [{"word": "slate", "statuses": ["present", "absent", "absent", "present", "absent"]}],
+      "hint_request": {"requested_level": 5}
+    }"#;
+    let request = format!(
+        "POST /v1/coach HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+        gated.len(),
+        gated
+    );
+    let (status, _, response) = handle_http_request(&request, &fixture_solver());
+    assert_eq!(status, "422 Unprocessable Entity");
+    assert!(response.contains("spoiler_confirmation_required"));
 }
 
 #[test]

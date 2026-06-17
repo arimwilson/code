@@ -346,6 +346,103 @@
         gap: 12px;
       }
 
+      .hint-shell {
+        display: grid;
+        gap: 10px;
+      }
+
+      .hint-shell[hidden],
+      .easy-share[hidden] {
+        display: none;
+      }
+
+      .hint-card {
+        display: grid;
+        gap: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfaf7;
+        padding: 12px;
+      }
+
+      .hint-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .hint-label {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      .hint-risk {
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .hint-message,
+      .hint-rationale {
+        margin: 0;
+        color: var(--ink);
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .hint-rationale {
+        color: var(--muted);
+      }
+
+      .revealed-words {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .revealed-word {
+        border: 1px solid var(--accent);
+        border-radius: 6px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        padding: 5px 8px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .hint-actions,
+      .easy-share {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .toggle-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .toggle-label input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+      }
+
       .summary-band {
         display: grid;
         gap: 6px;
@@ -454,6 +551,10 @@
 
       .mode-tabs .tab-option {
         grid-template-columns: minmax(0, 1fr);
+      }
+
+      .tabs.mode-tabs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
       .tab-option:has(.tab-button[aria-selected="true"]) {
@@ -784,10 +885,23 @@
             <div class="tab-option">
               <button
                 class="tab-button mode-tab-button"
-                id="mode-post-game"
+                id="mode-easy"
                 type="button"
                 role="tab"
                 aria-selected="true"
+                aria-controls="easyModePanel"
+                data-mode="easy"
+              >
+                Easy Mode
+              </button>
+            </div>
+            <div class="tab-option">
+              <button
+                class="tab-button mode-tab-button"
+                id="mode-post-game"
+                type="button"
+                role="tab"
+                aria-selected="false"
                 aria-controls="postGamePanel"
                 data-mode="post-game"
               >
@@ -811,9 +925,42 @@
 
           <section
             class="mode-panel primary-panel"
+            id="easyModePanel"
+            role="tabpanel"
+            aria-labelledby="mode-easy"
+          >
+            <div class="section-heading">
+              <h2>Easy Mode</h2>
+              <div class="ranking-note" id="easyModeState">Live help</div>
+            </div>
+            <div class="toggle-row">
+              <label class="toggle-label">
+                <input id="easyHardMode" type="checkbox" />
+                Hard Mode
+              </label>
+            </div>
+            <button class="action-button primary" id="getHint" type="button">
+              Get a hint
+            </button>
+            <div
+              class="hint-shell"
+              id="hintCard"
+              aria-live="polite"
+              hidden
+            ></div>
+            <div class="easy-share" id="easyShare" hidden>
+              <button class="action-button" id="copyEasyShare" type="button">
+                Copy share text
+              </button>
+            </div>
+          </section>
+
+          <section
+            class="mode-panel"
             id="postGamePanel"
             role="tabpanel"
             aria-labelledby="mode-post-game"
+            hidden
           >
             <div class="section-heading">
               <h2>Post Game</h2>
@@ -913,9 +1060,16 @@
       const message = document.querySelector("#message");
       const recommendations = document.querySelector("#recommendations");
       const rankingNote = document.querySelector("#rankingNote");
+      const easyModeState = document.querySelector("#easyModeState");
+      const easyModePanel = document.querySelector("#easyModePanel");
       const postGameState = document.querySelector("#postGameState");
       const postGamePanel = document.querySelector("#postGamePanel");
       const advancedPanel = document.querySelector("#advancedPanel");
+      const getHintButton = document.querySelector("#getHint");
+      const easyHardMode = document.querySelector("#easyHardMode");
+      const hintCard = document.querySelector("#hintCard");
+      const easyShare = document.querySelector("#easyShare");
+      const copyEasyShareButton = document.querySelector("#copyEasyShare");
       const reviewGameButton = document.querySelector("#reviewGame");
       const coachReport = document.querySelector("#coachReport");
       const showAdvancedButton = document.querySelector("#showAdvanced");
@@ -950,6 +1104,14 @@
       let advancedConfirmed = false;
       let latestCoachId = 0;
       let latestShareText = "";
+      let latestHintId = 0;
+      let latestHintData = null;
+      let highestHintLevelUsed = 0;
+      let hintLevelsUsed = [];
+      let pendingHintLevel = null;
+      let easyModeHardMode = false;
+      let latestEasyShareText = "";
+      let hintRequestInFlight = false;
 
       function setMessage(text, isError = false) {
         message.textContent = text;
@@ -994,13 +1156,55 @@
         coachReport.innerHTML = "";
       }
 
+      function clearEasyHintState({ preserveUsage = false } = {}) {
+        latestHintId += 1;
+        latestHintData = null;
+        if (!preserveUsage) {
+          highestHintLevelUsed = 0;
+          hintLevelsUsed = [];
+        }
+        pendingHintLevel = null;
+        latestEasyShareText = "";
+        hintRequestInFlight = false;
+        hintCard.hidden = true;
+        hintCard.innerHTML = "";
+        easyShare.hidden = true;
+        syncEasyModeState();
+      }
+
       function setActiveMode(mode) {
         modeTabButtons.forEach((button) => {
           const isSelected = button.dataset.mode === mode;
           button.setAttribute("aria-selected", String(isSelected));
         });
+        easyModePanel.hidden = mode !== "easy";
         postGamePanel.hidden = mode !== "post-game";
         advancedPanel.hidden = mode !== "advanced";
+        easyModePanel.classList.toggle("primary-panel", mode === "easy");
+        postGamePanel.classList.toggle("primary-panel", mode === "post-game");
+        advancedPanel.classList.toggle("primary-panel", mode === "advanced");
+      }
+
+      function syncEasyModeState() {
+        const complete = isBoardComplete();
+        getHintButton.disabled = complete || hintRequestInFlight;
+        if (complete) {
+          easyModeState.textContent = "Game complete";
+          getHintButton.textContent = "Get a hint";
+          return;
+        }
+        if (hintRequestInFlight) {
+          easyModeState.textContent = "Thinking";
+          getHintButton.textContent = "Getting hint...";
+          return;
+        }
+        if (latestHintData) {
+          easyModeState.textContent = `Level ${latestHintData.level}`;
+          getHintButton.textContent = "Get a hint";
+          return;
+        }
+        easyModeState.textContent = "Live help";
+        getHintButton.textContent = "Get a hint";
       }
 
       function syncPostGameState() {
@@ -1060,6 +1264,7 @@
           "How Wirdle Helps",
           `
             <p>Wirdle does not know today&apos;s answer. Play a guess in Wordle, add that same word here, then tap the tiles to match Wordle&apos;s colors.</p>
+            <p><strong>Easy Mode</strong> gives live hints that get stronger only when you ask.</p>
             <p><strong>Post Game</strong> reviews a finished board with grades, turn notes, and share text.</p>
             <p><strong>Advanced Analyses</strong> keeps the old solver-style rankings behind a spoiler warning.</p>
           `,
@@ -1117,6 +1322,7 @@
           submitted.statuses[tileIndex] =
             statuses[(current + 1) % statuses.length];
           clearCoachReport();
+          clearEasyHintState();
           renderBoard();
           refreshRecommendations();
           focusKeyboard();
@@ -1144,6 +1350,7 @@
           activeLetters.length !== WORD_LENGTH;
         syncKeyboardCapture();
         syncPostGameState();
+        syncEasyModeState();
       }
 
       function addLetter(letter) {
@@ -1185,6 +1392,7 @@
         });
         activeLetters = [];
         clearCoachReport();
+        clearEasyHintState({ preserveUsage: true });
         renderBoard();
         refreshRecommendations();
         setMessage("");
@@ -1469,6 +1677,158 @@
         coachReport.hidden = false;
       }
 
+      function spoilerRiskLabel(value) {
+        return String(value || "")
+          .split("_")
+          .map(titleCase)
+          .join(" ");
+      }
+
+      function renderEasyHint(data) {
+        const hint = data.easy_hint;
+        latestHintData = hint;
+        latestEasyShareText = data.share?.text || "";
+        highestHintLevelUsed = Math.max(
+          highestHintLevelUsed,
+          hint.share_summary?.highest_hint_level_used || hint.level,
+        );
+        if (!hintLevelsUsed.includes(hint.level)) {
+          hintLevelsUsed.push(hint.level);
+          hintLevelsUsed.sort((a, b) => a - b);
+        }
+
+        const rationale = hint.rationale
+          ? `<p class="hint-rationale">${escapeHtml(hint.rationale)}</p>`
+          : "";
+        const revealedWords = hint.revealed_words?.length
+          ? `<div class="revealed-words">${hint.revealed_words
+              .map(
+                (word) =>
+                  `<span class="revealed-word">${escapeHtml(word)}</span>`,
+              )
+              .join("")}</div>`
+          : "";
+        const stronger = hint.next_action_label
+          ? `<button class="action-button primary" id="strongerHint" type="button">${escapeHtml(hint.next_action_label)}</button>`
+          : "";
+        const explain = `<button class="action-button" id="explainHint" type="button">Explain that</button>`;
+
+        hintCard.innerHTML = `
+          <article class="hint-card">
+            <div class="hint-meta">
+              <div class="hint-label">Level ${hint.level}: ${escapeHtml(hint.label)}</div>
+              <div class="hint-risk">${escapeHtml(spoilerRiskLabel(hint.spoiler_risk))}</div>
+            </div>
+            <p class="hint-message">${escapeHtml(hint.message)}</p>
+            ${revealedWords}
+            ${rationale}
+            <div class="hint-actions">
+              ${stronger}
+              ${explain}
+            </div>
+          </article>
+        `;
+        hintCard.hidden = false;
+        easyShare.hidden = !latestEasyShareText;
+        syncEasyModeState();
+      }
+
+      function openHintWarning(level, explainCurrent = false) {
+        const isReveal = level >= 6;
+        openOverlay(
+          isReveal ? "Reveal answer?" : "Stronger hint?",
+          isReveal
+            ? "<p>This can reveal the answer if your board narrows to one compatible word.</p>"
+            : "<p>This can reveal answer-like words and reduce the puzzle.</p>",
+          "hint-spoiler",
+          isReveal ? "Reveal answer" : "Show stronger hint",
+          () => {
+            requestHint({
+              requestedLevel: level,
+              explainCurrent,
+              confirmedSpoiler: true,
+            });
+          },
+        );
+      }
+
+      async function requestHint({
+        requestedLevel = null,
+        explainCurrent = false,
+        confirmedSpoiler = false,
+      } = {}) {
+        if (isBoardComplete()) {
+          setMessage("This game is complete. Use Post Game for a review.", true);
+          syncEasyModeState();
+          return;
+        }
+        const hintId = latestHintId + 1;
+        latestHintId = hintId;
+        pendingHintLevel = requestedLevel;
+        hintRequestInFlight = true;
+        syncEasyModeState();
+        setMessage("");
+
+        const hintRequest = {};
+        if (requestedLevel !== null) {
+          hintRequest.requested_level = requestedLevel;
+        }
+        if (explainCurrent) {
+          hintRequest.explain_current = true;
+          if (hintRequest.requested_level === undefined && latestHintData) {
+            hintRequest.requested_level = latestHintData.level;
+          }
+        }
+        if (confirmedSpoiler) {
+          hintRequest.confirmed_spoiler = true;
+        }
+
+        try {
+          const response = await fetch("/v1/coach", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              intent: "easy_hint",
+              guesses: submittedGuesses,
+              hard_mode: easyModeHardMode,
+              hint_request: hintRequest,
+              session_context: {
+                highest_hint_level_used: highestHintLevelUsed,
+                hint_levels_used: hintLevelsUsed,
+              },
+            }),
+          });
+          const data = await response.json();
+          if (hintId !== latestHintId) {
+            return;
+          }
+          if (!response.ok) {
+            if (data.error === "spoiler_confirmation_required") {
+              openHintWarning(
+                requestedLevel || Math.min((latestHintData?.level || 4) + 1, 6),
+                explainCurrent,
+              );
+              setMessage("");
+              return;
+            }
+            setMessage(data.message || "Hint unavailable.", true);
+            return;
+          }
+          renderEasyHint(data);
+          setMessage("");
+        } catch (_err) {
+          if (hintId === latestHintId) {
+            setMessage("Hint unavailable.", true);
+          }
+        } finally {
+          if (hintId === latestHintId) {
+            hintRequestInFlight = false;
+            pendingHintLevel = null;
+            syncEasyModeState();
+          }
+        }
+      }
+
       async function reviewGame() {
         if (!isBoardComplete()) {
           setMessage("Finish the Wordle board before reviewing your game.", true);
@@ -1488,6 +1848,10 @@
               intent: "post_game_review",
               guesses: submittedGuesses,
               hard_mode: false,
+              session_context: {
+                highest_hint_level_used: highestHintLevelUsed,
+                hint_levels_used: hintLevelsUsed,
+              },
             }),
           });
           const data = await response.json();
@@ -1640,6 +2004,7 @@
       undoButton.addEventListener("click", () => {
         submittedGuesses.pop();
         clearCoachReport();
+        clearEasyHintState();
         renderBoard();
         refreshRecommendations();
         focusKeyboard();
@@ -1649,12 +2014,21 @@
         submittedGuesses.length = 0;
         activeLetters = [];
         clearCoachReport();
+        clearEasyHintState();
         renderBoard();
         refreshRecommendations();
         focusKeyboard();
       });
 
       dataInfo.addEventListener("click", openDataInfo);
+      getHintButton.addEventListener("click", () => {
+        requestHint();
+      });
+      easyHardMode.addEventListener("change", () => {
+        easyModeHardMode = easyHardMode.checked;
+        clearEasyHintState();
+        setMessage("");
+      });
       reviewGameButton.addEventListener("click", reviewGame);
       showAdvancedButton.addEventListener("click", openAdvancedWarning);
       coachHelp.addEventListener("click", () => {
@@ -1683,6 +2057,20 @@
         button.addEventListener("click", () => {
           setActiveMode(button.dataset.mode);
         });
+      });
+
+      hintCard.addEventListener("click", (event) => {
+        if (event.target.closest("#strongerHint")) {
+          const nextLevel = Math.min((latestHintData?.level || 0) + 1, 6);
+          requestHint({ requestedLevel: nextLevel });
+          return;
+        }
+        if (event.target.closest("#explainHint")) {
+          requestHint({
+            requestedLevel: latestHintData?.level || highestHintLevelUsed || 1,
+            explainCurrent: true,
+          });
+        }
       });
 
       tabButtons.forEach((button) => {
@@ -1716,6 +2104,19 @@
         }
         try {
           await navigator.clipboard.writeText(latestShareText);
+          setMessage("Share text copied.");
+        } catch (_err) {
+          setMessage("Share text could not be copied.", true);
+        }
+      });
+
+      copyEasyShareButton.addEventListener("click", async () => {
+        if (!latestEasyShareText) {
+          setMessage("Share text unavailable.", true);
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(latestEasyShareText);
           setMessage("Share text copied.");
         } catch (_err) {
           setMessage("Share text could not be copied.", true);
