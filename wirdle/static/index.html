@@ -317,6 +317,10 @@
         gap: 14px;
       }
 
+      .mode-panel[hidden] {
+        display: none;
+      }
+
       .mode-panel {
         display: grid;
         gap: 12px;
@@ -405,6 +409,11 @@
         display: none;
       }
 
+      .advanced-shell {
+        display: grid;
+        gap: 8px;
+      }
+
       .section-heading {
         display: flex;
         align-items: baseline;
@@ -441,6 +450,10 @@
         align-items: center;
         gap: 2px;
         border-radius: 6px;
+      }
+
+      .mode-tabs .tab-option {
+        grid-template-columns: minmax(0, 1fr);
       }
 
       .tab-option:has(.tab-button[aria-selected="true"]) {
@@ -767,7 +780,41 @@
         </section>
 
         <section class="mode-stack" aria-label="Wirdle modes">
-          <section class="mode-panel primary-panel" aria-label="Post Game">
+          <div class="tabs mode-tabs" id="modeTabs" role="tablist" aria-label="Mode">
+            <div class="tab-option">
+              <button
+                class="tab-button mode-tab-button"
+                id="mode-post-game"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="postGamePanel"
+                data-mode="post-game"
+              >
+                Post Game
+              </button>
+            </div>
+            <div class="tab-option">
+              <button
+                class="tab-button mode-tab-button"
+                id="mode-advanced"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="advancedPanel"
+                data-mode="advanced"
+              >
+                Advanced Analyses
+              </button>
+            </div>
+          </div>
+
+          <section
+            class="mode-panel primary-panel"
+            id="postGamePanel"
+            role="tabpanel"
+            aria-labelledby="mode-post-game"
+          >
             <div class="section-heading">
               <h2>Post Game</h2>
               <div class="ranking-note" id="postGameState">Finish board</div>
@@ -778,7 +825,13 @@
             <div class="coach-report" id="coachReport" hidden></div>
           </section>
 
-          <section class="mode-panel" aria-label="Advanced Analyses">
+          <section
+            class="mode-panel"
+            id="advancedPanel"
+            role="tabpanel"
+            aria-labelledby="mode-advanced"
+            hidden
+          >
             <div class="section-heading">
               <h2>Advanced Analyses</h2>
               <div class="ranking-note" id="rankingNote">Spoiler gated</div>
@@ -790,7 +843,7 @@
               Show Advanced Analyses
             </button>
             <div class="advanced-shell" id="advancedShell" hidden>
-              <div class="tabs" role="tablist" aria-label="Suggestion type">
+              <div class="tabs" id="suggestionTabs" role="tablist" aria-label="Suggestion type">
                 <div class="tab-option">
                   <button
                     class="tab-button"
@@ -861,10 +914,15 @@
       const recommendations = document.querySelector("#recommendations");
       const rankingNote = document.querySelector("#rankingNote");
       const postGameState = document.querySelector("#postGameState");
+      const postGamePanel = document.querySelector("#postGamePanel");
+      const advancedPanel = document.querySelector("#advancedPanel");
       const reviewGameButton = document.querySelector("#reviewGame");
       const coachReport = document.querySelector("#coachReport");
       const showAdvancedButton = document.querySelector("#showAdvanced");
       const advancedShell = document.querySelector("#advancedShell");
+      const modeTabButtons = Array.from(
+        document.querySelectorAll(".mode-tab-button"),
+      );
       const dataInfo = document.querySelector("#dataInfo");
       const addGuessButton = document.querySelector("#addGuess");
       const undoButton = document.querySelector("#undo");
@@ -875,8 +933,10 @@
       const overlayBody = document.querySelector("#overlayBody");
       const overlayClose = document.querySelector("#overlayClose");
       const overlayAction = document.querySelector("#overlayAction");
-      const tabs = document.querySelector(".tabs");
-      const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+      const suggestionTabs = document.querySelector("#suggestionTabs");
+      const tabButtons = Array.from(
+        document.querySelectorAll("#suggestionTabs .tab-button"),
+      );
 
       const submittedGuesses = [];
       let activeLetters = [];
@@ -932,6 +992,15 @@
         latestShareText = "";
         coachReport.hidden = true;
         coachReport.innerHTML = "";
+      }
+
+      function setActiveMode(mode) {
+        modeTabButtons.forEach((button) => {
+          const isSelected = button.dataset.mode === mode;
+          button.setAttribute("aria-selected", String(isSelected));
+        });
+        postGamePanel.hidden = mode !== "post-game";
+        advancedPanel.hidden = mode !== "advanced";
       }
 
       function syncPostGameState() {
@@ -1610,13 +1679,19 @@
         }
       });
 
+      modeTabButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          setActiveMode(button.dataset.mode);
+        });
+      });
+
       tabButtons.forEach((button) => {
         button.addEventListener("click", () => {
           setActiveSuggestionTab(button.dataset.tab);
         });
       });
 
-      tabs.addEventListener("click", (event) => {
+      suggestionTabs.addEventListener("click", (event) => {
         const infoButton = event.target.closest("[data-info-action]");
         if (!infoButton) {
           return;
