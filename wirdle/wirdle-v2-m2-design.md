@@ -40,6 +40,7 @@ Easy Mode must preserve discovery by default:
 - M2 accepts the Level 6 answer reveal constraint: reveal only when the entered board uniquely determines one compatible candidate. Do not add an official current-puzzle answer source in M2.
 - Easy Mode should expose a Hard Mode toggle. When enabled, Level 5 guess help must only show words that are playable under the known constraints.
 - Easy Mode share text can be copied before the puzzle is complete. This supports sharing that the player is currently stuck without revealing guess words, recommendations, candidates, or the answer.
+- Easy Mode is the default selected tab and appears left of Post Game and Advanced Analyses. This makes live coaching the primary first-screen action while keeping Post Game and solver-style analysis available.
 
 ## Current System
 
@@ -493,13 +494,13 @@ Rules:
 
 ### Mode Tabs
 
-Add Easy Mode as a peer tab:
+Add Easy Mode as the leftmost tab and default selected panel:
 
-- Post Game
 - Easy Mode
+- Post Game
 - Advanced Analyses
 
-Keep board controls unchanged. Mode panels should remain separate from board editing controls.
+Keep board controls unchanged. Mode panels should remain separate from board editing controls. On initial page load, the Easy Mode tab should have `aria-selected="true"`, and the Post Game and Advanced Analyses panels should be hidden until selected.
 
 ### Easy Mode Panel
 
@@ -600,7 +601,7 @@ The confirmation action should retry the same `/v1/coach` request with `confirme
 
 ## UI Implementation Plan
 
-1. Add Easy Mode tab markup and panel.
+1. Add Easy Mode tab markup and panel as the leftmost/default selected mode.
 2. Add hint card CSS using existing panel and button styles.
 3. Add Easy Mode JS state and reset hooks.
 4. Implement `requestHint({ requestedLevel, explainCurrent, confirmedSpoiler })`.
@@ -647,7 +648,8 @@ HTTP tests:
 
 UI checks:
 
-- Easy Mode tab appears between Post Game and Advanced Analyses.
+- Easy Mode tab appears left of Post Game and Advanced Analyses.
+- Easy Mode panel is selected and visible on initial page load.
 - `Get a hint` works on in-progress boards.
 - hint state clears after board edits.
 - `A little more` requests the next level.
