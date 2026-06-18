@@ -12766,5 +12766,12 @@
     "solution": "amaze",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-17",
+    "puzzle_number": 1824,
+    "solution": "token",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
