@@ -12787,5 +12787,12 @@
     "solution": "emoji",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-20",
+    "puzzle_number": 1827,
+    "solution": "drake",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
