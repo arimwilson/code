@@ -12794,5 +12794,12 @@
     "solution": "drake",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-21",
+    "puzzle_number": 1828,
+    "solution": "alibi",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
