@@ -12801,5 +12801,12 @@
     "solution": "alibi",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-22",
+    "puzzle_number": 1829,
+    "solution": "ovate",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
