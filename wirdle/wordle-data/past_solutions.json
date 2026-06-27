@@ -12829,5 +12829,12 @@
     "solution": "unity",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-26",
+    "puzzle_number": 1833,
+    "solution": "acute",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
