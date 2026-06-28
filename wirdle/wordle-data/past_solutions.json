@@ -12836,5 +12836,12 @@
     "solution": "acute",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-06-27",
+    "puzzle_number": 1834,
+    "solution": "scoop",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
