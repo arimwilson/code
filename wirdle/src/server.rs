@@ -89,6 +89,13 @@ pub fn handle_http_request(raw: &str, solver: &Solver) -> (&'static str, &'stati
             include_str!("../static/index.html").to_string(),
         );
     }
+    if first.starts_with("GET /wirdle-icon.svg ") {
+        return (
+            "200 OK",
+            "image/svg+xml",
+            include_str!("../static/wirdle-icon.svg").to_string(),
+        );
+    }
     if first.starts_with("GET /v1/health ") {
         return ("200 OK", "application/json", solver.health_json());
     }

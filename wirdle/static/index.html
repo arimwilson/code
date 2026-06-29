@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Wirdle - Wordle Coach</title>
+    <link rel="icon" type="image/svg+xml" href="/wirdle-icon.svg" />
     <style>
       :root {
         --bg: #f7f7f3;
@@ -67,8 +68,22 @@
       h1 {
         margin: 0;
         font-size: 24px;
+        font-weight: 800;
         line-height: 1;
         letter-spacing: 0;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.08em;
+      }
+
+      .brand-icon {
+        display: block;
+        width: 1em;
+        height: 1em;
+        flex: 0 0 auto;
       }
 
       .header-tools {
@@ -792,7 +807,7 @@
   <body>
     <main>
       <header>
-        <h1>Wirdle</h1>
+        <h1 class="brand" aria-label="Wirdle"><img class="brand-icon" src="/wirdle-icon.svg" alt="W" />irdle</h1>
         <div class="header-tools">
           <button
             class="header-info-button"

@@ -777,6 +777,16 @@ fn serves_static_ui_as_html() {
 }
 
 #[test]
+fn serves_wirdle_icon_as_svg() {
+    let (status, content_type, response) =
+        handle_http_request("GET /wirdle-icon.svg HTTP/1.1\r\n\r\n", &fixture_solver());
+
+    assert_eq!(status, "200 OK");
+    assert_eq!(content_type, "image/svg+xml");
+    assert!(response.contains("Wirdle icon"));
+}
+
+#[test]
 fn health_includes_historical_solution_dates() {
     let past = PastSolutionIndex::load("wordle-data/past_solutions.json").unwrap();
     let (first_date, latest_date) = past.date_range().unwrap();
