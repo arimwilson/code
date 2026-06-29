@@ -12843,5 +12843,12 @@
     "solution": "scoop",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-28",
+    "puzzle_number": 1835,
+    "solution": "emcee",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
