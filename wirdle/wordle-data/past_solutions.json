@@ -12850,5 +12850,12 @@
     "solution": "emcee",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-29",
+    "puzzle_number": 1836,
+    "solution": "crude",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
