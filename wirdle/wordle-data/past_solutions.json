@@ -12857,5 +12857,12 @@
     "solution": "crude",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-06-30",
+    "puzzle_number": 1837,
+    "solution": "puppy",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
