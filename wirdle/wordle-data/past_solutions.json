@@ -12878,5 +12878,12 @@
     "solution": "maven",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-03",
+    "puzzle_number": 1840,
+    "solution": "baton",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
