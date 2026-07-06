@@ -12892,5 +12892,12 @@
     "solution": "pizza",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-05",
+    "puzzle_number": 1842,
+    "solution": "swami",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
