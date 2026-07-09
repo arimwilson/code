@@ -12913,5 +12913,12 @@
     "solution": "sling",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-08",
+    "puzzle_number": 1845,
+    "solution": "demon",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
