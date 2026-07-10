@@ -12920,5 +12920,12 @@
     "solution": "demon",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-09",
+    "puzzle_number": 1846,
+    "solution": "amend",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
