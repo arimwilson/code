@@ -12927,5 +12927,12 @@
     "solution": "amend",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-10",
+    "puzzle_number": 1847,
+    "solution": "canal",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
