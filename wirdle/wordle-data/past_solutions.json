@@ -12934,5 +12934,12 @@
     "solution": "canal",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-11",
+    "puzzle_number": 1848,
+    "solution": "avian",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
