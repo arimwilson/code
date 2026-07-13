@@ -12941,5 +12941,12 @@
     "solution": "avian",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-12",
+    "puzzle_number": 1849,
+    "solution": "clack",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
