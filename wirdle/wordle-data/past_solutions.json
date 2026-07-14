@@ -12948,5 +12948,12 @@
     "solution": "clack",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-13",
+    "puzzle_number": 1850,
+    "solution": "stout",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
