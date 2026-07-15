@@ -12955,5 +12955,12 @@
     "solution": "stout",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-07-14",
+    "puzzle_number": 1851,
+    "solution": "steak",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
