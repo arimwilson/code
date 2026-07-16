@@ -12962,5 +12962,12 @@
     "solution": "steak",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-15",
+    "puzzle_number": 1852,
+    "solution": "pshaw",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
