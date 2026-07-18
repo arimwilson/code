@@ -12976,5 +12976,12 @@
     "solution": "butte",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-17",
+    "puzzle_number": 1854,
+    "solution": "legal",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
