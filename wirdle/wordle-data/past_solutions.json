@@ -12983,5 +12983,12 @@
     "solution": "legal",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-18",
+    "puzzle_number": 1855,
+    "solution": "booth",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
