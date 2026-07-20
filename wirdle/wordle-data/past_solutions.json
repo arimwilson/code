@@ -12990,5 +12990,12 @@
     "solution": "booth",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-19",
+    "puzzle_number": 1856,
+    "solution": "churn",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
