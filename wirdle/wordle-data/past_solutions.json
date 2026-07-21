@@ -12997,5 +12997,12 @@
     "solution": "churn",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-20",
+    "puzzle_number": 1857,
+    "solution": "diver",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
