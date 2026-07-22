@@ -13004,5 +13004,12 @@
     "solution": "diver",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-21",
+    "puzzle_number": 1858,
+    "solution": "shill",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
