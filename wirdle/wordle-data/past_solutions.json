@@ -13018,5 +13018,12 @@
     "solution": "lorry",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-23",
+    "puzzle_number": 1860,
+    "solution": "orbit",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
