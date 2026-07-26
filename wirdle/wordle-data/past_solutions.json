@@ -13032,5 +13032,12 @@
     "solution": "putty",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-25",
+    "puzzle_number": 1862,
+    "solution": "aloha",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
