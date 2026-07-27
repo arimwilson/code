@@ -13039,5 +13039,12 @@
     "solution": "aloha",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-26",
+    "puzzle_number": 1863,
+    "solution": "grape",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
