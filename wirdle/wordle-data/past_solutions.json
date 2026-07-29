@@ -13053,5 +13053,12 @@
     "solution": "poser",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-28",
+    "puzzle_number": 1865,
+    "solution": "sonar",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
