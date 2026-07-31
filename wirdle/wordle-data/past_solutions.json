@@ -13067,5 +13067,12 @@
     "solution": "valve",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-07-30",
+    "puzzle_number": 1867,
+    "solution": "flume",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
