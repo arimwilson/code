@@ -13088,5 +13088,12 @@
     "solution": "slush",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-02",
+    "puzzle_number": 1870,
+    "solution": "penal",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
