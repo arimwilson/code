@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-Find short pronounceable 2‑3 letter domain names with cheap prices.
-Heuristics:
-  • label length 2‑3, short TLDs (≤3 letters)
-  • combined “word” (label+tld) must look pronounceable and, if enabled,
-    be a reasonably common English‑looking word via wordfreq.
+Find short pronounceable 2‑3 letter domains that are still cheap.
+
+All runtime options live in `.env`:
+  GODADDY_API_KEY, GODADDY_API_SECRET  – registrar creds
+  MAX_PRICE_USD                        – price ceiling (float)
+  USE_WORDFREQ                         – 1/0 for English‑word ranking
+  MIN_VOWELS, MAX_CONSONANT_STREAK     – phonetic heuristics
+  TLDS                                 – comma‑sep short TLDs
+  PATTERNS_2, PATTERNS_3               – comma‑sep label patterns
+  CONCURRENCY_LIMIT, HTTP_TIMEOUT      – API tuning
 """
-import asyncio, itertools, os, math
+import asyncio, itertools, math, os
 from dataclasses import dataclass
 from typing import Iterable, List, Optional
 
@@ -14,45 +19,53 @@ import httpx
 from dotenv import load_dotenv
 from tqdm.asyncio import tqdm_asyncio
 
-# -------------- CONFIG -------------------------------------------------
-SHORT_CHEAPISH_TLDS = [
-    # mostly 2‑letter ccTLDs + a few 3‑letter bargains
-    "ai", "am", "fm", "gg", "gl", "gs", "io", "is", "it",
-    "la", "ly", "me", "sh", "so", "to", "tv", "vc", "ws",
-    "zip", "lol", "app", "run"  # 3‑letter, still “shortish”
-]
+# ────────────────────────────────────────────────────────────────────────
+# 1.  CONFIG  ─ picks up everything from .env (with sane fallbacks)
+# ────────────────────────────────────────────────────────────────────────
+load_dotenv()                                  # load .env from current dir
 
-VOWELS = "aeiou"
-CONSONANTS = ''.join(ch for ch in "abcdefghijklmnopqrstuvwxyz" if ch not in VOWELS)
-PATTERNS_2 = ["CV", "VC", "VV"]          # restrict to smoother sounding 2‑letter combos
-PATTERNS_3 = ["CVC", "VCV", "CVV", "VVC"]
+GODADDY_API_KEY    = os.getenv("GODADDY_API_KEY")
+GODADDY_API_SECRET = os.getenv("GODADDY_API_SECRET")
 
-API_BASE = "https://api.godaddy.com/v1"
-WORD_FREQ_LIMIT = 5e4  # only keep words in the 50k most common bucket
-# ----------------------------------------------------------------------
+MAX_PRICE_USD      = float(os.getenv("MAX_PRICE_USD", "10"))
+USE_WORDFREQ       = os.getenv("USE_WORDFREQ", "1") != "0"
 
-# -------- optional wordfreq scoring -----------------------------------
-USE_WORDFREQ = os.getenv("USE_WORDFREQ", "1") != "0"
+MIN_VOWELS         = int(os.getenv("MIN_VOWELS", "2"))
+MAX_CONS_STREAK    = int(os.getenv("MAX_CONSONANT_STREAK", "2"))
+
+TLDS               = os.getenv("TLDS", "ai,io,ly,sh").split(",")
+PATTERNS_2         = os.getenv("PATTERNS_2", "CV,VC,VV").split(",")
+PATTERNS_3         = os.getenv("PATTERNS_3", "CVC,VCV,CVV,VVC").split(",")
+
+CONCURRENCY_LIMIT  = int(os.getenv("CONCURRENCY_LIMIT", "30"))
+HTTP_TIMEOUT       = int(os.getenv("HTTP_TIMEOUT", "10"))
+
+# static alphabets
+VOWELS      = "aeiou"
+CONSONANTS  = ''.join(c for c in "abcdefghijklmnopqrstuvwxyz" if c not in VOWELS)
+
+# wordfreq (optional)
 if USE_WORDFREQ:
     from wordfreq import zipf_frequency
 
-def is_common_word(word: str) -> bool:
-    """Returns True if word is among ~50k most common English word‑forms."""
+def freq_score(word: str) -> float:
+    """Lower is better; +inf means not ranked/disabled."""
     if not USE_WORDFREQ:
-        return True
-    # zipf_frequency ≈ log10(freq per billion). “4” => ~1/10 000, “3” => 1/100 000
-    return zipf_frequency(word, "en") >= 3.0
-# ----------------------------------------------------------------------
+        return float("inf")
+    # higher frequency → lower (better) score
+    return -zipf_frequency(word, "en")
 
+# ────────────────────────────────────────────────────────────────────────
+# 2.  PRONUNCIATION HELPERS
+# ────────────────────────────────────────────────────────────────────────
 def has_ok_phonetics(s: str) -> bool:
-    """Lo‑fi pronounceability heuristic."""
-    if sum(ch in VOWELS for ch in s) < 2:          # need at least 2 vowels overall
+    if sum(ch in VOWELS for ch in s) < MIN_VOWELS:
         return False
     streak = 0
     for ch in s:
         if ch in CONSONANTS:
             streak += 1
-            if streak > 2:
+            if streak > MAX_CONS_STREAK:
                 return False
         else:
             streak = 0
@@ -62,72 +75,85 @@ def has_ok_phonetics(s: str) -> bool:
 
 def generate_labels() -> List[str]:
     pools = {"V": VOWELS, "C": CONSONANTS}
-    labels = set()
-    for pat in PATTERNS_2 + PATTERNS_3:
-        letters = [pools[p] for p in pat]
-        for tup in itertools.product(*letters):
-            lbl = ''.join(tup)
-            if has_ok_phonetics(lbl):
-                labels.add(lbl)
+    labels: set[str] = set()
+
+    def expand(patterns: Iterable[str]):
+        for pat in patterns:
+            letters = [pools.get(p, pools["C"]+pools["V"]) for p in pat]
+            for tup in itertools.product(*letters):
+                lbl = ''.join(tup)
+                if has_ok_phonetics(lbl):
+                    labels.add(lbl)
+
+    expand(PATTERNS_2)
+    expand(PATTERNS_3)
     return sorted(labels)
+
+def label_tld_ok(label: str, tld: str) -> bool:
+    combo = label + tld
+    return has_ok_phonetics(combo)
+
+# ────────────────────────────────────────────────────────────────────────
+# 3.  API
+# ────────────────────────────────────────────────────────────────────────
+API_BASE = "https://api.godaddy.com/v1"
 
 @dataclass
 class Candidate:
     domain: str
-    price: Optional[float]  # USD
-    word_rank: float        # lower is better (∞ means not found)
+    price: float
+    score: float  # wordfreq score (lower = better)
 
-def combined_ok(label: str, tld: str) -> bool:
-    combo = label + tld   # “goo” + “gl” → “googl”
-    return has_ok_phonetics(combo) and is_common_word(combo)
-
-async def godaddy_check(client: httpx.AsyncClient, domain: str) -> Optional[float]:
+async def godaddy_price(client: httpx.AsyncClient, domain: str) -> Optional[float]:
     try:
         r = await client.get(f"{API_BASE}/domains/available", params={"domain": domain})
+        if r.status_code == 404:
+            return None
         r.raise_for_status()
         data = r.json()
         if not data.get("available"):
             return None
         cents = data.get("price")
         return round(cents / 100.0, 2) if cents else None
-    except httpx.HTTPStatusError:
+    except (httpx.HTTPStatusError, ValueError):
         return None
 
-async def main():
-    load_dotenv()
-    key, secret = os.getenv("GODADDY_API_KEY"), os.getenv("GODADDY_API_SECRET")
-    max_price = float(os.getenv("MAX_PRICE_USD", "10"))
-    tlds = os.getenv("TLDS", ",".join(SHORT_CHEAPISH_TLDS)).split(",")
+async def main() -> None:
+    if not GODADDY_API_KEY or not GODADDY_API_SECRET:
+        raise SystemExit("🔑  Add GODADDY_API_KEY & GODADDY_API_SECRET to your .env")
+
     labels = generate_labels()
+    combos = [(lbl, tld) for lbl, tld in itertools.product(labels, TLDS)
+              if label_tld_ok(lbl, tld)]
+    print(f"{len(combos):,} label/TLD combos after phonetic filter.")
 
-    # Early phonetic filter on label+TLD to cut API traffic
-    combos = [(lbl, tld) for lbl, tld in itertools.product(labels, tlds)
-              if combined_ok(lbl, tld)]
-    print(f"{len(combos):,} label/TLD combos pass pronunciation screen.")
+    headers = {"Authorization": f"sso-key {GODADDY_API_KEY}:{GODADDY_API_SECRET}",
+               "Accept": "application/json"}
 
-    headers = {"Authorization": f"sso-key {key}:{secret}", "Accept": "application/json"}
-    async with httpx.AsyncClient(headers=headers, timeout=10) as client:
-        sem = asyncio.Semaphore(30)
-        async def check(lbl, tld):
-            dom = f"{lbl}.{tld}"
+    found: List[Candidate] = []
+    async with httpx.AsyncClient(headers=headers, timeout=HTTP_TIMEOUT) as client:
+        sem = asyncio.Semaphore(CONCURRENCY_LIMIT)
+
+        async def check(label: str, tld: str):
             async with sem:
-                price = await godaddy_check(client, dom)
-            if price is None or price > max_price:
-                return None
-            word_rank = -math.inf if not USE_WORDFREQ else zipf_frequency(lbl+tld, "en") * -1
-            return Candidate(dom, price, word_rank)
+                dom = f"{label}.{tld}"
+                price = await godaddy_price(client, dom)
+            if price is not None and price <= MAX_PRICE_USD:
+                found.append(Candidate(dom, price, freq_score(label+tld)))
 
         tasks = [check(l, t) for l, t in combos]
-        found: List[Candidate] = []
-        for coro in tqdm_asyncio.as_completed(tasks, total=len(tasks), desc="Querying"):
-            res = await coro
-            if res:
-                found.append(res)
+        await tqdm_asyncio.gather(*tasks, desc="Querying GoDaddy", total=len(tasks))
 
-    found.sort(key=lambda c: (c.word_rank, c.price, len(c.domain)))
-    print(f"\n=== Under ${max_price:.2f} & ranked ===")
+    if not found:
+        print("😢  Nothing under your price cap.")
+        return
+
+    found.sort(key=lambda c: (c.score, c.price, len(c.domain)))
+
+    print(f"\n=== Available under ${MAX_PRICE_USD:.2f} ===")
     for c in found:
-        print(f"{c.domain:15s}  ${c.price:<5}   (score {c.word_rank:+.2f})")
+        rank = f"{c.score:+.2f}" if USE_WORDFREQ else "-"
+        print(f"{c.domain:15s}  ${c.price:<5}   score {rank}")
 
 if __name__ == "__main__":
     asyncio.run(main())
