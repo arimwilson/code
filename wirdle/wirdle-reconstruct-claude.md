@@ -15,6 +15,12 @@ The working algorithm models the **player's** knowledge state rather than the so
 searches over whole sequences so that a constraint violation on turn 4 can retroactively rule
 out a word on turn 3. That coupling turns out to be the single most valuable signal available.
 
+A second board with a *known* ground-truth sequence (below) then falsified the word prior:
+using "is this word a Wordle answer?" as a proxy for "would a player type this word?" demoted
+the single most informative guess on the board from **#1 to #24**. The information model was
+sound; the prior was wrong, and in a systematic direction. See
+[Validation against ground truth](#validation-against-ground-truth-and-where-the-model-failed).
+
 ## Problem statement
 
 Given answer `A` and observed patterns `P₁..P_T`, find `g₁..g_T` maximising plausibility
@@ -61,12 +67,17 @@ They are thinking of words they know. So the belief set is drawn from `allowed_g
 (14,855) weighted by familiarity:
 
 ```
-B₁ = allowed_guesses,  familiarity(w) = 1.0 if w ∈ candidate_solutions else 0.15
+B₁ = allowed_guesses,  familiarity(w) = <see below>
 Bᵢ₊₁ = { w ∈ Bᵢ : feedback(w, gᵢ) == Pᵢ }
 ```
 
 and the information term becomes a familiarity-weighted entropy over `Bᵢ`. Entropy stays
 non-zero into the endgame and the model regains discrimination.
+
+> **Correction.** The prototype used `familiarity(w) = 1.0 if w ∈ candidate_solutions else 0.15`.
+> That is wrong and was the largest single source of error — see
+> [Validation against ground truth](#validation-against-ground-truth-and-where-the-model-failed).
+> Use a frequency-derived familiarity instead.
 
 ### Step 3 — constraint discipline is the dominant late signal
 
@@ -121,7 +132,7 @@ without this.
 Per-turn word probability is the sum of sequence probabilities over the final beam, not the
 row-local softmax. This accounts for downstream consistency, which is the whole point.
 
-## Result on Wordle 1,874 (GRIPE)
+## Result on the first board (Wordle 1,874, GRIPE, 6/6 — no ground truth)
 
 ```
 most likely sequence:  saner  beret  rifle  crime  pride  gripe
@@ -147,22 +158,117 @@ Reading the model's behaviour, which is a good sanity check on its priors:
 handful. Reported to a user, this board should read as "turn 3 was almost certainly `rifle`,
 turn 5 was a `pri_e` word — but the opening two guesses can't be pinned down."
 
+## Validation against ground truth, and where the model failed
+
+A second shared board for the same puzzle, this time with the real sequence known:
+
+```
+Wordle 1,874 4/6        truth:      TEARS  PORED  CREPE  GRIPE
+⬛🟨⬛🟨⬛                model said:  media  inert  crepe  gripe
+🟨⬛🟨🟨⬛
+⬛🟩⬛🟩🟩                row sets:     442     56      7      1
+🟩🟩🟩🟩🟩
+```
+
+One of three reconstructible turns correct. The failure is diagnosable and systematic.
+
+### Root cause: answer-list membership is the wrong prior for a guess
+
+**`TEARS` and `PORED` are not in `candidate_solutions`.** Wordle's answer list editorially
+excludes ‑S plurals and most ‑ED past tenses. The binary familiarity prior therefore scored
+them `0.15` — the same bucket as `frape`, `tiars`, `porey`.
+
+| word | entropy rank in its row | rank after the prior | reason demoted |
+|---|---|---|---|
+| `tears` | **#1 of 442** (6.01 bits) | #24 | ‑S plural, not an answer word |
+| `pored` | #2 of 56 (4.34 bits) | #4 | ‑ED past tense, not an answer word |
+| `crepe` | #1 of 7 | #1 ✓ | in the answer list |
+
+`tears` was the most informative guess available out of all 14,855 allowed words, and the
+prior ranked it 24th. The damage is broader than one word: the entropy-only top of row 1 was
+*entirely* ‑S words — `tears, lears, nears, dears, hears` — so the ×0.15 factor demoted the
+whole correct region of the search space and surfaced `media`/`learn`/`teary` instead.
+
+The two distributions are not merely different, they are **anti-correlated for probes**: ‑S
+and ‑ED endings are strong information plays *precisely because* NYT never uses them as
+answers, so players spend them freely. `candidate_solutions` membership belongs only in the
+"this guess might itself be the answer" term, never in the guess prior.
+
+A second, self-inflicted error compounded it: the turn-1 opener table was hand-invented, gave
+`media` a ×2.5 boost on no evidence, and omitted `tears`, a well-known opener.
+
+### The fix, measured
+
+Replacing the binary prior with a real frequency corpus (`wordfreq`, Zipf scale):
+
+```
+familiarity(w) = max(0.01, 10^(γ · (zipf(w) − 3.0)) · (1.6 if w ∈ candidate_solutions else 1))
+γ = 0.55
+```
+
+| word | before | after |
+|---|---|---|
+| `tears` | #24 of 442 | **#6** |
+| `pored` | #4 of 56 | **#5** |
+| `crepe` | #1, p = 0.72 | **#1, p = 0.93** |
+
+A clear improvement, but it does **not** recover the sequence, and the reasons are worth
+recording rather than tuning away:
+
+- Turn 1: `years` (zipf 5.96) and `heart` (5.31) are more common than `tears` (4.47) and
+  nearly as informative. Frequency alone cannot separate them.
+- Turn 2: `roger` takes p = 0.60 as a pure corpus artefact — frequent as a name and a radio
+  idiom, not as a word players type. Proper nouns and interjections inflate Zipf. Cap the
+  frequency term's dynamic range so it cannot override a ~0.5-bit entropy gap.
+
+### Dead end: system dictionaries are not a commonality oracle
+
+`/usr/share/dict/words` (web2, 235k entries) was tried as a dependency-free substitute and is
+unusable in **both** directions: it is a headword list, so it lacks `tears` and `roped`
+entirely, while including `lear` and `tiar` as headwords. Stem-based inflection tests inherit
+both faults. A genuine frequency corpus is required; there is no offline shortcut.
+
+### What this says about achievable accuracy
+
+Rows 1 and 2 had 442 and 56 legal words. They are genuinely under-determined, and the model's
+low confidence there (0.19 and 0.16) was the one thing it got right — it was paired with the
+wrong ranking. **The target metric is top-3/top-5 recovery, not top-1**, for every row whose
+`|Sᵢ|` is large. Only row 3 (`|S₃| = 7`) was ever determined enough to name outright, which is
+exactly the row the model got right on both boards.
+
 ## What the prototype did not establish
 
 The round-trip backtest (simulate a rational player → emit grid → reconstruct → measure
-top-1 recovery) is specified below but **was not run to completion**. In Python each board
-costs ~6s because the belief set is 14,855 words, and the simulator on top of that made a
-20-board sweep impractical. It should be measured in Rust, where the same work is ~50×
-cheaper, before the scoring weights above are treated as tuned. The penalty constants and
-`β = 1.5` are reasoned defaults validated on one board, not fitted values.
+top-1 **and top-3** recovery per turn) is specified below but **was not run to completion**.
+In Python each board costs ~6s because the belief set is 14,855 words, and the simulator on
+top of that made a 20-board sweep impractical. It should be measured in Rust, where the same
+work is ~50× cheaper. The penalty constants and `β = 1.5` are reasoned defaults validated on
+one board, not fitted values.
+
+Sequence the work so the backtest is not measuring the wrong thing: **fix the word prior
+first**. Tuning `β` or the penalty constants against a broken familiarity term would fit those
+constants to compensate for it. Note also that a simulated rational player is a best case —
+it is generated by the same kind of model doing the reconstructing. The two human boards here
+are worth more as validation than a large synthetic sweep, and more ground-truth boards
+(guesses plus grid) are the most valuable test data to collect.
 
 ## Implementation plan
 
-### Data
-- `wordle-data/word_frequency.txt` (new, generated by `scripts/update_wordle_data.py`).
-  The binary `in candidate_solutions` familiarity proxy is too coarse for the endgame: all 11
-  plausible turn-4 words on this board are in the solution list, so the prior cannot separate
-  `crime` from `trice`. A real frequency rank is the highest-value single improvement.
+### Data — prerequisite, not an enhancement
+
+- `wordle-data/word_frequency.txt` (new, generated by `scripts/update_wordle_data.py` from a
+  frequency corpus such as `wordfreq`, emitting `word zipf` for all 14,855 allowed guesses).
+  The generator is Python, so the Rust crate stays dependency-free — it only reads the file.
+
+  This was originally scoped as the highest-value improvement; ground-truth validation
+  promoted it to a **prerequisite**. Without it the model does not merely tie in the endgame,
+  it actively demotes the correct words (`tears` #1 → #24). Ship this before the beam search.
+
+- Retire the hand-written opener table. Derive turn-1 priors from frequency × entropy, or
+  from the user's own history once that exists. The hand-made table measurably hurt.
+
+- Clamp the frequency term (e.g. Zipf capped at ~5.0 before the exponent) so proper-noun
+  artefacts like `roger` cannot override a meaningful entropy gap.
 
 ### Rust
 - `src/reconstruct.rs` — share-text parsing, belief-set tracking, constraint penalties,
@@ -211,6 +317,11 @@ listing ranked alternatives ("*246 other words fit this row*") → `Use this boa
 Confidence chips: **Certain** (`|Sᵢ| = 1`), **Confident** (≥ 0.6), **Likely** (≥ 0.3),
 **Uncertain** (< 0.3, alternatives expanded by default). Row 1 will be Uncertain on most
 boards. Never render a guess as fact.
+
+Ground truth confirms this is the right shape for the UI, not a hedge. On the 4/6 board the
+correct words for rows 1–2 sat at ranks 6 and 5 after the prior fix — present in a
+five-alternative expander, absent from any single-word answer. An uncertain row should read
+as "one of these", and the alternatives list is the actual product surface for early rows.
 
 ### Spoiler handling
 
