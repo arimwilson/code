@@ -13116,5 +13116,12 @@
     "solution": "posit",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-06",
+    "puzzle_number": 1874,
+    "solution": "gripe",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
