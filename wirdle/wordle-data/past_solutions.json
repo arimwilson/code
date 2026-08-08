@@ -13123,5 +13123,12 @@
     "solution": "gripe",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-08-07",
+    "puzzle_number": 1875,
+    "solution": "feign",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
