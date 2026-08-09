@@ -13130,5 +13130,12 @@
     "solution": "feign",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-08-08",
+    "puzzle_number": 1876,
+    "solution": "privy",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
