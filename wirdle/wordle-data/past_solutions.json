@@ -13137,5 +13137,12 @@
     "solution": "privy",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-09",
+    "puzzle_number": 1877,
+    "solution": "clunk",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
