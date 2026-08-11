@@ -13144,5 +13144,12 @@
     "solution": "clunk",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-10",
+    "puzzle_number": 1878,
+    "solution": "snipe",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
