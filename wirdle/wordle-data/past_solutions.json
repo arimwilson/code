@@ -13172,5 +13172,12 @@
     "solution": "crash",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-14",
+    "puzzle_number": 1882,
+    "solution": "geode",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
