@@ -13179,5 +13179,12 @@
     "solution": "geode",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-15",
+    "puzzle_number": 1883,
+    "solution": "loose",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
