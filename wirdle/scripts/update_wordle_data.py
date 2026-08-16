@@ -6,7 +6,7 @@ The output matches the files consumed by this crate:
   wordle-data/allowed_guesses.txt
   wordle-data/candidate_solutions.txt
   wordle-data/past_solutions.json
-  wordle-data/editorial_overrides.json
+  wordle-data/editorial_overrides.json (hand-maintained; preserved if present)
 """
 
 from __future__ import annotations
@@ -216,6 +216,30 @@ def fetch_all_past_solutions(through: date) -> list[dict[str, object]]:
     return rows
 
 
+def empty_editorial_overrides() -> dict[str, object]:
+    return {
+        "add_candidate_solutions": [],
+        "remove_candidate_solutions": [],
+        "word_priors": {},
+    }
+
+
+def load_editorial_overrides() -> dict[str, object]:
+    """Read the hand-maintained overrides, seeding the empty shape when absent.
+
+    A data refresh must not discard editorial tweaks, so an existing file is
+    kept as-is and only missing top-level keys are backfilled.
+    """
+    path = DATA_DIR / "editorial_overrides.json"
+    try:
+        existing = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return empty_editorial_overrides()
+    if not isinstance(existing, dict):
+        raise ValueError(f"{path} must contain a JSON object")
+    return {**empty_editorial_overrides(), **existing}
+
+
 def write_text(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as tmp:
@@ -242,6 +266,7 @@ def parse_args() -> tuple[date, bool]:
 
 def main() -> int:
     through, skip_past_solutions = parse_args()
+    editorial_overrides = load_editorial_overrides()
     guesses, answers = fetch_nyt_word_lists()
     past_solutions = (
         json.loads((DATA_DIR / "past_solutions.json").read_text(encoding="utf-8"))
@@ -261,15 +286,7 @@ def main() -> int:
     )
     write_text(
         DATA_DIR / "editorial_overrides.json",
-        json.dumps(
-            {
-                "add_candidate_solutions": [],
-                "remove_candidate_solutions": [],
-                "word_priors": {},
-            },
-            indent=2,
-        )
-        + "\n",
+        json.dumps(editorial_overrides, indent=2) + "\n",
     )
 
     print(f"allowed_guesses={len(allowed_guesses)}")
