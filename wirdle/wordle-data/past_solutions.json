@@ -13186,5 +13186,12 @@
     "solution": "loose",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-16",
+    "puzzle_number": 1884,
+    "solution": "aspic",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
