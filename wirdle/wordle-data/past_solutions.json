@@ -13200,5 +13200,12 @@
     "solution": "tribe",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-18",
+    "puzzle_number": 1886,
+    "solution": "strip",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
