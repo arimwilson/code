@@ -13214,5 +13214,12 @@
     "solution": "grill",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-20",
+    "puzzle_number": 1888,
+    "solution": "murky",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
