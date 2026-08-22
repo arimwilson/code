@@ -13221,5 +13221,12 @@
     "solution": "murky",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-21",
+    "puzzle_number": 1889,
+    "solution": "trace",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
