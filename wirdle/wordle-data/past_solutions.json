@@ -13235,5 +13235,12 @@
     "solution": "prawn",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-23",
+    "puzzle_number": 1891,
+    "solution": "olden",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
