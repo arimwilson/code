@@ -1,7 +1,5 @@
 {
-  "add_candidate_solutions": [
-    "aspic"
-  ],
-  "remove_candidate_solutions": [],
+  "add_likelier_solutions": [],
+  "remove_likelier_solutions": [],
   "word_priors": {}
 }

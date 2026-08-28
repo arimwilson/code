@@ -5,7 +5,9 @@ use wordle_api::feedback::{LetterStatus::*, pattern_from_statuses, statuses_from
 use wordle_api::filter::GuessInput;
 use wordle_api::rank::{evaluate_information_guess, rank_information_guesses, rank_likely_answers};
 use wordle_api::server::{handle_http_request, parse_coach_request, parse_solve_request};
-use wordle_api::solver::{PastSolutionPolicy, SolveMode, SolveRequest, entry};
+use wordle_api::solver::{
+    PastSolutionPolicy, SolveMode, SolveRequest, entry, off_list_backtest_cases,
+};
 use wordle_api::{
     EditorialOverrides, Lexicon, PastSolutionIndex, Solver, Word, evaluate_feedback,
     filter_candidates, known_backtest_cases, run_backtest,
@@ -16,7 +18,7 @@ fn word(input: &str) -> Word {
 }
 
 fn fixture_solver() -> Solver {
-    Solver::load("wordle-data").unwrap()
+    Solver::load_uncached("wordle-data").unwrap()
 }
 
 fn played_game(answer: &str, guesses: &[&str]) -> Vec<GuessInput> {
@@ -111,7 +113,7 @@ fn candidate_filter_uses_exact_feedback_patterns() {
 fn past_solution_penalty_downweights_without_eliminating() {
     let lexicon = Lexicon {
         allowed_guesses: vec![word("pride"), word("brain")],
-        candidate_solutions: vec![word("pride"), word("brain")],
+        likelier_solutions: [word("pride"), word("brain")].into_iter().collect(),
         overrides: EditorialOverrides::default(),
     };
     let past = PastSolutionIndex::from_entries(vec![entry("2026-05-20", 1, "pride")]);
@@ -174,7 +176,7 @@ fn no_candidates_error_is_clear() {
         .solve(&SolveRequest {
             guesses: vec![GuessInput::new(
                 word("slate"),
-                [Present, Present, Present, Present, Present],
+                [Correct, Correct, Correct, Correct, Present],
             )],
             mode: SolveMode::Hybrid,
             hard_mode: false,
@@ -223,14 +225,21 @@ fn evaluate_information_guess_matches_ranked_information_values() {
         enabled: false,
         ..PastSolutionPolicy::default()
     };
-    let likely = rank_likely_answers(
+    let likely = rank_likely_answers(&candidates, solver.past(), &policy, solver.lexicon());
+    let ranked = rank_information_guesses(
+        &[word("slate")],
         &candidates,
+        &likely,
         solver.past(),
-        &policy,
-        &solver.lexicon().overrides,
+        solver.lexicon(),
     );
-    let ranked = rank_information_guesses(&[word("slate")], &candidates, &likely, solver.past());
-    let evaluated = evaluate_information_guess(word("slate"), &candidates, &likely, solver.past());
+    let evaluated = evaluate_information_guess(
+        word("slate"),
+        &candidates,
+        &likely,
+        solver.past(),
+        solver.lexicon(),
+    );
 
     assert_eq!(ranked.len(), 1);
     assert_eq!(ranked[0].word, evaluated.word);
@@ -318,7 +327,7 @@ fn post_game_coach_rejects_incomplete_and_inconsistent_boards() {
             intent: CoachIntent::PostGameReview,
             guesses: vec![GuessInput::new(
                 word("slate"),
-                [Present, Present, Present, Present, Present],
+                [Correct, Correct, Correct, Correct, Present],
             )],
             hard_mode: false,
             hint_request: None,
@@ -379,7 +388,7 @@ fn easy_hint_rejects_bad_or_finished_boards() {
             CoachIntent::EasyHint,
             vec![GuessInput::new(
                 word("slate"),
-                [Present, Present, Present, Present, Present],
+                [Correct, Correct, Correct, Correct, Present],
             )],
         ),
     )
@@ -577,13 +586,13 @@ fn single_candidate_in_progress_game(solver: &Solver, answer: &str) -> Vec<Guess
     let answer = word(answer);
     let mut observed = Vec::new();
     for _ in 0..5 {
-        let candidates = filter_candidates(&solver.lexicon().candidate_solutions, &observed);
+        let candidates = filter_candidates(&solver.lexicon().allowed_guesses, &observed);
         if candidates == vec![answer] {
             return observed;
         }
         let guess = solver
             .lexicon()
-            .candidate_solutions
+            .allowed_guesses
             .iter()
             .copied()
             .filter(|candidate| *candidate != answer)
@@ -593,7 +602,7 @@ fn single_candidate_in_progress_game(solver: &Solver, answer: &str) -> Vec<Guess
                     *candidate,
                     statuses_from_pattern(evaluate_feedback(*candidate, answer)),
                 ));
-                filter_candidates(&solver.lexicon().candidate_solutions, &trial).len()
+                filter_candidates(&solver.lexicon().allowed_guesses, &trial).len()
             })
             .expect("candidate guess");
         observed.push(GuessInput::new(
@@ -602,7 +611,7 @@ fn single_candidate_in_progress_game(solver: &Solver, answer: &str) -> Vec<Guess
         ));
     }
     assert_eq!(
-        filter_candidates(&solver.lexicon().candidate_solutions, &observed),
+        filter_candidates(&solver.lexicon().allowed_guesses, &observed),
         vec![answer]
     );
     observed
@@ -755,7 +764,7 @@ fn coach_http_rejects_malformed_incomplete_and_inconsistent_boards() {
     assert_eq!(status, "422 Unprocessable Entity");
     assert!(response.contains("board_incomplete"));
 
-    let inconsistent = r#"{"intent":"post_game_review","guesses":[{"word":"slate","statuses":["present","present","present","present","present"]}]}"#;
+    let inconsistent = r#"{"intent":"post_game_review","guesses":[{"word":"slate","statuses":["correct","correct","correct","correct","present"]}]}"#;
     let request = format!(
         "POST /v1/coach HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
         inconsistent.len(),
@@ -801,12 +810,130 @@ fn health_includes_historical_solution_dates() {
 }
 
 #[test]
-fn backtest_solves_last_five_fixture_cases() {
+fn backtest_solves_fixture_and_off_list_cases() {
     let lexicon = Lexicon::load("wordle-data").unwrap();
     let past = PastSolutionIndex::load("wordle-data/past_solutions.json").unwrap();
-    let games = run_backtest(&lexicon, &past, &known_backtest_cases(), 6);
+    let cases = known_backtest_cases();
+    let games = run_backtest(&lexicon, &past, &cases, 6);
 
-    assert_eq!(games.len(), 5);
+    assert_eq!(games.len(), 5 + off_list_backtest_cases().len());
     assert!(games.iter().all(|game| game.solved));
     assert!(games.iter().all(|game| game.guesses.len() <= 6));
+}
+
+#[test]
+fn off_list_answers_are_live_candidates() {
+    let solver = fixture_solver();
+    let response = solver
+        .solve(&SolveRequest {
+            guesses: vec![],
+            mode: SolveMode::LikelyAnswer,
+            hard_mode: false,
+            limit: usize::MAX,
+            past_solution_policy: PastSolutionPolicy::default(),
+        })
+        .unwrap();
+
+    // Every accepted word is a candidate now, including answers NYT picked
+    // that were never on the likelier-solutions list.
+    assert_eq!(
+        response.remaining_candidates,
+        solver.lexicon().allowed_guesses.len()
+    );
+    for (_, _, answer) in off_list_backtest_cases() {
+        let ranked = response
+            .likely_answers
+            .iter()
+            .find(|candidate| candidate.word == word(answer))
+            .unwrap_or_else(|| panic!("{answer} should be rankable"));
+        assert!(
+            ranked.probability > 0.0,
+            "{answer} should have nonzero probability"
+        );
+    }
+}
+
+#[test]
+fn plurals_do_not_crowd_out_likelier_answers() {
+    let solver = fixture_solver();
+    let response = solver
+        .solve(&SolveRequest {
+            guesses: vec![],
+            mode: SolveMode::LikelyAnswer,
+            hard_mode: false,
+            limit: 25,
+            past_solution_policy: PastSolutionPolicy::default(),
+        })
+        .unwrap();
+
+    let top: Vec<String> = response
+        .likely_answers
+        .iter()
+        .map(|answer| answer.word.to_string())
+        .collect();
+
+    // The accepted-guess universe is full of `-s` plurals of ordinary words.
+    // Those are the words that swamp the ranking if the priors are computed
+    // over the whole universe, so none should reach the top of the list.
+    let plurals: Vec<&String> = top
+        .iter()
+        .filter(|candidate| {
+            candidate.ends_with('s')
+                && Word::parse(&candidate[..4])
+                    .map(|stem| solver.lexicon().is_likelier(stem))
+                    .unwrap_or(false)
+        })
+        .collect();
+    assert!(
+        plurals.is_empty(),
+        "plurals of likelier words should not reach the top: {plurals:?} in {top:?}"
+    );
+
+    // Off-list words stay live but must not dominate: the list NYT actually
+    // draws from should still supply the bulk of the top answers.
+    let likelier_count = response
+        .likely_answers
+        .iter()
+        .filter(|answer| solver.lexicon().is_likelier(answer.word))
+        .count();
+    assert!(
+        likelier_count >= 20,
+        "expected likelier words to dominate the top 25, got {likelier_count}: {top:?}"
+    );
+}
+
+#[test]
+fn first_turn_cache_matches_uncached_ranking() {
+    let uncached = fixture_solver();
+    let cached = fixture_solver().with_first_turn_cache();
+    let request = || SolveRequest {
+        guesses: vec![],
+        mode: SolveMode::Hybrid,
+        hard_mode: false,
+        limit: 30,
+        past_solution_policy: PastSolutionPolicy::default(),
+    };
+
+    let slow = uncached.solve(&request()).unwrap();
+    let fast = cached.solve(&request()).unwrap();
+
+    assert_eq!(slow.remaining_candidates, fast.remaining_candidates);
+    assert_eq!(
+        slow.best_information_guesses.len(),
+        fast.best_information_guesses.len()
+    );
+    for (slow_guess, fast_guess) in slow
+        .best_information_guesses
+        .iter()
+        .zip(fast.best_information_guesses.iter())
+    {
+        assert_eq!(slow_guess.word, fast_guess.word);
+        assert_eq!(
+            slow_guess.worst_case_remaining,
+            fast_guess.worst_case_remaining
+        );
+        assert!((slow_guess.entropy_bits - fast_guess.entropy_bits).abs() < 1e-9);
+        assert!((slow_guess.expected_remaining - fast_guess.expected_remaining).abs() < 1e-9);
+        assert!((slow_guess.score - fast_guess.score).abs() < 1e-9);
+    }
 }

@@ -357,7 +357,7 @@ pub fn analyze_board(
     let mut turns = Vec::with_capacity(guesses.len());
     let mut prior = Vec::new();
     let mut solved_turn = None;
-    let mut final_remaining_candidates = solver.lexicon().candidate_solutions.len();
+    let mut final_remaining_candidates = solver.lexicon().allowed_guesses.len();
 
     for (idx, guess) in guesses.iter().enumerate() {
         if solved_turn.is_some() {
@@ -367,7 +367,7 @@ pub fn analyze_board(
             ));
         }
 
-        let candidates_before = filter_candidates(&solver.lexicon().candidate_solutions, &prior);
+        let candidates_before = filter_candidates(&solver.lexicon().allowed_guesses, &prior);
         if candidates_before.is_empty() {
             return Err(board_inconsistent());
         }
@@ -376,18 +376,18 @@ pub fn analyze_board(
             &candidates_before,
             solver.past(),
             &PastSolutionPolicy::default(),
-            &solver.lexicon().overrides,
+            solver.lexicon(),
         );
         let information = evaluate_information_guess(
             guess.word,
             &candidates_before,
             &likely_answers,
             solver.past(),
+            solver.lexicon(),
         );
         let mut with_current = prior.clone();
         with_current.push(guess.clone());
-        let candidates_after =
-            filter_candidates(&solver.lexicon().candidate_solutions, &with_current);
+        let candidates_after = filter_candidates(&solver.lexicon().allowed_guesses, &with_current);
         if candidates_after.is_empty() {
             return Err(board_inconsistent());
         }
@@ -1077,7 +1077,7 @@ fn hint_share_summary(
 }
 
 fn current_candidates(solver: &Solver, guesses: &[GuessInput]) -> Vec<Word> {
-    filter_candidates(&solver.lexicon().candidate_solutions, guesses)
+    filter_candidates(&solver.lexicon().allowed_guesses, guesses)
 }
 
 fn known_green_positions(guesses: &[GuessInput]) -> Vec<(usize, u8)> {
@@ -1270,7 +1270,7 @@ fn human_like_guess_options(
         candidates,
         solver.past(),
         &PastSolutionPolicy::default(),
-        &solver.lexicon().overrides,
+        solver.lexicon(),
     );
     let likely_scores: HashMap<Word, f64> = likely_answers
         .iter()
@@ -1281,8 +1281,13 @@ fn human_like_guess_options(
         .copied()
         .filter(|word| !hard_mode || is_candidate_consistent(*word, guesses))
         .map(|word| {
-            let information =
-                evaluate_information_guess(word, candidates, &likely_answers, solver.past());
+            let information = evaluate_information_guess(
+                word,
+                candidates,
+                &likely_answers,
+                solver.past(),
+                solver.lexicon(),
+            );
             let likely_score = likely_scores.get(&word).copied().unwrap_or(0.0);
             let mut human_score = 100;
             human_score += (likely_score * 70.0).round() as i32;

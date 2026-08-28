@@ -1,6 +1,6 @@
 # Wirdle v2.1: Remove the Candidate Solutions List
 
-**Status: Unimplemented.** This is a proposed design; none of the changes below have been made.
+**Status: Implemented.** See "Implementation notes" at the end for the two places the built version departs from this design, and for measured results.
 
 ## Summary
 
@@ -125,3 +125,35 @@ Design:
 
 - Whether 0.2 survives backtest contact (see the weight tuning note); the constant is deliberately isolated so retuning is a one-line change.
 - Whether `remaining_candidates` jumping to 14,855 needs frontend copy softening (e.g. showing the likelier-consistent count alongside), since users may read "14,855 possible answers" as a regression. Deferred until the UI is touched.
+
+
+## Implementation notes
+
+Implemented on `claude/wordle-remove-candidate-list-gw0uay`. Two deviations from the design above, both found while verifying the running server:
+
+### Deviation 1: entropy is prior-weighted, not uniform
+
+The design left `evaluate_information_guess` computing entropy over an unweighted pool and changed only the possible-answer bonus. Verification showed that is not enough. With a uniform distribution over 14,855 words, the recommended guesses became words chosen for splitting the obscure tail: first turn `tares, lares, rales, rates, ranes`, and mid-game `corni, morin, porin` — words a player would not enter.
+
+The fix keeps every accepted word a candidate but measures information against the distribution answers are actually drawn from: each candidate contributes its likelier weight (1.0 or 0.2) to its feedback bucket, and entropy and expected-remaining are computed from those weighted masses. `worst_case_remaining` still uses raw counts, since that is the number of words a player could actually still face. Mid-game recommendations moved from `corni, morin, porin` to `crony, round, corny, groin`.
+
+The weights are static, so this is fully compatible with the startup cache; `FirstTurnStats::compute` applies the identical weighting, and a test asserts the cached and uncached paths agree to 1e-9.
+
+Because `rank_information_guesses` evaluates every guess against the same candidate pool, the per-candidate weight lookup is hoisted out of the per-guess loop (`candidate_weights`). Without that hoist the weighting cost 15.7M redundant `BTreeSet` probes and doubled mid-game latency (1.32s → 2.79s); with it, mid-game is 1.47s.
+
+### Deviation 2: the "impossible board" test fixture changed
+
+Four tests used `slate` with all-present feedback as their inconsistent-board fixture. That board is no longer inconsistent: `taels`, `tales`, and `tesla` are accepted words that satisfy it, and under the new universe they are legitimate candidates. The fixture is now `slate` with the first four letters correct and `e` present, which is impossible for any word in any list (four greens fix every position, so the fifth letter cannot be elsewhere) and so will not break again on a data refresh.
+
+### Measured results
+
+- **Off-list answers are solvable.** All 8 answers that were unsolvable under the old candidate list (`pshaw`, `shill`, `aloha`, `clunk`, `geode`, `aspic`, `runny`, `capon`) now solve in the backtest, averaging 3.25 guesses. They are permanent backtest cases via `off_list_backtest_cases()`.
+- **First-turn latency improved over the pre-change baseline**, not just over the widened cost: 2.24s before → ~0.02s served from cache. Startup warmup is 8-9s, and the listener binds only afterwards, so no request ever sees a cold cache.
+- **Answer ranking quality held.** Top likely answers are `sooty, sauce, shale, saner, sleet, slant, shone, crier` — effectively identical to the pre-change list. Exactly one off-list word (`sooey`) appears in the top 25, and no plural of a likelier word does.
+- **Guess efficiency cost.** On the 5 original backtest cases, average guesses rose from 3.20 to 3.80. This is the expected information-theoretic price of a 6.3x larger universe (log2(14855/2359) ≈ 2.65 bits ≈ half a guess) and is the deliberate trade for never missing an answer.
+- 35 tests pass, `cargo fmt --check` is clean.
+
+### Still open
+
+- `OTHER_ACCEPTED_WEIGHT = 0.2` was not retuned; the observed ranking quality did not call for it. It remains a one-line change in `src/lexicon.rs` if off-list words start crowding the top.
+- `remaining_candidates` now starts at 14,855 in `/v1/solve` responses. The Word Lists panel explains the new model, but the number itself may still read as a regression to users; deferred as before.

@@ -1289,7 +1289,7 @@
 
       function openDataInfo() {
         const details = wordListInfo
-          ? `<p>Loaded ${formatNumber(wordListInfo.allowedGuesses)} allowed guess words and ${formatNumber(wordListInfo.candidateSolutions)} possible answer words.</p>
+          ? `<p>Loaded ${formatNumber(wordListInfo.allowedGuesses)} accepted words. Any of them can be the answer, and ${formatNumber(wordListInfo.likelierSolutions)} of them are words the NYT has historically drawn answers from, which are weighted more heavily.</p>
             <p>Historical solutions: ${formatNumber(wordListInfo.pastSolutions)} from ${wordListInfo.pastSolutionFirstDate} through ${wordListInfo.pastSolutionLatestDate}.</p>`
           : "<p>The word lists are still loading.</p>";
         openOverlay(
@@ -2183,7 +2183,7 @@
         .then((response) => response.json())
         .then((data) => {
           wordListInfo = {
-            candidateSolutions: data.candidate_solutions,
+            likelierSolutions: data.likelier_solutions,
             allowedGuesses: data.allowed_guesses,
             pastSolutions: data.past_solutions,
             pastSolutionFirstDate: data.past_solution_first_date,

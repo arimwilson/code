@@ -6,8 +6,8 @@ use std::path::Path;
 
 #[derive(Clone, Debug, Default)]
 pub struct EditorialOverrides {
-    pub add_candidate_solutions: BTreeSet<Word>,
-    pub remove_candidate_solutions: BTreeSet<Word>,
+    pub add_likelier_solutions: BTreeSet<Word>,
+    pub remove_likelier_solutions: BTreeSet<Word>,
     pub word_priors: BTreeMap<Word, f64>,
 }
 
@@ -19,17 +19,29 @@ impl EditorialOverrides {
             Err(err) => return Err(err),
         };
         Ok(Self {
-            add_candidate_solutions: parse_word_array(&text, "add_candidate_solutions"),
-            remove_candidate_solutions: parse_word_array(&text, "remove_candidate_solutions"),
+            add_likelier_solutions: parse_word_array(&text, "add_likelier_solutions"),
+            remove_likelier_solutions: parse_word_array(&text, "remove_likelier_solutions"),
             word_priors: parse_word_priors(&text),
         })
     }
 }
 
+/// Ranking weight for words on the likelier-solutions list.
+pub const LIKELIER_WEIGHT: f64 = 1.0;
+
+/// Ranking weight for accepted words that are not on the likelier-solutions
+/// list. NYT picks these regularly now (8 of the ~45 answers after
+/// 2026-07-15), so they must stay live candidates, just less likely ones.
+pub const OTHER_ACCEPTED_WEIGHT: f64 = 0.2;
+
 #[derive(Clone, Debug)]
 pub struct Lexicon {
+    /// The full NYT accepted-guess list. This is also the solution universe:
+    /// any accepted word can be the answer.
     pub allowed_guesses: Vec<Word>,
-    pub candidate_solutions: Vec<Word>,
+    /// Words NYT has historically drawn answers from. Used only as a ranking
+    /// prior, never as a filter.
+    pub likelier_solutions: BTreeSet<Word>,
     pub overrides: EditorialOverrides,
 }
 
@@ -37,26 +49,40 @@ impl Lexicon {
     pub fn load(data_dir: impl AsRef<Path>) -> io::Result<Self> {
         let data_dir = data_dir.as_ref();
         let mut allowed_guesses = load_words(data_dir.join("allowed_guesses.txt"))?;
-        let mut candidate_solutions = load_words(data_dir.join("candidate_solutions.txt"))?;
+        let mut likelier_solutions: BTreeSet<Word> =
+            load_words(data_dir.join("likelier_solutions.txt"))?
+                .into_iter()
+                .collect();
         let overrides = EditorialOverrides::load(data_dir.join("editorial_overrides.json"))?;
 
-        for word in &overrides.add_candidate_solutions {
-            if !candidate_solutions.contains(word) {
-                candidate_solutions.push(*word);
-            }
+        for word in &overrides.add_likelier_solutions {
+            likelier_solutions.insert(*word);
             if !allowed_guesses.contains(word) {
                 allowed_guesses.push(*word);
             }
         }
-        candidate_solutions.retain(|word| !overrides.remove_candidate_solutions.contains(word));
+        likelier_solutions.retain(|word| !overrides.remove_likelier_solutions.contains(word));
         sort_dedup(&mut allowed_guesses);
-        sort_dedup(&mut candidate_solutions);
 
         Ok(Self {
             allowed_guesses,
-            candidate_solutions,
+            likelier_solutions,
             overrides,
         })
+    }
+
+    /// Ranking weight for `word`, by whether NYT has historically drawn
+    /// answers from it.
+    pub fn likelier_weight(&self, word: Word) -> f64 {
+        if self.likelier_solutions.contains(&word) {
+            LIKELIER_WEIGHT
+        } else {
+            OTHER_ACCEPTED_WEIGHT
+        }
+    }
+
+    pub fn is_likelier(&self, word: Word) -> bool {
+        self.likelier_solutions.contains(&word)
     }
 }
 
