@@ -11,7 +11,13 @@ cargo run --bin wordle-server
 python3 scripts/update_wordle_data.py
 ```
 
-The server precomputes first-turn statistics over the full accepted-word list before it binds its port, so requests never observe a cold cache. The warmup is threaded and takes roughly 2 seconds; hosted platforms need a health-check start period longer than that.
+The server needs first-turn statistics over the full accepted-word list before it binds its port, so requests never observe a cold cache. At startup it loads them from `wordle-data/first_turn_cache.bin` (override with `WORDLE_FIRST_TURN_CACHE`) when that file matches the current word data; otherwise it computes them, which takes roughly 2 seconds on a 4-core machine and far longer on throttled instances. Generate the cache with:
+
+```bash
+cargo run --release --bin wordle-server -- --warm-cache
+```
+
+The Docker image runs this at build time, so deployed cold starts skip the computation. The cache is fingerprinted against the word list and prior weights; a stale or corrupt file is ignored and recomputed, never trusted.
 
 The server listens on `127.0.0.1:7878` by default and serves the web UI at `/`. Override with:
 

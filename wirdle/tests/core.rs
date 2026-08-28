@@ -6,7 +6,7 @@ use wordle_api::filter::GuessInput;
 use wordle_api::rank::{evaluate_information_guess, rank_information_guesses, rank_likely_answers};
 use wordle_api::server::{handle_http_request, parse_coach_request, parse_solve_request};
 use wordle_api::solver::{
-    PastSolutionPolicy, SolveMode, SolveRequest, entry, off_list_backtest_cases,
+    FirstTurnStats, PastSolutionPolicy, SolveMode, SolveRequest, entry, off_list_backtest_cases,
 };
 use wordle_api::{
     EditorialOverrides, Lexicon, PastSolutionIndex, Solver, Word, evaluate_feedback,
@@ -960,6 +960,61 @@ fn plurals_do_not_crowd_out_likelier_answers() {
         likelier_count >= 20,
         "expected likelier words to dominate the top 25, got {likelier_count}: {top:?}"
     );
+}
+
+fn small_cache_lexicon() -> Lexicon {
+    let words = ["slate", "crane", "pride", "brain", "sooty", "clunk"];
+    Lexicon {
+        allowed_guesses: words.iter().map(|w| word(w)).collect(),
+        likelier_solutions: ["slate", "crane"].iter().map(|w| word(w)).collect(),
+        overrides: EditorialOverrides::default(),
+    }
+}
+
+fn temp_cache_path(name: &str) -> std::path::PathBuf {
+    std::env::temp_dir().join(format!("wirdle-test-{name}-{}.bin", std::process::id()))
+}
+
+#[test]
+fn first_turn_cache_file_roundtrips_and_rejects_stale_data() {
+    let lexicon = small_cache_lexicon();
+    let stats = FirstTurnStats::compute(&lexicon);
+    let path = temp_cache_path("roundtrip");
+
+    stats.save(&path, &lexicon).unwrap();
+    let loaded = FirstTurnStats::load(&path, &lexicon).unwrap();
+    let past = PastSolutionIndex::from_entries(vec![]);
+    let from_computed = Solver::new(lexicon.clone(), past.clone()).with_first_turn_stats(stats);
+    let from_file = Solver::new(lexicon.clone(), past).with_first_turn_stats(loaded);
+    let request = solve_request(SolveMode::Hybrid, 10);
+    let computed = from_computed.solve(&request).unwrap();
+    let cached = from_file.solve(&request).unwrap();
+    for (a, b) in computed
+        .best_information_guesses
+        .iter()
+        .zip(cached.best_information_guesses.iter())
+    {
+        assert_eq!(a.word, b.word);
+        assert_eq!(a.worst_case_remaining, b.worst_case_remaining);
+        assert!((a.score - b.score).abs() < 1e-12);
+    }
+
+    // A changed word list must invalidate the cache: wrong statistics served
+    // silently would be worse than recomputing.
+    let mut grown = lexicon.clone();
+    grown.allowed_guesses.push(word("geode"));
+    assert!(FirstTurnStats::load(&path, &grown).is_err());
+
+    // Same list, different weights (likelier membership) must also invalidate.
+    let mut reweighted = lexicon.clone();
+    reweighted.likelier_solutions.insert(word("sooty"));
+    assert!(FirstTurnStats::load(&path, &reweighted).is_err());
+
+    // Corruption and absence fall back too.
+    std::fs::write(&path, b"not a cache").unwrap();
+    assert!(FirstTurnStats::load(&path, &lexicon).is_err());
+    std::fs::remove_file(&path).unwrap();
+    assert!(FirstTurnStats::load(&path, &lexicon).is_err());
 }
 
 #[test]
