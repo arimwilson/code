@@ -14,7 +14,7 @@ pub use lexicon::{EditorialOverrides, Lexicon};
 pub use past_solutions::{PastSolutionEntry, PastSolutionIndex};
 pub use rank::{InformationGuess, LikelyAnswer};
 pub use solver::{
-    BacktestCase, BacktestGame, PastSolutionPolicy, SolveMode, SolveRequest, SolveResponse, Solver,
-    known_backtest_cases, run_backtest,
+    BacktestCase, BacktestGame, FirstTurnStats, PastSolutionPolicy, SolveMode, SolveRequest,
+    SolveResponse, Solver, known_backtest_cases, run_backtest,
 };
 pub use word::Word;

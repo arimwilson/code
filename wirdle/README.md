@@ -11,6 +11,8 @@ cargo run --bin wordle-server
 python3 scripts/update_wordle_data.py
 ```
 
+The server precomputes first-turn statistics over the full accepted-word list before it binds its port, so requests never observe a cold cache. The warmup is threaded and takes roughly 2 seconds; hosted platforms need a health-check start period longer than that.
+
 The server listens on `127.0.0.1:7878` by default and serves the web UI at `/`. Override with:
 
 ```bash
@@ -55,8 +57,8 @@ Example `POST /v1/solve` body:
 
 Sources:
 
-- `allowed_guesses.txt`: extracted from the current NYT Wordle JavaScript assets referenced by `https://www.nytimes.com/games/wordle/index.html`.
-- `candidate_solutions.txt`: the original answer slice from the same NYT asset, merged with observed historical solutions.
+- `allowed_guesses.txt`: extracted from the current NYT Wordle JavaScript assets referenced by `https://www.nytimes.com/games/wordle/index.html`. This is the solution universe: any accepted word can be the answer.
+- `likelier_solutions.txt`: the original answer slice from the same NYT asset, merged with observed historical solutions. This is only a ranking prior, never a filter. NYT now regularly picks answers outside it (8 of the ~45 answers after 2026-07-15), so words on this list are weighted 1.0 in answer ranking and other accepted words 0.2.
 - `past_solutions.json`: dated NYT puzzle JSON from `https://www.nytimes.com/svc/wordle/v2/YYYY-MM-DD.json`. The scheduled GitHub Action updates it through the previous New York Wordle date.
 
-As of the latest update in this checkout, `past_solutions.json` contains 1,817 rows through Wordle 1,816 on `2026-06-09`.
+As of the latest update in this checkout, `past_solutions.json` contains 1,895 rows through Wordle 1,894 on `2026-08-26`.

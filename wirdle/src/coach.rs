@@ -1,6 +1,8 @@
 use crate::feedback::LetterStatus;
 use crate::filter::{GuessInput, filter_candidates, is_candidate_consistent};
-use crate::rank::evaluate_information_guess;
+use crate::rank::{
+    CandidatePool, bucket_stats, effective_size, evaluate_information_guess, information_guess,
+};
 use crate::rank::{InformationGuess, rank_likely_answers};
 use crate::solver::{PastSolutionPolicy, Solver};
 use crate::word::Word;
@@ -138,6 +140,11 @@ pub struct BoardAnalysis {
     pub state: BoardState,
     pub turns: Vec<TurnAnalysis>,
     pub final_remaining_candidates: usize,
+    /// Prior-weighted size of the final pool. Thresholds tuned against the old
+    /// answer-only universe compare against this, not the raw count: the
+    /// accepted-guess universe adds ~12.5k words worth a fraction of an answer
+    /// each, which would otherwise push every board into a lower risk tier.
+    pub final_effective_candidates: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -357,7 +364,14 @@ pub fn analyze_board(
     let mut turns = Vec::with_capacity(guesses.len());
     let mut prior = Vec::new();
     let mut solved_turn = None;
-    let mut final_remaining_candidates = solver.lexicon().candidate_solutions.len();
+    let mut final_remaining_candidates = solver.lexicon().allowed_guesses.len();
+    // Any played guess overwrites this on the first loop iteration, so only pay
+    // the full-universe membership pass for a board with no guesses yet.
+    let mut final_effective_candidates = if guesses.is_empty() {
+        effective_size(&solver.lexicon().allowed_guesses, solver.lexicon())
+    } else {
+        0.0
+    };
 
     for (idx, guess) in guesses.iter().enumerate() {
         if solved_turn.is_some() {
@@ -367,7 +381,7 @@ pub fn analyze_board(
             ));
         }
 
-        let candidates_before = filter_candidates(&solver.lexicon().candidate_solutions, &prior);
+        let candidates_before = filter_candidates(&solver.lexicon().allowed_guesses, &prior);
         if candidates_before.is_empty() {
             return Err(board_inconsistent());
         }
@@ -376,18 +390,18 @@ pub fn analyze_board(
             &candidates_before,
             solver.past(),
             &PastSolutionPolicy::default(),
-            &solver.lexicon().overrides,
+            solver.lexicon(),
         );
         let information = evaluate_information_guess(
             guess.word,
             &candidates_before,
             &likely_answers,
             solver.past(),
+            solver.lexicon(),
         );
         let mut with_current = prior.clone();
         with_current.push(guess.clone());
-        let candidates_after =
-            filter_candidates(&solver.lexicon().candidate_solutions, &with_current);
+        let candidates_after = filter_candidates(&solver.lexicon().allowed_guesses, &with_current);
         if candidates_after.is_empty() {
             return Err(board_inconsistent());
         }
@@ -403,6 +417,7 @@ pub fn analyze_board(
         }
 
         final_remaining_candidates = candidates_after.len();
+        final_effective_candidates = effective_size(&candidates_after, solver.lexicon());
         turns.push(TurnAnalysis {
             turn_index: idx,
             statuses: guess.statuses,
@@ -423,9 +438,13 @@ pub fn analyze_board(
                 information_bucket(candidates_before.len(), candidates_after.len()),
                 guess.word,
                 &candidates_before,
+                solver.lexicon().is_likelier(guess.word),
             ),
             stage: stage(idx),
-            trap_risk: trap_risk(&candidates_before),
+            trap_risk: trap_risk(
+                &candidates_before,
+                effective_size(&candidates_before, solver.lexicon()),
+            ),
             duplicate_letter_note: duplicate_letter_note(guess),
             vowel_count: vowel_count(guess.word),
             solved_on_turn,
@@ -445,6 +464,7 @@ pub fn analyze_board(
         state,
         turns,
         final_remaining_candidates,
+        final_effective_candidates,
     })
 }
 
@@ -765,17 +785,17 @@ fn first_hint_level(analysis: &BoardAnalysis) -> HintLevel {
     if last_turn.constraint_discipline == ConstraintDiscipline::Miss {
         return HintLevel::GentleNudge;
     }
-    if analysis.turns.len() <= 3 && analysis.final_remaining_candidates > 20 {
+    if analysis.turns.len() <= 3 && analysis.final_effective_candidates > 20.0 {
         return HintLevel::GentleNudge;
     }
-    if last_turn.trap_risk != TrapRisk::Low || analysis.final_remaining_candidates <= 12 {
+    if last_turn.trap_risk != TrapRisk::Low || analysis.final_effective_candidates <= 12.0 {
         return HintLevel::NextMoveStrategy;
     }
     HintLevel::GentleNudge
 }
 
 fn should_downgrade_spoilery_mid_hint(analysis: &BoardAnalysis) -> bool {
-    analysis.turns.len() <= 1 && analysis.final_remaining_candidates > 80
+    analysis.turns.len() <= 1 && analysis.final_effective_candidates > 80.0
 }
 
 fn build_hint_response(
@@ -952,7 +972,7 @@ fn next_move_strategy_message(
         return "A pattern-splitting guess is more useful than trying similar answers one at a time."
             .to_string();
     }
-    if analysis.final_remaining_candidates <= 3 || analysis.turns.len() >= 5 {
+    if analysis.final_effective_candidates <= 3.0 || analysis.turns.len() >= 5 {
         return "With the board this narrow, prefer a plausible answer that respects every clue."
             .to_string();
     }
@@ -980,7 +1000,7 @@ fn next_move_strategy_message(
 }
 
 fn next_move_strategy_rationale(analysis: &BoardAnalysis) -> Option<String> {
-    if analysis.final_remaining_candidates <= 12 {
+    if analysis.final_effective_candidates <= 12.0 {
         return Some("The candidate pool is small enough that answer-shaped guesses matter more than pure information probes.".to_string());
     }
     if analysis
@@ -1077,7 +1097,7 @@ fn hint_share_summary(
 }
 
 fn current_candidates(solver: &Solver, guesses: &[GuessInput]) -> Vec<Word> {
-    filter_candidates(&solver.lexicon().candidate_solutions, guesses)
+    filter_candidates(&solver.lexicon().allowed_guesses, guesses)
 }
 
 fn known_green_positions(guesses: &[GuessInput]) -> Vec<(usize, u8)> {
@@ -1260,6 +1280,17 @@ fn common_edge_pattern(candidates: &[Word]) -> Option<(usize, Vec<u8>)> {
     None
 }
 
+/// How many of the most likely candidates get the expensive per-guess
+/// evaluation.
+///
+/// Callers surface only the top few options, and `human_score` is dominated by
+/// the likely-answer score, so the leaders always come from the head of that
+/// ranking. Evaluating the whole pool instead is O(n^2) over the accepted-guess
+/// universe: ~220M feedback evaluations, measured at ~38s for one hint request
+/// on an empty board. Narrow boards are unaffected — they have fewer candidates
+/// than this bound.
+const HUMAN_OPTION_EVALUATION_LIMIT: usize = 64;
+
 fn human_like_guess_options(
     solver: &Solver,
     candidates: &[Word],
@@ -1270,19 +1301,25 @@ fn human_like_guess_options(
         candidates,
         solver.past(),
         &PastSolutionPolicy::default(),
-        &solver.lexicon().overrides,
+        solver.lexicon(),
     );
     let likely_scores: HashMap<Word, f64> = likely_answers
         .iter()
         .map(|answer| (answer.word, answer.score))
         .collect();
-    let mut options = candidates
+    let considered: Vec<Word> = likely_answers
         .iter()
-        .copied()
+        .map(|answer| answer.word)
         .filter(|word| !hard_mode || is_candidate_consistent(*word, guesses))
+        .take(HUMAN_OPTION_EVALUATION_LIMIT)
+        .collect();
+    let pool = CandidatePool::new(candidates, solver.lexicon(), &likely_answers);
+    let mut options = considered
+        .into_iter()
         .map(|word| {
+            let stats = bucket_stats(word, &pool);
             let information =
-                evaluate_information_guess(word, candidates, &likely_answers, solver.past());
+                information_guess(word, &stats, &pool, solver.past(), solver.lexicon());
             let likely_score = likely_scores.get(&word).copied().unwrap_or(0.0);
             let mut human_score = 100;
             human_score += (likely_score * 70.0).round() as i32;
@@ -1424,11 +1461,15 @@ fn move_type(
     information_bucket: InformationBucket,
     guess: crate::word::Word,
     candidates: &[crate::word::Word],
+    is_likelier: bool,
 ) -> MoveType {
     if !respects_known_info {
         return MoveType::ConstraintMiss;
     }
-    let is_possible_answer = candidates.contains(&guess);
+    // With the accepted-guess list as the universe, mere membership is true for
+    // almost every guess, so an opener would grade as a solve attempt and Probe
+    // would be unreachable. Answer-shaped means likelier, as it does in ranking.
+    let is_possible_answer = candidates.contains(&guess) && is_likelier;
     if is_possible_answer && (candidates_before <= 3 || turn_index >= 4) {
         MoveType::ForcedSolve
     } else if is_possible_answer {
@@ -1449,14 +1490,14 @@ fn stage(turn_index: usize) -> Stage {
     }
 }
 
-fn trap_risk(candidates: &[crate::word::Word]) -> TrapRisk {
-    if candidates.len() <= 4 {
+fn trap_risk(candidates: &[crate::word::Word], effective: f64) -> TrapRisk {
+    if effective <= 4.0 {
         return TrapRisk::High;
     }
-    if candidates.len() <= 10 && tight_family(candidates) {
+    if effective <= 10.0 && tight_family(candidates) {
         return TrapRisk::High;
     }
-    if candidates.len() <= 16 {
+    if effective <= 16.0 {
         return TrapRisk::Moderate;
     }
     TrapRisk::Low

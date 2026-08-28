@@ -4,7 +4,7 @@
 The output matches the files consumed by this crate:
 
   wordle-data/allowed_guesses.txt
-  wordle-data/candidate_solutions.txt
+  wordle-data/likelier_solutions.txt
   wordle-data/past_solutions.json
   wordle-data/editorial_overrides.json (hand-maintained; preserved if present)
 """
@@ -218,8 +218,8 @@ def fetch_all_past_solutions(through: date) -> list[dict[str, object]]:
 
 def empty_editorial_overrides() -> dict[str, object]:
     return {
-        "add_candidate_solutions": [],
-        "remove_candidate_solutions": [],
+        "add_likelier_solutions": [],
+        "remove_likelier_solutions": [],
         "word_priors": {},
     }
 
@@ -237,6 +237,16 @@ def load_editorial_overrides() -> dict[str, object]:
         return empty_editorial_overrides()
     if not isinstance(existing, dict):
         raise ValueError(f"{path} must contain a JSON object")
+    # Migrate pre-v2.1 key names so a stale file is not silently emptied.
+    renamed = {
+        "add_candidate_solutions": "add_likelier_solutions",
+        "remove_candidate_solutions": "remove_likelier_solutions",
+    }
+    existing = dict(existing)
+    for old, new in renamed.items():
+        if old in existing:
+            existing.setdefault(new, existing.pop(old))
+            existing.pop(old, None)
     return {**empty_editorial_overrides(), **existing}
 
 
@@ -276,10 +286,10 @@ def main() -> int:
 
     past_words = {str(row["solution"]) for row in past_solutions}
     allowed_guesses = sorted(set(guesses) | set(answers) | past_words)
-    candidate_solutions = sorted(set(answers) | past_words)
+    likelier_solutions = sorted(set(answers) | past_words)
 
     write_text(DATA_DIR / "allowed_guesses.txt", "\n".join(allowed_guesses) + "\n")
-    write_text(DATA_DIR / "candidate_solutions.txt", "\n".join(candidate_solutions) + "\n")
+    write_text(DATA_DIR / "likelier_solutions.txt", "\n".join(likelier_solutions) + "\n")
     write_text(
         DATA_DIR / "past_solutions.json",
         json.dumps(past_solutions, indent=2, sort_keys=False) + "\n",
@@ -290,7 +300,7 @@ def main() -> int:
     )
 
     print(f"allowed_guesses={len(allowed_guesses)}")
-    print(f"candidate_solutions={len(candidate_solutions)}")
+    print(f"likelier_solutions={len(likelier_solutions)}")
     print(f"past_solutions={len(past_solutions)}")
     if past_solutions:
         print(f"past_solution_range={past_solutions[0]['date']}..{past_solutions[-1]['date']}")
