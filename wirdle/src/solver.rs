@@ -7,6 +7,7 @@ use crate::rank::{
     rank_information_guesses, rank_likely_answers, sort_information_guesses,
 };
 use crate::word::Word;
+use std::fs;
 use std::io;
 use std::path::Path;
 use std::sync::Arc;
@@ -121,6 +122,94 @@ impl FirstTurnStats {
     fn stats(&self) -> &[GuessStats] {
         &self.stats
     }
+
+    /// Serialize to `path`: magic, word count, lexicon fingerprint, then one
+    /// fixed-width record per guess, little-endian throughout. Written via a
+    /// temp file and rename so a crash mid-write cannot leave a torn cache.
+    pub fn save(&self, path: impl AsRef<Path>, lexicon: &Lexicon) -> io::Result<()> {
+        let path = path.as_ref();
+        let mut bytes =
+            Vec::with_capacity(CACHE_MAGIC.len() + 16 + self.stats.len() * CACHE_RECORD_BYTES);
+        bytes.extend_from_slice(CACHE_MAGIC);
+        bytes.extend_from_slice(&(self.stats.len() as u64).to_le_bytes());
+        bytes.extend_from_slice(&cache_fingerprint(lexicon).to_le_bytes());
+        for stat in &self.stats {
+            bytes.extend_from_slice(&stat.entropy_bits.to_le_bytes());
+            bytes.extend_from_slice(&stat.expected_remaining.to_le_bytes());
+            bytes.extend_from_slice(&(stat.worst_case_remaining as u64).to_le_bytes());
+        }
+        let tmp = path.with_extension("bin.tmp");
+        fs::write(&tmp, &bytes)?;
+        fs::rename(&tmp, path)
+    }
+
+    /// Load a cache written by `save`, refusing one that does not match the
+    /// current lexicon: a stale cache (word list or weights changed since the
+    /// build) must fall back to computing, never serve wrong statistics.
+    pub fn load(path: impl AsRef<Path>, lexicon: &Lexicon) -> io::Result<Self> {
+        let stale = |reason: &str| io::Error::new(io::ErrorKind::InvalidData, reason.to_string());
+        let bytes = fs::read(path)?;
+        let header_len = CACHE_MAGIC.len() + 16;
+        if bytes.len() < header_len || &bytes[..CACHE_MAGIC.len()] != CACHE_MAGIC {
+            return Err(stale("unrecognized first-turn cache header"));
+        }
+        let read_u64 = |offset: usize| {
+            u64::from_le_bytes(bytes[offset..offset + 8].try_into().expect("8-byte slice"))
+        };
+        let count = read_u64(CACHE_MAGIC.len()) as usize;
+        if count != lexicon.allowed_guesses.len() {
+            return Err(stale(
+                "first-turn cache word count does not match the word list",
+            ));
+        }
+        if read_u64(CACHE_MAGIC.len() + 8) != cache_fingerprint(lexicon) {
+            return Err(stale(
+                "first-turn cache was built from a different word list or weights",
+            ));
+        }
+        if bytes.len() != header_len + count * CACHE_RECORD_BYTES {
+            return Err(stale("first-turn cache is truncated"));
+        }
+
+        let stats = (0..count)
+            .map(|idx| {
+                let offset = header_len + idx * CACHE_RECORD_BYTES;
+                GuessStats {
+                    entropy_bits: f64::from_le_bytes(
+                        bytes[offset..offset + 8].try_into().expect("8-byte slice"),
+                    ),
+                    expected_remaining: f64::from_le_bytes(
+                        bytes[offset + 8..offset + 16]
+                            .try_into()
+                            .expect("8-byte slice"),
+                    ),
+                    worst_case_remaining: read_u64(offset + 16) as usize,
+                }
+            })
+            .collect();
+        Ok(Self { stats })
+    }
+}
+
+const CACHE_MAGIC: &[u8; 8] = b"WRDLFT01";
+const CACHE_RECORD_BYTES: usize = 24;
+
+/// Fingerprint of everything the first-turn statistics depend on: the ordered
+/// word list and each word's prior weight (which folds in likelier membership
+/// and the weight constants). FNV-1a, dependency-free.
+fn cache_fingerprint(lexicon: &Lexicon) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut mix = |bytes: &[u8]| {
+        for byte in bytes {
+            hash ^= u64::from(*byte);
+            hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+        }
+    };
+    for word in &lexicon.allowed_guesses {
+        mix(&word.0);
+        mix(&lexicon.likelier_weight(*word).to_le_bytes());
+    }
+    hash
 }
 
 #[derive(Clone, Debug)]
@@ -153,6 +242,12 @@ impl Solver {
 
     /// Precompute the empty-board statistics. Blocking and slow (seconds over
     /// the full accepted-guess list) — callers run it before serving traffic.
+    /// Attach statistics loaded from a build-time cache file.
+    pub fn with_first_turn_stats(mut self, stats: FirstTurnStats) -> Self {
+        self.first_turn = Some(Arc::new(stats));
+        self
+    }
+
     pub fn with_first_turn_cache(mut self) -> Self {
         let start = Instant::now();
         self.first_turn = Some(Arc::new(FirstTurnStats::compute(&self.lexicon)));
