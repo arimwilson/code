@@ -10,6 +10,7 @@ use crate::word::Word;
 use std::io;
 use std::path::Path;
 use std::sync::Arc;
+use std::thread;
 use std::time::Instant;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -84,11 +85,36 @@ impl FirstTurnStats {
         // request-dependent, so they are supplied later; only the bucket
         // statistics are cached here.
         let pool = CandidatePool::new(&lexicon.allowed_guesses, lexicon, &[]);
-        let stats = lexicon
-            .allowed_guesses
-            .iter()
-            .map(|guess| bucket_stats(*guess, &pool))
-            .collect();
+        let guesses = &lexicon.allowed_guesses;
+
+        // Each guess's sweep is independent and reads only shared state, so
+        // chunk it across threads. This blocks the server's port bind, so the
+        // wall time is startup latency.
+        let threads = thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1)
+            .min(guesses.len().max(1));
+        let chunk = guesses.len().div_ceil(threads.max(1)).max(1);
+
+        let mut stats = Vec::with_capacity(guesses.len());
+        thread::scope(|scope| {
+            let handles: Vec<_> = guesses
+                .chunks(chunk)
+                .map(|slice| {
+                    let pool = &pool;
+                    scope.spawn(move || {
+                        slice
+                            .iter()
+                            .map(|guess| bucket_stats(*guess, pool))
+                            .collect::<Vec<_>>()
+                    })
+                })
+                .collect();
+            for handle in handles {
+                stats.extend(handle.join().expect("first-turn worker panicked"));
+            }
+        });
+
         Self { stats }
     }
 

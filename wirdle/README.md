@@ -11,7 +11,7 @@ cargo run --bin wordle-server
 python3 scripts/update_wordle_data.py
 ```
 
-The server precomputes first-turn statistics over the full accepted-word list before it binds its port, so it takes roughly 15 seconds to start listening and requests never observe a cold cache. Hosted platforms need a health-check start period longer than that warmup.
+The server precomputes first-turn statistics over the full accepted-word list before it binds its port, so requests never observe a cold cache. The warmup is threaded and takes roughly 2 seconds; hosted platforms need a health-check start period longer than that.
 
 The server listens on `127.0.0.1:7878` by default and serves the web UI at `/`. Override with:
 

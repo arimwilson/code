@@ -28,6 +28,10 @@ impl LetterStatus {
 
 pub type Pattern = u16;
 
+/// Number of distinct feedback patterns: three states over five positions,
+/// encoded base-3, so values run 0..=242.
+pub const PATTERN_COUNT: usize = 243;
+
 pub fn pattern_from_statuses(statuses: [LetterStatus; 5]) -> Pattern {
     statuses
         .iter()

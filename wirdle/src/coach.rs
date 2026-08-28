@@ -365,8 +365,13 @@ pub fn analyze_board(
     let mut prior = Vec::new();
     let mut solved_turn = None;
     let mut final_remaining_candidates = solver.lexicon().allowed_guesses.len();
-    let mut final_effective_candidates =
-        effective_size(&solver.lexicon().allowed_guesses, solver.lexicon());
+    // Any played guess overwrites this on the first loop iteration, so only pay
+    // the full-universe membership pass for a board with no guesses yet.
+    let mut final_effective_candidates = if guesses.is_empty() {
+        effective_size(&solver.lexicon().allowed_guesses, solver.lexicon())
+    } else {
+        0.0
+    };
 
     for (idx, guess) in guesses.iter().enumerate() {
         if solved_turn.is_some() {

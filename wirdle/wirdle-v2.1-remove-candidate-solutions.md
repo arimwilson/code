@@ -189,3 +189,22 @@ Also: `SolveMode::LikelyAnswer` no longer builds the information ranking just to
 - **`add/remove_likelier_solutions` are kept**, not folded into `word_priors`. They are not redundant: likelier membership also decides the positional-prior basis, the possible-answer bonus, and effective pool size, none of which `word_priors` reaches.
 - **The `AnswerReveal` gate still requires exactly one candidate.** It fires less often now, but loosening it would reveal a word that might not be the answer.
 - **A `CandidatePool` threaded through the whole pipeline** (replacing `&Lexicon` in `rank.rs`) is the deeper form of this change, but it reaches well beyond this diff; the pool exists now and can absorb the rest later.
+
+
+### Efficiency pass
+
+Measured wins applied after the review:
+
+- **Feedback patterns are a dense 0..=242 space** (three states, five positions, base-3), so `bucket_stats` buckets into fixed `[f64; 243]` / `[u32; 243]` arrays instead of allocating a `HashMap` per guess. Output is bit-identical; the map allocation and hashing dominated the sweep.
+- **The startup sweep is chunked across threads** with `std::thread::scope` (no new dependency). Each guess's sweep is independent and reads only shared state.
+
+Combined, startup fell from ~8.6s to **2.07s**, mid-game solve after a weak opener from ~5.6s to **3.36s**, and the debug test suite from 2m11s to well under a minute. `README.md`'s startup note was updated accordingly.
+
+Also removed: `analyze_board` computed the full-universe effective size on every coach request and then overwrote it on the first loop iteration. It is now computed only for a board with no guesses — which, unlike the review suggested, does occur (an Easy Mode hint on an empty board), so the value still has to be correct there.
+
+### Efficiency work not done
+
+- **`rank_information_guesses` is still a sequential per-request sweep**, so a solve after a weak opener is ~3.4s — the slowest path left. Fanning it out would help (~0.9s projected), but `serve` already spawns a thread per connection, so it needs a bounded pool rather than unbounded per-request fan-out. That is a server design decision, not a local change.
+- **Both rankings fully materialize and sort ~14.8k rows to return 10-30.** `select_nth_unstable_by` plus sorting the head was measured at 11x on the sort alone (1.57ms to 0.14ms), worth ~2.5x on a cached first-turn request. Small in absolute terms (13ms to ~5ms) next to the item above.
+- **`likelier_solutions` remains a `BTreeSet`.** A `HashSet` halves membership-pass cost (717us to 361us) and a bitmask parallel to the sorted word list removes it; minor next to the sweep costs.
+- **`run_backtest` is sequential across independent cases**, worth ~4x on the two slow debug tests.

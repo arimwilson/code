@@ -1,4 +1,4 @@
-use crate::feedback::evaluate_feedback;
+use crate::feedback::{PATTERN_COUNT, evaluate_feedback};
 use crate::lexicon::Lexicon;
 use crate::past_solutions::PastSolutionIndex;
 use crate::solver::PastSolutionPolicy;
@@ -203,23 +203,29 @@ pub fn bucket_stats(guess: Word, pool: &CandidatePool<'_>) -> GuessStats {
         return GuessStats::default();
     }
 
-    let mut buckets: HashMap<u16, (f64, usize)> = HashMap::new();
+    // Feedback patterns form a dense 0..=242 space, so bucket into fixed arrays
+    // rather than a HashMap: this sweep runs once per guess over the whole
+    // accepted-guess list, and the map allocation plus hashing dominated it.
+    let mut bucket_weight = [0.0f64; PATTERN_COUNT];
+    let mut bucket_count = [0u32; PATTERN_COUNT];
     for (candidate, weight) in pool.words.iter().zip(pool.weights.iter()) {
-        let bucket = buckets
-            .entry(evaluate_feedback(guess, *candidate))
-            .or_insert((0.0, 0));
-        bucket.0 += weight;
-        bucket.1 += 1;
+        let pattern = evaluate_feedback(guess, *candidate) as usize;
+        bucket_weight[pattern] += weight;
+        bucket_count[pattern] += 1;
     }
 
     let mut stats = GuessStats::default();
-    for (bucket_weight, bucket_count) in buckets.values().copied() {
-        let p = bucket_weight / pool.total_weight;
+    for pattern in 0..PATTERN_COUNT {
+        let count = bucket_count[pattern];
+        if count == 0 {
+            continue;
+        }
+        let p = bucket_weight[pattern] / pool.total_weight;
         if p > 0.0 {
             stats.entropy_bits -= p * p.log2();
         }
-        stats.expected_remaining += p * bucket_count as f64;
-        stats.worst_case_remaining = stats.worst_case_remaining.max(bucket_count);
+        stats.expected_remaining += p * count as f64;
+        stats.worst_case_remaining = stats.worst_case_remaining.max(count as usize);
     }
     stats
 }
