@@ -13263,5 +13263,12 @@
     "solution": "capon",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-08-27",
+    "puzzle_number": 1895,
+    "solution": "uncut",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
