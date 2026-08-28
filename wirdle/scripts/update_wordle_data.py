@@ -237,6 +237,16 @@ def load_editorial_overrides() -> dict[str, object]:
         return empty_editorial_overrides()
     if not isinstance(existing, dict):
         raise ValueError(f"{path} must contain a JSON object")
+    # Migrate pre-v2.1 key names so a stale file is not silently emptied.
+    renamed = {
+        "add_candidate_solutions": "add_likelier_solutions",
+        "remove_candidate_solutions": "remove_likelier_solutions",
+    }
+    existing = dict(existing)
+    for old, new in renamed.items():
+        if old in existing:
+            existing.setdefault(new, existing.pop(old))
+            existing.pop(old, None)
     return {**empty_editorial_overrides(), **existing}
 
 

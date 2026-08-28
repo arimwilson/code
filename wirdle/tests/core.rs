@@ -17,8 +17,20 @@ fn word(input: &str) -> Word {
     Word::parse(input).unwrap()
 }
 
+const FIXTURE_DATA_DIR: &str = "wordle-data";
+
 fn fixture_solver() -> Solver {
-    Solver::load_uncached("wordle-data").unwrap()
+    Solver::load(FIXTURE_DATA_DIR).unwrap()
+}
+
+fn solve_request(mode: SolveMode, limit: usize) -> SolveRequest {
+    SolveRequest {
+        guesses: vec![],
+        mode,
+        hard_mode: false,
+        limit,
+        past_solution_policy: PastSolutionPolicy::default(),
+    }
 }
 
 fn played_game(answer: &str, guesses: &[&str]) -> Vec<GuessInput> {
@@ -811,27 +823,98 @@ fn health_includes_historical_solution_dates() {
 
 #[test]
 fn backtest_solves_fixture_and_off_list_cases() {
-    let lexicon = Lexicon::load("wordle-data").unwrap();
-    let past = PastSolutionIndex::load("wordle-data/past_solutions.json").unwrap();
+    let lexicon = Lexicon::load(FIXTURE_DATA_DIR).unwrap();
+    let past = PastSolutionIndex::load(format!("{FIXTURE_DATA_DIR}/past_solutions.json")).unwrap();
     let cases = known_backtest_cases();
     let games = run_backtest(&lexicon, &past, &cases, 6);
 
-    assert_eq!(games.len(), 5 + off_list_backtest_cases().len());
+    assert_eq!(games.len(), cases.len());
     assert!(games.iter().all(|game| game.solved));
     assert!(games.iter().all(|game| game.guesses.len() <= 6));
 }
 
 #[test]
-fn off_list_answers_are_live_candidates() {
+fn backtest_solves_answers_absent_from_the_likelier_list() {
+    // The nightly updater merges every past solution back into the likelier
+    // list, so by today's data the off-list answers are on it and would solve
+    // even under the old candidate-list universe. Drop them from the likelier
+    // list to reconstruct the state on the day each puzzle ran: that is the
+    // situation this change exists to fix, and the only one that regresses if
+    // the universe narrows again.
+    let mut lexicon = Lexicon::load(FIXTURE_DATA_DIR).unwrap();
+    let past = PastSolutionIndex::load(format!("{FIXTURE_DATA_DIR}/past_solutions.json")).unwrap();
+    let cases: Vec<_> = known_backtest_cases()
+        .into_iter()
+        .filter(|case| {
+            off_list_backtest_cases()
+                .iter()
+                .any(|(_, _, answer)| word(answer) == case.answer)
+        })
+        .collect();
+    assert_eq!(cases.len(), off_list_backtest_cases().len());
+
+    for case in &cases {
+        lexicon.likelier_solutions.remove(&case.answer);
+        assert!(
+            lexicon.allowed_guesses.contains(&case.answer),
+            "{} must remain an accepted word",
+            case.answer
+        );
+    }
+
+    let games = run_backtest(&lexicon, &past, &cases, 6);
+    let unsolved: Vec<String> = games
+        .iter()
+        .filter(|game| !game.solved)
+        .map(|game| game.case.answer.to_string())
+        .collect();
+    assert!(
+        unsolved.is_empty(),
+        "answers absent from the likelier list must still be solvable: {unsolved:?}"
+    );
+}
+
+#[test]
+fn accepted_words_outside_the_likelier_list_are_live_candidates() {
+    let solver = fixture_solver();
+    let off_list: Vec<Word> = solver
+        .lexicon()
+        .allowed_guesses
+        .iter()
+        .copied()
+        .filter(|word| !solver.lexicon().is_likelier(*word))
+        .take(50)
+        .collect();
+    assert!(!off_list.is_empty());
+
+    let response = solver
+        .solve(&solve_request(SolveMode::LikelyAnswer, usize::MAX))
+        .unwrap();
+
+    assert_eq!(
+        response.remaining_candidates,
+        solver.lexicon().allowed_guesses.len()
+    );
+    // Words the likelier list does not contain must still be rankable answers;
+    // that is precisely what the old candidate-list universe made impossible.
+    for candidate in off_list {
+        let ranked = response
+            .likely_answers
+            .iter()
+            .find(|answer| answer.word == candidate)
+            .unwrap_or_else(|| panic!("{candidate} should be rankable"));
+        assert!(
+            ranked.probability > 0.0,
+            "{candidate} should have nonzero probability"
+        );
+    }
+}
+
+#[test]
+fn recent_off_list_answers_are_live_candidates() {
     let solver = fixture_solver();
     let response = solver
-        .solve(&SolveRequest {
-            guesses: vec![],
-            mode: SolveMode::LikelyAnswer,
-            hard_mode: false,
-            limit: usize::MAX,
-            past_solution_policy: PastSolutionPolicy::default(),
-        })
+        .solve(&solve_request(SolveMode::LikelyAnswer, usize::MAX))
         .unwrap();
 
     // Every accepted word is a candidate now, including answers NYT picked
@@ -857,13 +940,7 @@ fn off_list_answers_are_live_candidates() {
 fn plurals_do_not_crowd_out_likelier_answers() {
     let solver = fixture_solver();
     let response = solver
-        .solve(&SolveRequest {
-            guesses: vec![],
-            mode: SolveMode::LikelyAnswer,
-            hard_mode: false,
-            limit: 25,
-            past_solution_policy: PastSolutionPolicy::default(),
-        })
+        .solve(&solve_request(SolveMode::LikelyAnswer, 25))
         .unwrap();
 
     let top: Vec<String> = response
@@ -871,23 +948,6 @@ fn plurals_do_not_crowd_out_likelier_answers() {
         .iter()
         .map(|answer| answer.word.to_string())
         .collect();
-
-    // The accepted-guess universe is full of `-s` plurals of ordinary words.
-    // Those are the words that swamp the ranking if the priors are computed
-    // over the whole universe, so none should reach the top of the list.
-    let plurals: Vec<&String> = top
-        .iter()
-        .filter(|candidate| {
-            candidate.ends_with('s')
-                && Word::parse(&candidate[..4])
-                    .map(|stem| solver.lexicon().is_likelier(stem))
-                    .unwrap_or(false)
-        })
-        .collect();
-    assert!(
-        plurals.is_empty(),
-        "plurals of likelier words should not reach the top: {plurals:?} in {top:?}"
-    );
 
     // Off-list words stay live but must not dominate: the list NYT actually
     // draws from should still supply the bulk of the top answers.
@@ -904,15 +964,23 @@ fn plurals_do_not_crowd_out_likelier_answers() {
 
 #[test]
 fn first_turn_cache_matches_uncached_ranking() {
-    let uncached = fixture_solver();
-    let cached = fixture_solver().with_first_turn_cache();
-    let request = || SolveRequest {
-        guesses: vec![],
-        mode: SolveMode::Hybrid,
-        hard_mode: false,
-        limit: 30,
-        past_solution_policy: PastSolutionPolicy::default(),
+    // A small lexicon exercises the same two code paths as the real word list
+    // while keeping the test in milliseconds instead of two full sweeps.
+    let words = [
+        "slate", "crane", "pride", "brain", "sooty", "shale", "clunk", "geode",
+    ];
+    let lexicon = Lexicon {
+        allowed_guesses: words.iter().map(|w| word(w)).collect(),
+        likelier_solutions: ["slate", "crane", "pride"]
+            .iter()
+            .map(|w| word(w))
+            .collect(),
+        overrides: EditorialOverrides::default(),
     };
+    let past = PastSolutionIndex::from_entries(vec![entry("2026-05-20", 1, "pride")]);
+    let uncached = Solver::new(lexicon.clone(), past.clone());
+    let cached = Solver::new(lexicon, past).with_first_turn_cache();
+    let request = || solve_request(SolveMode::Hybrid, 30);
 
     let slow = uncached.solve(&request()).unwrap();
     let fast = cached.solve(&request()).unwrap();
@@ -922,6 +990,7 @@ fn first_turn_cache_matches_uncached_ranking() {
         slow.best_information_guesses.len(),
         fast.best_information_guesses.len()
     );
+    assert!(!fast.best_information_guesses.is_empty());
     for (slow_guess, fast_guess) in slow
         .best_information_guesses
         .iter()
@@ -932,6 +1001,7 @@ fn first_turn_cache_matches_uncached_ranking() {
             slow_guess.worst_case_remaining,
             fast_guess.worst_case_remaining
         );
+        assert_eq!(slow_guess.is_likelier, fast_guess.is_likelier);
         assert!((slow_guess.entropy_bits - fast_guess.entropy_bits).abs() < 1e-9);
         assert!((slow_guess.expected_remaining - fast_guess.expected_remaining).abs() < 1e-9);
         assert!((slow_guess.score - fast_guess.score).abs() < 1e-9);

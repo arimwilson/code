@@ -157,3 +157,35 @@ Four tests used `slate` with all-present feedback as their inconsistent-board fi
 
 - `OTHER_ACCEPTED_WEIGHT = 0.2` was not retuned; the observed ranking quality did not call for it. It remains a one-line change in `src/lexicon.rs` if off-list words start crowding the top.
 - `remaining_candidates` now starts at 14,855 in `/v1/solve` responses. The Word Lists panel explains the new model, but the number itself may still read as a regression to users; deferred as before.
+
+
+## Post-review changes (code-review + simplify)
+
+A `/code-review` and `/simplify` pass after the first implementation found several defects and duplications. What changed:
+
+### Defects fixed
+
+- **Power Words tab was empty on every fresh board.** The UI filtered probes with `!is_possible_answer`, which is now true for all 14,855 first-turn guesses. `InformationGuess` gained an `is_likelier` flag, exposed in `/v1/solve`, and the UI filters on that instead: a probe is a word the answer list does not draw from, not merely an inconsistent one. Verified: 0 rows before, 33 after.
+- **`MoveType::Probe` had become unreachable.** `move_type` used bare pool membership, so every opener graded as a solve attempt. It now requires the guess to be likelier, matching how ranking defines answer-shaped.
+- **The coach hint ladder silently dropped a rung.** `trap_risk`, `first_hint_level`, and the spoiler-downgrade gate compare raw pool counts against thresholds tuned for the old answer-only universe, so a turn-2 pool of ~25 read as low-risk where ~4 used to read as high-risk. `BoardAnalysis` now carries `final_effective_candidates` — the prior-weighted pool size — and those thresholds compare against it. At turn 0 the effective size is ~4,858, not 14,855.
+- **A level-5 hint on an empty board took ~38s.** `human_like_guess_options` evaluated all 14,855 candidates O(N²) but its callers use only the top 3. It now evaluates the top `HUMAN_OPTION_EVALUATION_LIMIT` (64) by likely-answer rank; narrow boards are unaffected because they hold fewer candidates than the bound. Measured 38s to 0.07s.
+- **The old override keys were silently ignored.** `add/remove_candidate_solutions` are now accepted as aliases in both the Rust loader and the Python updater, so an un-migrated `editorial_overrides.json` is migrated rather than dropped and then overwritten.
+
+### The regression test did not test the regression
+
+The 8 "off-list" backtest cases pass identically on master: the nightly updater merges every past solution back into the list, so those words are on today's likelier list and would solve under the old universe too. They were only off-list *on the day each puzzle ran*.
+
+`backtest_solves_answers_absent_from_the_likelier_list` now removes each answer from `likelier_solutions` first, reconstructing the day-of state, and `accepted_words_outside_the_likelier_list_are_live_candidates` samples words that are genuinely not on the list. These fail if the universe ever narrows again; the originals did not.
+
+### Duplication removed
+
+The scoring formula, the four-key comparator, and the weighted-bucket loop existed in two copies (`rank.rs` and the cache in `solver.rs`), held together only by a comment and one fixed-point test. `rank.rs` now owns `GuessStats`, `bucket_stats`, `score_guess`, `information_guess`, and `sort_information_guesses`; `FirstTurnStats` stores `Vec<GuessStats>` — literally the request-independent part — and both paths call the same scorer and comparator. A `CandidatePool` carries the weights, membership set, and answer-probability map that were previously rebuilt per guess (~21M redundant hash inserts per mid-game solve).
+
+Also: `SolveMode::LikelyAnswer` no longer builds the information ranking just to discard it; `cached_first_turn` takes the `likely_answers` that `solve` already computed instead of recomputing them; `serve` shares one `Arc<Solver>` instead of deep-copying the lexicon and past-solution index per connection; and the warmup moved out of `Solver::load` into `with_first_turn_cache`, called by the server binary before `serve` binds — so there is one load path and the binding-order guarantee is explicit at the call site.
+
+### Reviewed and deliberately not changed
+
+- **`positional_letter_priors` stays a hard likelier subset**, not a `likelier_weight` blend, even though every other use of the prior is a weight. Blending was tried and measured: the accepted list holds ~5x more off-list words than likelier ones, so at 0.2 they still out-mass them (12,496 x 0.2 > 2,359) and the top answers collapse back into `-s` plurals (`sores`, `sanes`, `sones`) — 11 plurals in the top 25 versus none with the subset. The comment at that function now records why the inconsistency is deliberate.
+- **`add/remove_likelier_solutions` are kept**, not folded into `word_priors`. They are not redundant: likelier membership also decides the positional-prior basis, the possible-answer bonus, and effective pool size, none of which `word_priors` reaches.
+- **The `AnswerReveal` gate still requires exactly one candidate.** It fires less often now, but loosening it would reveal a word that might not be the answer.
+- **A `CandidatePool` threaded through the whole pipeline** (replacing `&Lexicon` in `rank.rs`) is the deeper form of this change, but it reaches well beyond this diff; the pool exists now and can absorb the rest later.

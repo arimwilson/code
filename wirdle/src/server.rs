@@ -12,9 +12,12 @@ use std::thread;
 pub fn serve(addr: &str, solver: Solver) -> std::io::Result<()> {
     let listener = TcpListener::bind(addr)?;
     eprintln!("wordle-server listening on http://{addr}");
+    // Share one Solver across connections: it owns a ~14.8k-word lexicon and the
+    // full past-solution index, so cloning it per request copied both.
+    let solver = std::sync::Arc::new(solver);
     for stream in listener.incoming() {
         let stream = stream?;
-        let solver = solver.clone();
+        let solver = std::sync::Arc::clone(&solver);
         thread::spawn(move || {
             if let Err(err) = handle_connection(stream, &solver) {
                 eprintln!("request failed: {err}");
@@ -281,12 +284,13 @@ fn solve_response_json(response: &SolveResponse) -> String {
         .iter()
         .map(|guess| {
             format!(
-                "{{\"word\":\"{}\",\"entropy_bits\":{:.6},\"expected_remaining\":{:.6},\"worst_case_remaining\":{},\"is_possible_answer\":{},\"used_before\":{},\"score\":{:.6}}}",
+                "{{\"word\":\"{}\",\"entropy_bits\":{:.6},\"expected_remaining\":{:.6},\"worst_case_remaining\":{},\"is_possible_answer\":{},\"is_likelier\":{},\"used_before\":{},\"score\":{:.6}}}",
                 guess.word,
                 guess.entropy_bits,
                 guess.expected_remaining,
                 guess.worst_case_remaining,
                 guess.is_possible_answer,
+                guess.is_likelier,
                 guess.used_before,
                 guess.score
             )

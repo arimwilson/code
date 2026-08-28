@@ -2,9 +2,11 @@ use crate::feedback::{LetterStatus, evaluate_feedback, statuses_from_pattern};
 use crate::filter::{GuessInput, filter_candidates, is_candidate_consistent};
 use crate::lexicon::Lexicon;
 use crate::past_solutions::{PastSolutionEntry, PastSolutionIndex};
-use crate::rank::{InformationGuess, LikelyAnswer, rank_information_guesses, rank_likely_answers};
+use crate::rank::{
+    CandidatePool, GuessStats, InformationGuess, LikelyAnswer, bucket_stats, information_guess,
+    rank_information_guesses, rank_likely_answers, sort_information_guesses,
+};
 use crate::word::Word;
-use std::collections::HashMap;
 use std::io;
 use std::path::Path;
 use std::sync::Arc;
@@ -64,15 +66,6 @@ pub struct SolveResponse {
     pub best_information_guesses: Vec<InformationGuess>,
 }
 
-/// Request-independent bucket statistics for one guess against the full
-/// solution universe (the empty-board case).
-#[derive(Clone, Copy, Debug)]
-pub struct FirstTurnStat {
-    pub entropy_bits: f64,
-    pub expected_remaining: f64,
-    pub worst_case_remaining: usize,
-}
-
 /// First-turn statistics for every allowed guess, parallel to
 /// `Lexicon::allowed_guesses`.
 ///
@@ -82,63 +75,25 @@ pub struct FirstTurnStat {
 /// at startup and reused by every fresh game.
 #[derive(Clone, Debug)]
 pub struct FirstTurnStats {
-    stats: Vec<FirstTurnStat>,
+    stats: Vec<GuessStats>,
 }
 
 impl FirstTurnStats {
     pub fn compute(lexicon: &Lexicon) -> Self {
-        let candidates = &lexicon.allowed_guesses;
-        // Mirrors `rank::evaluate_information_guess`: prior-weighted mass drives
-        // entropy and expected remaining, raw counts drive the worst case.
-        let weights: Vec<f64> = candidates
-            .iter()
-            .map(|candidate| lexicon.likelier_weight(*candidate))
-            .collect();
-        let total_weight = weights.iter().sum::<f64>().max(f64::EPSILON);
-
+        // The empty-board pool is the whole universe. Answer probabilities are
+        // request-dependent, so they are supplied later; only the bucket
+        // statistics are cached here.
+        let pool = CandidatePool::new(&lexicon.allowed_guesses, lexicon, &[]);
         let stats = lexicon
             .allowed_guesses
             .iter()
-            .map(|guess| {
-                let mut buckets: HashMap<u16, (f64, usize)> = HashMap::new();
-                for (candidate, weight) in candidates.iter().zip(weights.iter()) {
-                    let bucket = buckets
-                        .entry(evaluate_feedback(*guess, *candidate))
-                        .or_insert((0.0, 0));
-                    bucket.0 += weight;
-                    bucket.1 += 1;
-                }
-                let mut entropy_bits = 0.0;
-                let mut expected_remaining = 0.0;
-                let mut worst_case_remaining = 0usize;
-                for (bucket_weight, bucket_count) in buckets.values().copied() {
-                    let p = bucket_weight / total_weight;
-                    if p > 0.0 {
-                        entropy_bits -= p * p.log2();
-                    }
-                    expected_remaining += p * bucket_count as f64;
-                    worst_case_remaining = worst_case_remaining.max(bucket_count);
-                }
-                FirstTurnStat {
-                    entropy_bits,
-                    expected_remaining,
-                    worst_case_remaining,
-                }
-            })
+            .map(|guess| bucket_stats(*guess, &pool))
             .collect();
         Self { stats }
     }
 
-    pub fn len(&self) -> usize {
-        self.stats.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.stats.is_empty()
-    }
-
-    pub fn get(&self, index: usize) -> Option<FirstTurnStat> {
-        self.stats.get(index).copied()
+    fn stats(&self) -> &[GuessStats] {
+        &self.stats
     }
 }
 
@@ -150,25 +105,10 @@ pub struct Solver {
 }
 
 impl Solver {
-    /// Load a solver and precompute first-turn statistics.
-    ///
-    /// The warmup runs before this returns, and `serve` binds its listener only
-    /// afterwards, so no request can arrive before the cache is ready.
+    /// Load a solver. Call `with_first_turn_cache` to precompute the empty-board
+    /// statistics; the server does so before binding its listener, so no request
+    /// can arrive before the cache is ready.
     pub fn load(data_dir: impl AsRef<Path>) -> io::Result<Self> {
-        let mut solver = Self::load_uncached(data_dir)?;
-        let start = Instant::now();
-        solver.first_turn = Some(Arc::new(FirstTurnStats::compute(&solver.lexicon)));
-        eprintln!(
-            "precomputed first-turn statistics for {} guesses in {:?}",
-            solver.lexicon.allowed_guesses.len(),
-            start.elapsed()
-        );
-        Ok(solver)
-    }
-
-    /// Load a solver without the first-turn warmup, for tests and offline tools
-    /// that never solve an empty board.
-    pub fn load_uncached(data_dir: impl AsRef<Path>) -> io::Result<Self> {
         let data_dir = data_dir.as_ref();
         Ok(Self {
             lexicon: Lexicon::load(data_dir)?,
@@ -185,9 +125,16 @@ impl Solver {
         }
     }
 
-    /// Attach precomputed first-turn statistics to an existing solver.
+    /// Precompute the empty-board statistics. Blocking and slow (seconds over
+    /// the full accepted-guess list) — callers run it before serving traffic.
     pub fn with_first_turn_cache(mut self) -> Self {
+        let start = Instant::now();
         self.first_turn = Some(Arc::new(FirstTurnStats::compute(&self.lexicon)));
+        eprintln!(
+            "precomputed first-turn statistics for {} guesses in {:?}",
+            self.lexicon.allowed_guesses.len(),
+            start.elapsed()
+        );
         self
     }
 
@@ -203,7 +150,10 @@ impl Solver {
             &request.past_solution_policy,
             &self.lexicon,
         );
-        let mut best_information_guesses = if let Some(cached) = self.cached_first_turn(request) {
+        // LikelyAnswer mode discards the information ranking, so skip building it.
+        let mut best_information_guesses = if request.mode == SolveMode::LikelyAnswer {
+            Vec::new()
+        } else if let Some(cached) = self.cached_first_turn(request, &likely_answers) {
             cached
         } else {
             let legal_guesses: Vec<Word> = if request.hard_mode {
@@ -226,7 +176,7 @@ impl Solver {
         };
 
         match request.mode {
-            SolveMode::LikelyAnswer => best_information_guesses.clear(),
+            SolveMode::LikelyAnswer => {}
             SolveMode::MaxInformation | SolveMode::Hybrid => {}
             SolveMode::Minimax => best_information_guesses.sort_by(|a, b| {
                 a.worst_case_remaining
@@ -246,65 +196,32 @@ impl Solver {
 
     /// Build the first-turn information ranking from cached bucket statistics.
     ///
-    /// Only the score mixes in request-dependent terms, so the expensive
-    /// entropy sweep is reused across every fresh game regardless of mode or
+    /// Only the score mixes in request-dependent terms, so the expensive bucket
+    /// sweep is reused across every fresh game regardless of mode or
     /// past-solution policy. Returns `None` unless the board is empty and the
     /// cache is present.
-    fn cached_first_turn(&self, request: &SolveRequest) -> Option<Vec<InformationGuess>> {
+    fn cached_first_turn(
+        &self,
+        request: &SolveRequest,
+        likely_answers: &[LikelyAnswer],
+    ) -> Option<Vec<InformationGuess>> {
         if !request.guesses.is_empty() {
             return None;
         }
         let cache = self.first_turn.as_ref()?;
-        if cache.len() != self.lexicon.allowed_guesses.len() {
-            return None;
-        }
 
-        let likely_answers = rank_likely_answers(
-            &self.lexicon.allowed_guesses,
-            &self.past,
-            &request.past_solution_policy,
-            &self.lexicon,
-        );
-        let answer_probability: std::collections::HashMap<Word, f64> = likely_answers
-            .iter()
-            .map(|answer| (answer.word, answer.probability))
-            .collect();
-        let candidate_count = self.lexicon.allowed_guesses.len() as f64;
-
+        let pool = CandidatePool::new(&self.lexicon.allowed_guesses, &self.lexicon, likely_answers);
+        // Zipping keeps the cache aligned with the word list structurally, so a
+        // mismatch cannot silently drop guesses from the ranking.
         let mut ranked: Vec<InformationGuess> = self
             .lexicon
             .allowed_guesses
             .iter()
             .copied()
-            .enumerate()
-            .filter_map(|(idx, guess)| {
-                let stat = cache.get(idx)?;
-                let answer_prob = answer_probability.get(&guess).copied().unwrap_or(0.0);
-                // Every accepted word is consistent with an empty board.
-                let likelier_possible_answer = self.lexicon.is_likelier(guess);
-                let score = stat.entropy_bits
-                    + answer_prob
-                    + if likelier_possible_answer { 0.05 } else { 0.0 }
-                    - (stat.expected_remaining / candidate_count) * 0.10;
-                Some(InformationGuess {
-                    word: guess,
-                    entropy_bits: stat.entropy_bits,
-                    expected_remaining: stat.expected_remaining,
-                    worst_case_remaining: stat.worst_case_remaining,
-                    is_possible_answer: true,
-                    used_before: self.past.was_ever_solution(guess),
-                    score,
-                })
-            })
+            .zip(cache.stats().iter())
+            .map(|(guess, stats)| information_guess(guess, stats, &pool, &self.past, &self.lexicon))
             .collect();
-
-        ranked.sort_by(|a, b| {
-            b.score
-                .total_cmp(&a.score)
-                .then_with(|| b.entropy_bits.total_cmp(&a.entropy_bits))
-                .then_with(|| a.worst_case_remaining.cmp(&b.worst_case_remaining))
-                .then_with(|| a.word.cmp(&b.word))
-        });
+        sort_information_guesses(&mut ranked);
         Some(ranked)
     }
 
@@ -390,9 +307,7 @@ pub fn run_backtest(
                         response
                             .best_information_guesses
                             .iter()
-                            .find(|guess| {
-                                guess.is_possible_answer && lexicon.is_likelier(guess.word)
-                            })
+                            .find(|guess| guess.is_possible_answer && guess.is_likelier)
                             .or_else(|| {
                                 response
                                     .best_information_guesses

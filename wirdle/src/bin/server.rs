@@ -6,6 +6,7 @@ fn main() -> std::io::Result<()> {
     let addr = env::var("WORDLE_ADDR")
         .or_else(|_| env::var("PORT").map(|port| format!("0.0.0.0:{port}")))
         .unwrap_or_else(|_| "127.0.0.1:7878".to_string());
-    let solver = Solver::load(data_dir)?;
+    // Warm the cache before `serve` binds, so requests never see a cold cache.
+    let solver = Solver::load(data_dir)?.with_first_turn_cache();
     serve(&addr, solver)
 }

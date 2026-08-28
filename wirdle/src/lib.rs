@@ -10,11 +10,11 @@ pub mod word;
 
 pub use feedback::{LetterStatus, Pattern, evaluate_feedback};
 pub use filter::{filter_candidates, is_candidate_consistent};
-pub use lexicon::{EditorialOverrides, LIKELIER_WEIGHT, Lexicon, OTHER_ACCEPTED_WEIGHT};
+pub use lexicon::{EditorialOverrides, Lexicon};
 pub use past_solutions::{PastSolutionEntry, PastSolutionIndex};
 pub use rank::{InformationGuess, LikelyAnswer};
 pub use solver::{
-    BacktestCase, BacktestGame, FirstTurnStat, FirstTurnStats, PastSolutionPolicy, SolveMode,
-    SolveRequest, SolveResponse, Solver, known_backtest_cases, run_backtest,
+    BacktestCase, BacktestGame, FirstTurnStats, PastSolutionPolicy, SolveMode, SolveRequest,
+    SolveResponse, Solver, known_backtest_cases, run_backtest,
 };
 pub use word::Word;

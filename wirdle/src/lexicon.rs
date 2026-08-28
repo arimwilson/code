@@ -19,20 +19,29 @@ impl EditorialOverrides {
             Err(err) => return Err(err),
         };
         Ok(Self {
-            add_likelier_solutions: parse_word_array(&text, "add_likelier_solutions"),
-            remove_likelier_solutions: parse_word_array(&text, "remove_likelier_solutions"),
+            // `*_candidate_solutions` are the pre-v2.1 key names. Accept them so
+            // an un-migrated overrides file keeps working instead of being
+            // silently ignored and then overwritten by the nightly updater.
+            add_likelier_solutions: parse_word_array(&text, "add_likelier_solutions")
+                .into_iter()
+                .chain(parse_word_array(&text, "add_candidate_solutions"))
+                .collect(),
+            remove_likelier_solutions: parse_word_array(&text, "remove_likelier_solutions")
+                .into_iter()
+                .chain(parse_word_array(&text, "remove_candidate_solutions"))
+                .collect(),
             word_priors: parse_word_priors(&text),
         })
     }
 }
 
 /// Ranking weight for words on the likelier-solutions list.
-pub const LIKELIER_WEIGHT: f64 = 1.0;
+const LIKELIER_WEIGHT: f64 = 1.0;
 
 /// Ranking weight for accepted words that are not on the likelier-solutions
 /// list. NYT picks these regularly now (8 of the ~45 answers after
 /// 2026-07-15), so they must stay live candidates, just less likely ones.
-pub const OTHER_ACCEPTED_WEIGHT: f64 = 0.2;
+const OTHER_ACCEPTED_WEIGHT: f64 = 0.2;
 
 #[derive(Clone, Debug)]
 pub struct Lexicon {

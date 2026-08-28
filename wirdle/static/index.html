@@ -1446,7 +1446,9 @@
         return data.best_information_guesses
           .filter(
             (guess) =>
-              !guess.is_possible_answer &&
+              // Every accepted word is "possible" now, so a probe is a word the
+              // answer list does not draw from, not merely an inconsistent one.
+              !guess.is_likelier &&
               !likelyWords.has(guess.word) &&
               guess.entropy_bits > 0 &&
               guess.worst_case_remaining < data.remaining_candidates,
