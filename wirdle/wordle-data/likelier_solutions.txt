@@ -1057,6 +1057,7 @@ inlay
 inlet
 inner
 input
+intel
 inter
 intro
 ionic
