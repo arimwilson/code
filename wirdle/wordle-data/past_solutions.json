@@ -13298,5 +13298,12 @@
     "solution": "mound",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-01",
+    "puzzle_number": 1900,
+    "solution": "remix",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
