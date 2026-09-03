@@ -13305,5 +13305,12 @@
     "solution": "remix",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-02",
+    "puzzle_number": 1901,
+    "solution": "ruler",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
