@@ -13340,5 +13340,12 @@
     "solution": "beige",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-07",
+    "puzzle_number": 1906,
+    "solution": "blind",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
