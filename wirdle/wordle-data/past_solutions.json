@@ -13354,5 +13354,12 @@
     "solution": "liven",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-09",
+    "puzzle_number": 1908,
+    "solution": "burst",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
