@@ -118,6 +118,7 @@ askew
 aspic
 assay
 asset
+aster
 atlas
 atoll
 atone

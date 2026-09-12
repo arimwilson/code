@@ -13368,5 +13368,12 @@
     "solution": "dryly",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-11",
+    "puzzle_number": 1910,
+    "solution": "aster",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
