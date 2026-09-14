@@ -13382,5 +13382,12 @@
     "solution": "nifty",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-13",
+    "puzzle_number": 1912,
+    "solution": "focus",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
