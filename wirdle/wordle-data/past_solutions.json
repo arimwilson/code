@@ -13389,5 +13389,12 @@
     "solution": "focus",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-09-14",
+    "puzzle_number": 1913,
+    "solution": "rinse",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
