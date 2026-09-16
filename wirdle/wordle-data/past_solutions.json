@@ -13396,5 +13396,12 @@
     "solution": "rinse",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-15",
+    "puzzle_number": 1914,
+    "solution": "dealt",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
