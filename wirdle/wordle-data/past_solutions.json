@@ -13403,5 +13403,12 @@
     "solution": "dealt",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-16",
+    "puzzle_number": 1915,
+    "solution": "wispy",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
