@@ -13410,5 +13410,12 @@
     "solution": "wispy",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-17",
+    "puzzle_number": 1916,
+    "solution": "theta",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
