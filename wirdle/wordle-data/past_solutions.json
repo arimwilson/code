@@ -13424,5 +13424,12 @@
     "solution": "snowy",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-19",
+    "puzzle_number": 1918,
+    "solution": "waken",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
