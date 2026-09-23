@@ -13445,5 +13445,12 @@
     "solution": "pager",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-22",
+    "puzzle_number": 1921,
+    "solution": "stoke",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
