@@ -13459,5 +13459,12 @@
     "solution": "forth",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-09-24",
+    "puzzle_number": 1923,
+    "solution": "messy",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
