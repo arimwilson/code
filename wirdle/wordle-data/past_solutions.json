@@ -13480,5 +13480,12 @@
     "solution": "elegy",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-27",
+    "puzzle_number": 1926,
+    "solution": "sloop",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
