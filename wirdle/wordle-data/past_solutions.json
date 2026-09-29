@@ -13487,5 +13487,12 @@
     "solution": "sloop",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-09-28",
+    "puzzle_number": 1927,
+    "solution": "trunk",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
