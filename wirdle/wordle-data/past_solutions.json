@@ -13529,5 +13529,12 @@
     "solution": "peeve",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-04",
+    "puzzle_number": 1933,
+    "solution": "shack",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
