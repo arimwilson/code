@@ -13536,5 +13536,12 @@
     "solution": "shack",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-05",
+    "puzzle_number": 1934,
+    "solution": "mocha",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
