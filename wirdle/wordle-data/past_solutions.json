@@ -13543,5 +13543,12 @@
     "solution": "mocha",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-06",
+    "puzzle_number": 1935,
+    "solution": "dimly",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
