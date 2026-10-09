@@ -13557,5 +13557,12 @@
     "solution": "prove",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-10-08",
+    "puzzle_number": 1937,
+    "solution": "strew",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]

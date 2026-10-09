@@ -1998,6 +1998,7 @@ stove
 strap
 straw
 stray
+strew
 strip
 strut
 stuck
