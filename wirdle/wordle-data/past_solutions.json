@@ -13564,5 +13564,12 @@
     "solution": "strew",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-09",
+    "puzzle_number": 1938,
+    "solution": "major",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
