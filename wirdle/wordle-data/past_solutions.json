@@ -13571,5 +13571,12 @@
     "solution": "major",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-10-10",
+    "puzzle_number": 1939,
+    "solution": "bumpy",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
