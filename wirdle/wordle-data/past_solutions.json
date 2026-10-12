@@ -13578,5 +13578,12 @@
     "solution": "bumpy",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-11",
+    "puzzle_number": 1940,
+    "solution": "uncap",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
