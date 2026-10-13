@@ -13585,5 +13585,12 @@
     "solution": "uncap",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-12",
+    "puzzle_number": 1941,
+    "solution": "yodel",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
