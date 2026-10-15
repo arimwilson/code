@@ -13599,5 +13599,12 @@
     "solution": "wider",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-14",
+    "puzzle_number": 1943,
+    "solution": "psych",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
