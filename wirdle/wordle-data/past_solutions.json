@@ -13613,5 +13613,12 @@
     "solution": "dunce",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-16",
+    "puzzle_number": 1945,
+    "solution": "shady",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
