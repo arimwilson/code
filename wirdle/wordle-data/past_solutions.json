@@ -13648,5 +13648,12 @@
     "solution": "wrest",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-21",
+    "puzzle_number": 1950,
+    "solution": "penny",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
