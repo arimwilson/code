@@ -13669,5 +13669,12 @@
     "solution": "trill",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-24",
+    "puzzle_number": 1953,
+    "solution": "holey",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
