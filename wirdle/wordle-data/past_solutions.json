@@ -13690,5 +13690,12 @@
     "solution": "geeky",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-27",
+    "puzzle_number": 1956,
+    "solution": "bingo",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
