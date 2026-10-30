@@ -13704,5 +13704,12 @@
     "solution": "grist",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-10-29",
+    "puzzle_number": 1958,
+    "solution": "motor",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
