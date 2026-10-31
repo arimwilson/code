@@ -13711,5 +13711,12 @@
     "solution": "motor",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-10-30",
+    "puzzle_number": 1959,
+    "solution": "slide",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
