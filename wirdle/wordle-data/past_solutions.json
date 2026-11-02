@@ -13725,5 +13725,12 @@
     "solution": "yahoo",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-01",
+    "puzzle_number": 1961,
+    "solution": "viper",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
