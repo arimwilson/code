@@ -13732,5 +13732,12 @@
     "solution": "viper",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-02",
+    "puzzle_number": 1962,
+    "solution": "scoot",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
