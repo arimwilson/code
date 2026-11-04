@@ -13739,5 +13739,12 @@
     "solution": "scoot",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-03",
+    "puzzle_number": 1963,
+    "solution": "pouch",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
