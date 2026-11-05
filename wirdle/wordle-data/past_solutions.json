@@ -13746,5 +13746,12 @@
     "solution": "pouch",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-04",
+    "puzzle_number": 1964,
+    "solution": "nutty",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
