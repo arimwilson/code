@@ -13753,5 +13753,12 @@
     "solution": "nutty",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-05",
+    "puzzle_number": 1965,
+    "solution": "parch",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
