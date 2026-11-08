@@ -13767,5 +13767,12 @@
     "solution": "dreck",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-07",
+    "puzzle_number": 1967,
+    "solution": "prate",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
