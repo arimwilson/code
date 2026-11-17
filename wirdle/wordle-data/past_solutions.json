@@ -13830,5 +13830,12 @@
     "solution": "snark",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-16",
+    "puzzle_number": 1976,
+    "solution": "drawl",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
