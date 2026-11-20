@@ -13851,5 +13851,12 @@
     "solution": "blurt",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-11-19",
+    "puzzle_number": 1979,
+    "solution": "clout",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
