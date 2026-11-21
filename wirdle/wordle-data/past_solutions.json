@@ -13858,5 +13858,12 @@
     "solution": "clout",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-20",
+    "puzzle_number": 1980,
+    "solution": "arose",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
