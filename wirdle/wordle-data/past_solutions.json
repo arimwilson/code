@@ -13872,5 +13872,12 @@
     "solution": "stent",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-22",
+    "puzzle_number": 1982,
+    "solution": "upend",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
