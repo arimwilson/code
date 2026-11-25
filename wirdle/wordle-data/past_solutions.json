@@ -13886,5 +13886,12 @@
     "solution": "filth",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-24",
+    "puzzle_number": 1984,
+    "solution": "sneer",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
