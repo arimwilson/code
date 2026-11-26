@@ -13893,5 +13893,12 @@
     "solution": "sneer",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": false
+  },
+  {
+    "date": "2026-11-25",
+    "puzzle_number": 1985,
+    "solution": "spicy",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": true
   }
 ]
