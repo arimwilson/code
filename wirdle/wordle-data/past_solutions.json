@@ -13900,5 +13900,12 @@
     "solution": "spicy",
     "source": "nytimes.com/svc/wordle/v2",
     "is_repeat": true
+  },
+  {
+    "date": "2026-11-26",
+    "puzzle_number": 1986,
+    "solution": "tense",
+    "source": "nytimes.com/svc/wordle/v2",
+    "is_repeat": false
   }
 ]
